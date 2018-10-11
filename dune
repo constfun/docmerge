@@ -1,1 +1,3 @@
-(executable (name docmerge))
+(executable
+    (name docmerge)
+    (libraries base))
