@@ -4,10 +4,10 @@ open Base
 (* TODO: How does automerge persist data? *)
 (* TODO: Somewhat ironically, OCaml data structures are mutable, while automerge uses Immutable.js
          It might be easier to source some immutable data structures for the initial translation. *)
+(* TODO: How ju juse Base properly? *)
 
 
 module OpSet = struct
-  type time (* Lamport timestamp *)
   type actor = string (* GUID *)
   type seq = int
   type change = {
@@ -23,8 +23,6 @@ module OpSet = struct
     (* All observed actor clocks. *)
     (* As you receieve new ops, the corresponding actor clock is updated. *)
     clock: seq Map.M(String).t;
-    states: int list;
-    history: int list;
     queue: change Queue.t;
   }
 
@@ -44,21 +42,40 @@ module OpSet = struct
       )
 
   let apply_change t change =
-    ()
+    (t, 42 (* is a diff *))
 
-  let apply_queued_ops t =
-    let {clock; queue} = t in
-    match Queue.dequeue queue with
-    | Some change ->
-      if causaly_ready clock change then
-        apply_change t change
-      else ()
-    | None -> ()
+  (* Simon says...
 
-  (* TODO: Should return new opset + diff *)
+    do drain op/change queue
+      if change ready
+        apply and accumulate diffs
+      else
+        put change into new queue
+    stop when new queue size == starting queue size
+      (ie. no ops were ready to apply)
+    otherwise recurse to retry ops that weren't ready
+
+  *)
+  let rec apply_queued_ops t diffs =
+    let (new_t, diffs) = Queue.fold t.queue
+        ~init:({t with queue = (Queue.of_list [])}, [])
+        ~f:(fun (t, diffs) change ->
+            if causaly_ready t.clock change then
+              let (t, diff) = apply_change t change in
+              (t, diff :: diffs)
+            else (
+              Queue.enqueue t.queue change;
+              (t, diffs)
+            )
+          ) in
+    if phys_equal (Queue.length new_t.queue) (Queue.length t.queue) then
+      (new_t, diffs)
+    else
+      apply_queued_ops new_t diffs
+
+  (* TODO: Maintain local undo history *)
   let add_change t change (* isUndoable *) =
     Queue.enqueue t.queue change;
-    (* Maintain local undo history *)
-    apply_queued_ops t
+    apply_queued_ops t []
 end
 
