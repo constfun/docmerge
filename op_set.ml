@@ -1,6 +1,6 @@
 open Base
 
-(* TODO: Can we cross-compile this file, use is instead of the op_set.js file in automerge and run tests? *)
+(* TODO: Can we cross-compile this file and use it instead of the op_set.js file in automerge to run tests? *)
 (* TODO: How does automerge persist data? *)
 (* TODO: Somewhat ironically, OCaml data structures are mutable, while automerge uses Immutable.js
          It might be easier to source some immutable data structures for the initial translation. *)
