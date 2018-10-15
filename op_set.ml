@@ -6,6 +6,8 @@ open Base
          It might be easier to source some immutable data structures for the initial translation. *)
 (* TODO: How ju juse Base properly? *)
 
+module ByActorMap = Map.M(String)
+module BySeqMap = Map.M(Int)
 
 module OpSet = struct
   type actor = string (* GUID *)
@@ -14,16 +16,23 @@ module OpSet = struct
     actor: actor;
     seq: seq;
     (* List of depended op sequences by actor. *)
-    deps: seq Map.M(String).t;
+    deps: seq ByActorMap.t;
   }
+
+  type state = {
+    allDeps: seq ByActorMap.t;
+  }
+
 
   type t = {
     actor: actor;
     seq: seq;
     (* All observed actor clocks. *)
     (* As you receieve new ops, the corresponding actor clock is updated. *)
-    clock: seq Map.M(String).t;
+    clock: seq ByActorMap.t;
     queue: change Queue.t;
+    (* TODO: What are states? *)
+    states: state BySeqMap.t ByActorMap.t
   }
 
   (* Returns true if all changes that causally precede the given change *)
@@ -40,6 +49,30 @@ module OpSet = struct
           else depClock >= depSeq
         | None -> Int.equal depSeq 1
       )
+
+  let transitive_deps t change =
+    Map.fold change.deps
+      ~init:(Map.empty (module String))
+      ~f:(fun ~key:depActor ~data:depSeq deps ->
+          if depSeq <= 0 then deps else
+          match Map.find t.states depActor with
+          | Some stateBySeq -> (
+            match Map.find stateBySeq (depSeq - 1) with
+            | Some state -> (
+              let transitive = state.allDeps in
+              let deps = Map.merge deps transitive ~f:(fun ~key -> function
+                  | `Both (l, r) -> Some (Int.max l r)
+                  | `Left l -> Some l
+                  | `Right r -> Some r
+                ) in
+              Map.set deps depActor depSeq
+            )
+            | None -> deps
+          )
+          | None -> deps
+      )
+
+
 
   let apply_change t change =
     (t, 42 (* is a diff *))
