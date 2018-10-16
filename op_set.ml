@@ -20,6 +20,7 @@ module OpSet = struct
   }
 
   type state = {
+    change: change;
     allDeps: seq ByActorMap.t;
   }
 
@@ -31,8 +32,8 @@ module OpSet = struct
     (* As you receieve new ops, the corresponding actor clock is updated. *)
     clock: seq ByActorMap.t;
     queue: change Queue.t;
-    (* TODO: What are states? *)
-    states: state BySeqMap.t ByActorMap.t
+    (* List of states for every actor for every seq *)
+    states: state list ByActorMap.t
   }
 
   (* Returns true if all changes that causally precede the given change *)
@@ -50,6 +51,13 @@ module OpSet = struct
         | None -> Int.equal depSeq 1
       )
 
+
+  (*
+     All change ops + allDeps of every actor state at current seq?
+     Something like that... ie
+     For every actor op that a change depends on
+     get all deps of the actors current state?
+  *)
   let transitive_deps t change =
     Map.fold change.deps
       ~init:(Map.empty (module String))
@@ -57,7 +65,7 @@ module OpSet = struct
           if depSeq <= 0 then deps else
           match Map.find t.states depActor with
           | Some stateBySeq -> (
-            match Map.find stateBySeq (depSeq - 1) with
+            match List.nth stateBySeq (depSeq - 1) with
             | Some state -> (
               let transitive = state.allDeps in
               let deps = Map.merge deps transitive ~f:(fun ~key -> function
@@ -74,8 +82,22 @@ module OpSet = struct
 
 
 
-  let apply_change t change =
-    (t, 42 (* is a diff *))
+  let apply_change t (change: change) =
+    (* Prior state by sequence *)
+    let prior = match Map.find t.states change.actor with
+      | Some s -> s
+      | None -> []
+    in
+    if change.seq <= List.length prior then (
+      match List.nth prior (change.seq - 1) with
+      | Some state when (phys_equal state.change change) ->
+        raise Not_found
+      | _ -> (t, [])
+    ) else (t, [])
+
+
+
+
 
   (* Simon says...
 
