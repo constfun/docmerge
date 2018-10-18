@@ -1,6 +1,8 @@
 (* TODO: Can we cross-compile this file and use it instead of the op_set.js file in automerge to run tests? *)
 (* TODO: How does automerge persist data? *)
-(* TODO: How ju juse Base properly? *)
+
+type exn +=
+  | Inconsistent_reuse_of_sequence
 
 module ActorMap = CCMap.Make(CCString)
 module SeqMap = CCMap.Make(CCInt)
@@ -8,11 +10,28 @@ module SeqMap = CCMap.Make(CCInt)
 module OpSet = struct
   type actor = string (* GUID *)
   type seq = int
+
+  type action =
+    | MakeMap
+    | MakeList
+    | MakeText
+    | Ins
+    | Set
+    | Del
+    | Link
+
+  type op = {
+    action: action;
+    actor: actor;
+    seq: seq;
+  }
+
   type change = {
     actor: actor;
     seq: seq;
     (* List of depended op sequences by actor. *)
     deps: seq ActorMap.t;
+    ops: op list;
   }
 
   type state = {
@@ -83,11 +102,13 @@ module OpSet = struct
     in
     if change.seq <= List.length prior then (
       match List.nth_opt prior (change.seq - 1) with
-      | Some state when state.change == change ->
-        raise Not_found
+      | Some state when state.change == change -> raise Inconsistent_reuse_of_sequence
       | _ -> (t, [])
-    ) else (t, [])
-      (* let allDeps = transitive_deps t *)
+    ) else
+      let allDeps = ActorMap.add change.actor (change.seq - 1) change.deps
+      |> transitive_deps t in
+      let new_prior = List.append prior [{change; allDeps}] in
+      let t = ActorMap.add change.actor new_prior t.states in
 
 
   (* Simon says...
