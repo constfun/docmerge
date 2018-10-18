@@ -43,12 +43,14 @@ module OpSet = struct
   type t = {
     actor: actor;
     seq: seq;
+    deps: seq ActorMap.t;
     (* All observed actor clocks. *)
     (* As you receieve new ops, the corresponding actor clock is updated. *)
     clock: seq ActorMap.t;
     queue: change CCFQueue.t;
     (* List of states for every actor for every seq *)
-    states: state list ActorMap.t
+    states: state list ActorMap.t;
+    history: change list;
   }
 
   (* Returns true if all changes that causally precede the given change *)
@@ -109,7 +111,18 @@ module OpSet = struct
       |> transitive_deps t in
       let new_prior = List.append prior [{change; allDeps}] in
       let t = ActorMap.add change.actor new_prior t.states in
-
+      (* NOTE: The original code sets actor and sequence equal to change actor and seq, for each op.
+               We choose to keep the actor and seq attached to every op in the data type. *)
+      let (t, diffs) = apply_ops t change.ops in
+      let remaining_deps =
+        ActorMap.filter (fun depActor depSeq ->
+          depSeq > (ActorMap.get_or depActor ~default:0 allDeps)
+        ) t.deps
+        |> ActorMap.add change.actor change.seq
+      in
+      let clock = ActorMap.add change.actor change.seq t.clock in
+      let history = List.append t.history [change] in
+      ({t with deps = remaining_deps; clock; history}, diffs)
 
   (* Simon says...
 
