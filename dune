@@ -1,3 +1,4 @@
 (executable
     (name docmerge)
-    (libraries base))
+    (flags -w -33)
+    (libraries containers containers.data))

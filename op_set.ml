@@ -1,13 +1,9 @@
-open Base
-
 (* TODO: Can we cross-compile this file and use it instead of the op_set.js file in automerge to run tests? *)
 (* TODO: How does automerge persist data? *)
-(* TODO: Somewhat ironically, OCaml data structures are mutable, while automerge uses Immutable.js
-         It might be easier to source some immutable data structures for the initial translation. *)
 (* TODO: How ju juse Base properly? *)
 
-module ByActorMap = Map.M(String)
-module BySeqMap = Map.M(Int)
+module ActorMap = CCMap.Make(CCString)
+module SeqMap = CCMap.Make(CCInt)
 
 module OpSet = struct
   type actor = string (* GUID *)
@@ -16,12 +12,12 @@ module OpSet = struct
     actor: actor;
     seq: seq;
     (* List of depended op sequences by actor. *)
-    deps: seq ByActorMap.t;
+    deps: seq ActorMap.t;
   }
 
   type state = {
     change: change;
-    allDeps: seq ByActorMap.t;
+    allDeps: seq ActorMap.t;
   }
 
 
@@ -30,10 +26,10 @@ module OpSet = struct
     seq: seq;
     (* All observed actor clocks. *)
     (* As you receieve new ops, the corresponding actor clock is updated. *)
-    clock: seq ByActorMap.t;
-    queue: change Queue.t;
+    clock: seq ActorMap.t;
+    queue: change CCFQueue.t;
     (* List of states for every actor for every seq *)
-    states: state list ByActorMap.t
+    states: state list ActorMap.t
   }
 
   (* Returns true if all changes that causally precede the given change *)
@@ -42,15 +38,15 @@ module OpSet = struct
   (* When a new op lands in the op set, check if all preceeding ops have been applied *)
   (* If we store ops in Irmin, causality is enforced by history, aka the Merkle DAG. *)
   (* TODO: rename change to op? *)
-  let causaly_ready clock change =
-    Map.for_alli change.deps (fun ~key:depActor ~data:depSeq ->
-        match Map.find clock depActor with
-        | Some depClock ->
-          if String.equal depActor change.actor then depClock >= change.seq - 1
-          else depClock >= depSeq
-        | None -> Int.equal depSeq 1
-      )
-
+  let causaly_ready t (change : change) =
+    change.deps
+    |> ActorMap.update change.actor (function
+        | Some seq -> Some (seq - 1)
+        | None -> None)
+    |> ActorMap.for_all (fun depActor depSeq ->
+        match ActorMap.find_opt depActor t.clock with
+        | Some depClock -> depClock >= depSeq
+        | None -> depSeq >= 0)
 
   (*
      All change ops + allDeps of every actor state at current seq?
@@ -58,45 +54,40 @@ module OpSet = struct
      For every actor op that a change depends on
      get all deps of the actors current state?
   *)
-  let transitive_deps t change =
-    Map.fold change.deps
-      ~init:(Map.empty (module String))
-      ~f:(fun ~key:depActor ~data:depSeq deps ->
-          if depSeq <= 0 then deps else
-          match Map.find t.states depActor with
-          | Some stateBySeq -> (
-            match List.nth stateBySeq (depSeq - 1) with
-            | Some state -> (
-              let transitive = state.allDeps in
-              let deps = Map.merge deps transitive ~f:(fun ~key -> function
-                  | `Both (l, r) -> Some (Int.max l r)
-                  | `Left l -> Some l
-                  | `Right r -> Some r
-                ) in
-              Map.set deps depActor depSeq
-            )
-            | None -> deps
+  let transitive_deps t baseDeps =
+    ActorMap.fold (fun depActor depSeq deps ->
+        if depSeq <= 0 then deps else
+        match ActorMap.find_opt depActor t.states with
+        | Some states -> (
+          match List.nth_opt states (depSeq - 1) with
+          | Some state -> (
+            ActorMap.merge (fun _ l r ->
+              match (l, r) with
+              | (Some l, Some r) -> Some (max l r)
+              | (Some l, None) -> Some l
+              | (None, Some r) -> Some r
+              | (None, None) -> None
+            ) deps state.allDeps
+            |> ActorMap.update depActor (fun _ -> Some depSeq)
           )
           | None -> deps
-      )
-
-
+        )
+        | None -> deps
+      ) baseDeps (ActorMap.empty)
 
   let apply_change t (change: change) =
     (* Prior state by sequence *)
-    let prior = match Map.find t.states change.actor with
+    let prior = match ActorMap.find_opt change.actor t.states with
       | Some s -> s
       | None -> []
     in
     if change.seq <= List.length prior then (
-      match List.nth prior (change.seq - 1) with
-      | Some state when (phys_equal state.change change) ->
+      match List.nth_opt prior (change.seq - 1) with
+      | Some state when state.change == change ->
         raise Not_found
       | _ -> (t, [])
     ) else (t, [])
-
-
-
+      (* let allDeps = transitive_deps t *)
 
 
   (* Simon says...
@@ -111,26 +102,24 @@ module OpSet = struct
     otherwise recurse to retry ops that weren't ready
 
   *)
-  let rec apply_queued_ops t diffs =
-    let (new_t, diffs) = Queue.fold t.queue
-        ~init:({t with queue = (Queue.of_list [])}, [])
-        ~f:(fun (t, diffs) change ->
-            if causaly_ready t.clock change then
-              let (t, diff) = apply_change t change in
-              (t, diff :: diffs)
-            else (
-              Queue.enqueue t.queue change;
-              (t, diffs)
-            )
-          ) in
-    if phys_equal (Queue.length new_t.queue) (Queue.length t.queue) then
+  let rec apply_queued_ops diffs t =
+    let (new_t, diffs) = CCFQueue.fold (fun (t, diffs) change ->
+        if causaly_ready t change then
+          let (t, diff) = apply_change t change in
+          (t, diff :: diffs)
+        else
+          ({t with queue = (CCFQueue.cons change t.queue)}, diffs)
+      ) (t, diffs) t.queue
+    in
+    if (CCFQueue.size new_t.queue) == (CCFQueue.size t.queue) then
       (new_t, diffs)
     else
-      apply_queued_ops new_t diffs
+      apply_queued_ops diffs new_t
+
 
   (* TODO: Maintain local undo history *)
   let add_change t change (* isUndoable *) =
-    Queue.enqueue t.queue change;
-    apply_queued_ops t []
+    {t with queue = (CCFQueue.cons change t.queue)}
+    |> apply_queued_ops []
 end
 
