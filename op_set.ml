@@ -8,6 +8,7 @@ type exn +=
 module ActorMap = CCMap.Make(CCString)
 module SeqMap = CCMap.Make(CCInt)
 module ObjectIdMap = CCMap.Make(CCString)
+module ObjectIdSet = CCSet.Make(CCString)
 
 module OpSet = struct
   type actor = string (* GUID *)
@@ -164,13 +165,28 @@ module OpSet = struct
     let by_object = ObjectIdMap.add op.obj obj t.by_object in
     ({t with by_object}, [edit])
 
-  (* let apply_ops t ops = *)
-  (*   List.fold_left (fun (all_diffs, new_objs) op -> *)
-  (*       match op.action with *)
-  (*       | MakeMap | MakeList | MakeText -> *)
-  (*         let new_obs = CCSet.Make( *)
-  (*         (t, []) *)
-  (*     ) *)
+  let apply_insert t op =
+    (t, [])
+
+  let apply_assign t op mem =
+    (t, [])
+
+  let apply_ops t ops =
+    let (t, all_diffs, _) = List.fold_left (fun (t, all_diffs, new_objs) (op : op) ->
+        match op.action with
+        | MakeMap | MakeList | MakeText ->
+          let new_objs = ObjectIdSet.add op.obj new_objs in
+          let (t, diffs) = apply_make t op in
+          (t, List.append all_diffs diffs, new_objs)
+        | Ins ->
+          let (t, diffs) = apply_insert t op in
+          (t, List.append all_diffs diffs, new_objs)
+        | Set | Del | Link ->
+          let (t, diffs) = apply_assign t op (ObjectIdSet.mem op.obj) in
+          (t, List.append all_diffs diffs, new_objs)
+      ) (t, [], ObjectIdSet.empty) ops
+    in
+    (t, all_diffs)
 
   let apply_change t (change: change) =
     (* Prior state by sequence *)
@@ -183,7 +199,7 @@ module OpSet = struct
       let allDeps = ActorMap.add change.actor (change.seq - 1) change.deps
       |> transitive_deps t in
       let new_prior = List.append prior [{change; allDeps}] in
-      let t = ActorMap.add change.actor new_prior t.states in
+      let t = {t with states = ActorMap.add change.actor new_prior t.states} in
       (* NOTE: The original code sets actor and sequence equal to change actor and seq, for each op.
                We choose to keep the actor and seq attached to every op in the data type. *)
       let (t, diffs) = apply_ops t change.ops in
