@@ -3,13 +3,16 @@
 
 type exn +=
   | Inconsistent_reuse_of_sequence
+  | Not_supported
 
 module ActorMap = CCMap.Make(CCString)
 module SeqMap = CCMap.Make(CCInt)
+module ObjectIdMap = CCMap.Make(CCString)
 
 module OpSet = struct
   type actor = string (* GUID *)
   type seq = int
+  type obj_id = string
 
   type action =
     | MakeMap
@@ -24,6 +27,7 @@ module OpSet = struct
     action: action;
     actor: actor;
     seq: seq;
+    obj: obj_id;
   }
 
   type change = {
@@ -39,6 +43,25 @@ module OpSet = struct
     allDeps: seq ActorMap.t;
   }
 
+  type edit_action =
+    | Create
+
+  type edit_type =
+    | Map
+    | Text
+    | List
+
+  type edit = {
+    _type: edit_type;
+    action: edit_action;
+    obj: obj_id;
+  }
+
+  type obj = {
+    _init: op;
+    _inbound: unit;
+    _elem_ids: int list option;
+  }
 
   type t = {
     actor: actor;
@@ -51,6 +74,7 @@ module OpSet = struct
     (* List of states for every actor for every seq *)
     states: state list ActorMap.t;
     history: change list;
+    by_object: obj ObjectIdMap.t;
   }
 
   (* Returns true if all changes that causally precede the given change *)
@@ -96,12 +120,61 @@ module OpSet = struct
         | None -> deps
       ) baseDeps (ActorMap.empty)
 
+  let apply_make t (op : op) =
+    let (edit, obj) =
+      match op.action with
+      | MakeMap ->
+        let e = {
+          action = Create;
+          _type = Map;
+          obj = op.obj;
+        } in
+        let o = {
+          _init = op;
+          _inbound = ();
+          _elem_ids = None;
+        } in
+        (e, o)
+      | MakeText ->
+        let e = {
+          action = Create;
+          _type = Text;
+          obj =  op.obj;
+        } in
+        let o = {
+          _init = op;
+          _inbound = ();
+          _elem_ids = Some [];
+        } in
+        (e, o)
+      | MakeList ->
+        let e = {
+          action = Create;
+          _type = List;
+          obj = op.obj;
+        } in
+        let o = {
+          _init = op;
+          _inbound = ();
+          _elem_ids = Some [];
+        } in
+        (e, o)
+      | _ -> raise Not_supported
+    in
+    let by_object = ObjectIdMap.add op.obj obj t.by_object in
+    ({t with by_object}, [edit])
+
+  (* let apply_ops t ops = *)
+  (*   List.fold_left (fun (all_diffs, new_objs) op -> *)
+  (*       match op.action with *)
+  (*       | MakeMap | MakeList | MakeText -> *)
+  (*         let new_obs = CCSet.Make( *)
+  (*         (t, []) *)
+  (*     ) *)
+
   let apply_change t (change: change) =
     (* Prior state by sequence *)
-    let prior = match ActorMap.find_opt change.actor t.states with
-      | Some s -> s
-      | None -> []
-    in
+    let prior = ActorMap.get_or ~default:[] change.actor t.states in
     if change.seq <= List.length prior then (
       match List.nth_opt prior (change.seq - 1) with
       | Some state when state.change == change -> raise Inconsistent_reuse_of_sequence
