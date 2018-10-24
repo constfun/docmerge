@@ -19,6 +19,12 @@ module OpSet = struct
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
 
   type op = {action: action; actor: actor; seq: seq; obj: obj_id}
+  module OpSet = CCSet.Make (struct
+    type t = op
+    let compare op1 op2 =
+      (* TODO: compare lamport clocks *)
+      -1
+  end)
 
   type change =
     { actor: actor
@@ -35,7 +41,7 @@ module OpSet = struct
 
   type edit = {_type: edit_type; action: edit_action; obj: obj_id}
 
-  type obj = {_init: op; _inbound: unit; _elem_ids: int list option}
+  type obj = {_init: op; _inbound: OpSet.t; _elem_ids: int list option}
 
   type t =
     { actor: actor
@@ -99,15 +105,15 @@ module OpSet = struct
       match op.action with
       | MakeMap ->
           let e = {action= Create; _type= Map; obj= op.obj} in
-          let o = {_init= op; _inbound= (); _elem_ids= None} in
+          let o = {_init= op; _inbound= OpSet.empty; _elem_ids= None} in
           (e, o)
       | MakeText ->
           let e = {action= Create; _type= Text; obj= op.obj} in
-          let o = {_init= op; _inbound= (); _elem_ids= Some []} in
+          let o = {_init= op; _inbound= OpSet.empty; _elem_ids= Some []} in
           (e, o)
       | MakeList ->
           let e = {action= Create; _type= List; obj= op.obj} in
-          let o = {_init= op; _inbound= (); _elem_ids= Some []} in
+          let o = {_init= op; _inbound= OpSet.empty; _elem_ids= Some []} in
           (e, o)
       | _ -> raise Not_supported
     in
