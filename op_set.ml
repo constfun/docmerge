@@ -1,7 +1,11 @@
 (* TODO: Can we cross-compile this file and use it instead of the op_set.js file in automerge to run tests? *)
 (* TODO: How does automerge persist data? *)
 
-type exn += Inconsistent_reuse_of_sequence | Not_supported | Modification_of_unknown_object | Duplicate_list_element_id
+type exn +=
+  | Inconsistent_reuse_of_sequence
+  | Not_supported
+  | Modification_of_unknown_object
+  | Duplicate_list_element_id
 
 module ActorMap = CCMap.Make (CCString)
 module SeqMap = CCMap.Make (CCInt)
@@ -19,13 +23,22 @@ module OpSet = struct
   type obj_id = string
 
   type elem_id = string
+
   type key = string
 
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
 
-  type op = {key: key; action: action; actor: actor; seq: seq; obj: obj_id; elem: elem_id}
+  type op =
+    { key: key
+    ; action: action
+    ; actor: actor
+    ; seq: seq
+    ; obj: obj_id
+    ; elem: int }
+
   module OpSet = CCSet.Make (struct
     type t = op
+
     let compare op1 op2 =
       (* TODO: compare lamport clocks *)
       -1
@@ -46,7 +59,13 @@ module OpSet = struct
 
   type edit = {_type: edit_type; action: edit_action; obj: obj_id}
 
-  type obj = {_following: op list KeyMap.t; _init: op; _inbound: OpSet.t; _elem_ids: int list option; _insertion: op ElemIdMap.t}
+  type obj =
+    { _max_elem: int
+    ; _following: op list KeyMap.t
+    ; _init: op
+    ; _inbound: OpSet.t
+    ; _elem_ids: int list option
+    ; _insertion: op ElemIdMap.t }
 
   type t =
     { actor: actor
@@ -110,44 +129,68 @@ module OpSet = struct
       match op.action with
       | MakeMap ->
           let e = {action= Create; _type= Map; obj= op.obj} in
-          let o = {_following = KeyMap.empty; _insertion = ElemIdMap.empty; _init= op; _inbound= OpSet.empty; _elem_ids= None} in
+          let o =
+            { _max_elem= 0
+            ; _following= KeyMap.empty
+            ; _insertion= ElemIdMap.empty
+            ; _init= op
+            ; _inbound= OpSet.empty
+            ; _elem_ids= None }
+          in
           (e, o)
       | MakeText ->
           let e = {action= Create; _type= Text; obj= op.obj} in
-          let o = {_following = KeyMap.empty; _insertion = ElemIdMap.empty; _init= op; _inbound= OpSet.empty; _elem_ids= Some []} in
+          let o =
+            { _max_elem= 0
+            ; _following= KeyMap.empty
+            ; _insertion= ElemIdMap.empty
+            ; _init= op
+            ; _inbound= OpSet.empty
+            ; _elem_ids= Some [] }
+          in
           (e, o)
       | MakeList ->
           let e = {action= Create; _type= List; obj= op.obj} in
-          let o = {_following = KeyMap.empty; _insertion = ElemIdMap.empty; _init= op; _inbound= OpSet.empty; _elem_ids= Some []} in
+          let o =
+            { _max_elem= 0
+            ; _following= KeyMap.empty
+            ; _insertion= ElemIdMap.empty
+            ; _init= op
+            ; _inbound= OpSet.empty
+            ; _elem_ids= Some [] }
+          in
           (e, o)
       | _ -> raise Not_supported
     in
     let by_object = ObjectIdMap.add op.obj obj t.by_object in
     ({t with by_object}, [edit])
 
-  let apply_insert t (op: op) =
-    let elem_id = op.actor ^ ":" ^ op.elem in
-    (match ObjectIdMap.find_opt op.obj t.by_object with
-        | Some obj ->
-          if ElemIdMap.mem elem_id obj._insertion then
-            raise Duplicate_list_element_id
-          else ()
-        | None -> raise Modification_of_unknown_object);
+  let apply_insert t (op : op) =
+    let elem_id = op.actor ^ ":" ^ (CCInt.to_string op.elem) in
+    ( match ObjectIdMap.find_opt op.obj t.by_object with
+    | Some obj ->
+        if ElemIdMap.mem elem_id obj._insertion then
+          raise Duplicate_list_element_id
+        else ()
+    | None -> raise Modification_of_unknown_object ) ;
     let by_object =
-      ObjectIdMap.update op.obj (function
+      ObjectIdMap.update op.obj
+        (function
           | Some obj ->
-            let _following = KeyMap.update op.key (function
-                | Some l -> Some (List.append l [op])
-                | None -> Some []
-              ) obj._following in
-            Some {obj with _following}
-          | None -> None
-        ) t.by_object
+              let _following =
+                KeyMap.update op.key
+                  (function
+                    | Some l -> Some (List.append l [op]) | None -> Some [])
+                  obj._following
+              in
+              let _max_elem = max op.elem obj._max_elem in
+              let _insertion = ElemIdMap.add elem_id op obj._insertion in
+              Some {obj with _following; _max_elem; _insertion}
+          | None -> None)
+        t.by_object
     in
-    let t = { t with by_object } in
+    let t = {t with by_object} in
     (t, [])
-
-
 
   let apply_assign t op mem = (t, [])
 
