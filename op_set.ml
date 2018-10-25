@@ -29,19 +29,14 @@ module OpSet = struct
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
 
   type op =
-    { key: key
-    ; action: action
-    ; actor: actor
-    ; seq: seq
-    ; obj: obj_id
-    ; elem: int }
+    {key: key; action: action; actor: actor; seq: seq; obj: obj_id; elem: int}
 
   module OpSet = CCSet.Make (struct
     type t = op
 
     let compare op1 op2 =
       (* TODO: compare lamport clocks *)
-      -1
+      0
   end)
 
   type change =
@@ -70,6 +65,10 @@ module OpSet = struct
   type t =
     { actor: actor
     ; seq: seq
+    ; undo_local: op list option
+    ; undo_pos: int
+    ; undo_stack: op list list
+    ; redo_stack: op list list
     ; deps: seq ActorMap.t
     ; (* All observed actor clocks. *)
       (* As you receieve new ops, the corresponding actor clock is updated. *)
@@ -166,7 +165,7 @@ module OpSet = struct
     ({t with by_object}, [edit])
 
   let apply_insert t (op : op) =
-    let elem_id = op.actor ^ ":" ^ (CCInt.to_string op.elem) in
+    let elem_id = op.actor ^ ":" ^ CCInt.to_string op.elem in
     ( match ObjectIdMap.find_opt op.obj t.by_object with
     | Some obj ->
         if ElemIdMap.mem elem_id obj._insertion then
@@ -192,7 +191,11 @@ module OpSet = struct
     let t = {t with by_object} in
     (t, [])
 
-  let apply_assign t op mem = (t, [])
+  let apply_assign t (op : op) is_top_level =
+    if not (ObjectIdMap.mem op.obj t.by_object) then
+      raise Modification_of_unknown_object
+    else (* TODO: If undoLocal and topLevel *)
+      (t, [])
 
   let apply_ops t ops =
     let t, all_diffs, _ =
@@ -254,7 +257,7 @@ module OpSet = struct
     otherwise recurse to retry ops that weren't ready
 
   *)
-  let rec apply_queued_ops diffs t =
+  let rec apply_queued_ops t diffs =
     let new_t, diffs =
       CCFQueue.fold
         (fun (t, diffs) change ->
@@ -265,9 +268,23 @@ module OpSet = struct
         (t, diffs) t.queue
     in
     if CCFQueue.size new_t.queue == CCFQueue.size t.queue then (new_t, diffs)
-    else apply_queued_ops diffs new_t
+    else apply_queued_ops new_t diffs
 
-  (* TODO: Maintain local undo history *)
-  let add_change t change (* isUndoable *) =
-    {t with queue= CCFQueue.cons change t.queue} |> apply_queued_ops []
+  let push_undo_history t =
+    let undo_stack =
+      CCList.append
+        (CCList.take t.undo_pos t.undo_stack)
+        [CCOpt.get_exn t.undo_local]
+    in
+    { t with
+      undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
+
+  let add_change t change isUndoable =
+    let t = {t with queue= CCFQueue.cons change t.queue} in
+    if isUndoable then
+      let t = {t with undo_local= Some []} in
+      let d, diffs = apply_queued_ops t [] in
+      let t = push_undo_history t in
+      (t, diffs)
+    else apply_queued_ops t []
 end
