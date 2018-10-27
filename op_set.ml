@@ -35,7 +35,7 @@ module OpSet = struct
     ; seq: seq
     ; obj: obj_id
     ; elem: int
-    ; value: unit option }
+    ; value: string option }
 
   module OpSet = CCSet.Make (struct
     type t = op
@@ -254,6 +254,22 @@ module OpSet = struct
           ([], []) refs
       in
       (* If any links were overwritten, remove them from the index of inbound links *)
+      let overwritten_links = CCList.filter (fun (op: op) -> match op.action with Link -> true | _ -> false) overwritten in
+      let t =
+        CCList.fold_left (fun t (op : op) ->
+            let by_object =
+              ObjectIdMap.update
+                (CCOpt.get_exn op.value)
+                (function
+                  | Some (obj_map, obj_aux) ->
+                    Some (obj_map, {obj_aux with _inbound= OpSet.remove op obj_aux._inbound})
+                  | None -> raise Not_found
+                )
+                t.by_object
+            in
+            {t with by_object}
+          ) t overwritten_links
+      in
       (t, [])
 
   let apply_ops t ops =
