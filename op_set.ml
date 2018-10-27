@@ -54,7 +54,12 @@ module OpSet = struct
 
   type edit = {_type: edit_type; action: edit_action; obj: obj_id}
 
-  type obj =
+  type ref_action = Del
+
+  type ref = {action: ref_action; obj: obj_id; key: key; value: unit option}
+
+  (* TODO: Needs to be actual map. *)
+  type obj_aux =
     { _max_elem: int
     ; _following: op list KeyMap.t
     ; _init: op
@@ -62,13 +67,15 @@ module OpSet = struct
     ; _elem_ids: int list option
     ; _insertion: op ElemIdMap.t }
 
+  type obj = ref list KeyMap.t * obj_aux
+
   type t =
     { actor: actor
     ; seq: seq
-    ; undo_local: op list option
+    ; undo_local: ref list option
     ; undo_pos: int
-    ; undo_stack: op list list
-    ; redo_stack: op list list
+    ; undo_stack: ref list list
+    ; redo_stack: ref list list
     ; deps: seq ActorMap.t
     ; (* All observed actor clocks. *)
       (* As you receieve new ops, the corresponding actor clock is updated. *)
@@ -124,7 +131,7 @@ module OpSet = struct
       baseDeps ActorMap.empty
 
   let apply_make t (op : op) =
-    let edit, obj =
+    let edit, obj_aux =
       match op.action with
       | MakeMap ->
           let e = {action= Create; _type= Map; obj= op.obj} in
@@ -161,30 +168,32 @@ module OpSet = struct
           (e, o)
       | _ -> raise Not_supported
     in
-    let by_object = ObjectIdMap.add op.obj obj t.by_object in
+    let by_object =
+      ObjectIdMap.add op.obj (KeyMap.empty, obj_aux) t.by_object
+    in
     ({t with by_object}, [edit])
 
   let apply_insert t (op : op) =
     let elem_id = op.actor ^ ":" ^ CCInt.to_string op.elem in
     ( match ObjectIdMap.find_opt op.obj t.by_object with
-    | Some obj ->
-        if ElemIdMap.mem elem_id obj._insertion then
+    | Some (_, obj_aux) ->
+        if ElemIdMap.mem elem_id obj_aux._insertion then
           raise Duplicate_list_element_id
         else ()
     | None -> raise Modification_of_unknown_object ) ;
     let by_object =
       ObjectIdMap.update op.obj
         (function
-          | Some obj ->
+          | Some (obj, obj_aux) ->
               let _following =
                 KeyMap.update op.key
                   (function
                     | Some l -> Some (List.append l [op]) | None -> Some [])
-                  obj._following
+                  obj_aux._following
               in
-              let _max_elem = max op.elem obj._max_elem in
-              let _insertion = ElemIdMap.add elem_id op obj._insertion in
-              Some {obj with _following; _max_elem; _insertion}
+              let _max_elem = max op.elem obj_aux._max_elem in
+              let _insertion = ElemIdMap.add elem_id op obj_aux._insertion in
+              Some (obj, {obj_aux with _following; _max_elem; _insertion})
           | None -> None)
         t.by_object
     in
@@ -194,7 +203,21 @@ module OpSet = struct
   let apply_assign t (op : op) is_top_level =
     if not (ObjectIdMap.mem op.obj t.by_object) then
       raise Modification_of_unknown_object
-    else (* TODO: If undoLocal and topLevel *)
+    else
+      let t =
+        match t.undo_local with
+        | Some uloc when is_top_level ->
+            let obj_map, obj_aux = ObjectIdMap.find op.obj t.by_object in
+            let undo_ops = KeyMap.get_or op.key ~default:[] obj_map in
+            let undo_ops =
+              if CCList.is_empty undo_ops then
+                [{action= Del; obj= op.obj; key= op.key; value= None}]
+              else undo_ops
+            in
+            let uloc = CCList.concat [uloc; undo_ops] in
+            {t with undo_local= Some uloc}
+        | _ -> t
+      in
       (t, [])
 
   let apply_ops t ops =
@@ -210,7 +233,9 @@ module OpSet = struct
               let t, diffs = apply_insert t op in
               (t, List.append all_diffs diffs, new_objs)
           | Set | Del | Link ->
-              let t, diffs = apply_assign t op (ObjectIdSet.mem op.obj) in
+              let t, diffs =
+                apply_assign t op (ObjectIdSet.mem op.obj new_objs)
+              in
               (t, List.append all_diffs diffs, new_objs) )
         (t, [], ObjectIdSet.empty) ops
     in
