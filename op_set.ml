@@ -29,7 +29,13 @@ module OpSet = struct
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
 
   type op =
-    {key: key; action: action; actor: actor; seq: seq; obj: obj_id; elem: int}
+    { key: key
+    ; action: action
+    ; actor: actor
+    ; seq: seq
+    ; obj: obj_id
+    ; elem: int
+    ; value: unit option }
 
   module OpSet = CCSet.Make (struct
     type t = op
@@ -54,9 +60,7 @@ module OpSet = struct
 
   type edit = {_type: edit_type; action: edit_action; obj: obj_id}
 
-  type ref_action = Del
-
-  type ref = {action: ref_action; obj: obj_id; key: key; value: unit option}
+  type ref = {action: action; obj: obj_id; key: key; value: unit option}
 
   (* TODO: Needs to be actual map. *)
   type obj_aux =
@@ -67,7 +71,7 @@ module OpSet = struct
     ; _elem_ids: int list option
     ; _insertion: op ElemIdMap.t }
 
-  type obj = ref list KeyMap.t * obj_aux
+  type obj = op list KeyMap.t * obj_aux
 
   type t =
     { actor: actor
@@ -200,6 +204,21 @@ module OpSet = struct
     let t = {t with by_object} in
     (t, [])
 
+  (* Returns true if the two operations are concurrent, that is, they happened without being aware of
+  each other (neither happened before the other). Returns false if one supersedes the other. *)
+  let is_concurrent t (op1 : op) (op2 : op) =
+    let actor1, seq1 = (op1.actor, op1.seq) in
+    let actor2, seq2 = (op2.actor, op2.seq) in
+    let clock1 =
+      (CCList.nth (ActorMap.find actor1 t.states) (seq1 - 1)).allDeps
+    in
+    let clock2 =
+      (CCList.nth (ActorMap.find actor2 t.states) (seq2 - 1)).allDeps
+    in
+    ActorMap.get_or actor2 ~default:0 clock1 < seq2
+    && ActorMap.get_or actor1 ~default:0 clock2 < seq1
+
+  (* Processes a 'set', 'del', or 'link' operation *)
   let apply_assign t (op : op) is_top_level =
     if not (ObjectIdMap.mem op.obj t.by_object) then
       raise Modification_of_unknown_object
@@ -208,7 +227,14 @@ module OpSet = struct
         match t.undo_local with
         | Some uloc when is_top_level ->
             let obj_map, obj_aux = ObjectIdMap.find op.obj t.by_object in
-            let undo_ops = KeyMap.get_or op.key ~default:[] obj_map in
+            let undo_ops =
+              KeyMap.get_or op.key ~default:[] obj_map
+              |> CCList.map (fun (op : op) ->
+                     { action= op.action
+                     ; obj= op.obj
+                     ; key= op.key
+                     ; value= op.value } )
+            in
             let undo_ops =
               if CCList.is_empty undo_ops then
                 [{action= Del; obj= op.obj; key= op.key; value= None}]
@@ -218,6 +244,16 @@ module OpSet = struct
             {t with undo_local= Some uloc}
         | _ -> t
       in
+      let overwritten, remaining =
+        let obj_map, obj_aux = ObjectIdMap.find op.obj t.by_object in
+        let refs = KeyMap.get_or op.key ~default:[] obj_map in
+        CCList.fold_left
+          (fun (over, rem) ref ->
+            if is_concurrent t ref op then (over, ref :: rem)
+            else (ref :: over, rem) )
+          ([], []) refs
+      in
+      (* If any links were overwritten, remove them from the index of inbound links *)
       (t, [])
 
   let apply_ops t ops =
