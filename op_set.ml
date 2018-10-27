@@ -60,7 +60,7 @@ module OpSet = struct
 
   type edit = {_type: edit_type; action: edit_action; obj: obj_id}
 
-  type ref = {action: action; obj: obj_id; key: key; value: unit option}
+  type ref = {action: action; obj: obj_id; key: key; value: string option}
 
   (* TODO: Needs to be actual map. *)
   type obj_aux =
@@ -218,6 +218,12 @@ module OpSet = struct
     ActorMap.get_or actor2 ~default:0 clock1 < seq2
     && ActorMap.get_or actor1 ~default:0 clock2 < seq1
 
+  let update_list_element t obj_id elem_id =
+    (t, [])
+
+  let update_map_key t obj_id elem_id =
+    (t, [])
+
   (* Processes a 'set', 'del', or 'link' operation *)
   let apply_assign t (op : op) is_top_level =
     if not (ObjectIdMap.mem op.obj t.by_object) then
@@ -254,23 +260,69 @@ module OpSet = struct
           ([], []) refs
       in
       (* If any links were overwritten, remove them from the index of inbound links *)
-      let overwritten_links = CCList.filter (fun (op: op) -> match op.action with Link -> true | _ -> false) overwritten in
+      let overwritten_links =
+        CCList.filter
+          (fun (op : op) -> match op.action with Link -> true | _ -> false)
+          overwritten
+      in
       let t =
-        CCList.fold_left (fun t (op : op) ->
+        CCList.fold_left
+          (fun t (op : op) ->
             let by_object =
-              ObjectIdMap.update
-                (CCOpt.get_exn op.value)
+              ObjectIdMap.update (CCOpt.get_exn op.value)
                 (function
                   | Some (obj_map, obj_aux) ->
-                    Some (obj_map, {obj_aux with _inbound= OpSet.remove op obj_aux._inbound})
-                  | None -> raise Not_found
-                )
+                      Some
+                        ( obj_map
+                        , { obj_aux with
+                            _inbound= OpSet.remove op obj_aux._inbound } )
+                  | None -> raise Not_found)
+                t.by_object
+            in
+            {t with by_object} )
+          t overwritten_links
+      in
+      let t =
+        match op.action with
+        | Link ->
+            let by_object =
+              ObjectIdMap.update (CCOpt.get_exn op.value)
+                (function
+                  | Some (obj_map, obj_aux) ->
+                      Some
+                        ( obj_map
+                        , {obj_aux with _inbound= OpSet.add op obj_aux._inbound}
+                        )
+                  | None -> raise Not_found)
                 t.by_object
             in
             {t with by_object}
-          ) t overwritten_links
+        | _ -> t
       in
-      (t, [])
+      let remaining =
+        match op.action with
+        | Del -> remaining
+        | _ -> CCList.append remaining [op]
+      in
+      let remaining =
+        CCList.sort
+          (fun (op1 : op) (op2 : op) -> String.compare op1.actor op2.actor)
+          remaining
+        |> CCList.rev
+      in
+      let by_object =
+        ObjectIdMap.update op.obj
+          (function
+            | Some (obj_map, obj_aux) ->
+                Some (ObjectIdMap.add op.key remaining obj_map, obj_aux)
+            | None -> raise Not_found)
+          t.by_object
+      in
+      let t = {t with by_object} in
+      let obj_type = (snd (ObjectIdMap.find op.obj t.by_object))._init.action in
+      match obj_type with
+      | MakeList | MakeText -> update_list_element t op.obj op.key
+      | _ -> update_map_key t op.obj op.key
 
   let apply_ops t ops =
     let t, all_diffs, _ =
