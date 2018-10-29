@@ -62,13 +62,12 @@ module OpSet = struct
 
   type ref = {action: action; obj: obj_id; key: key; value: string option}
 
-  (* TODO: Needs to be actual map. *)
   type obj_aux =
     { _max_elem: int
     ; _following: op list KeyMap.t
     ; _init: op
     ; _inbound: OpSet.t
-    ; _elem_ids: int list option
+    ; _elem_ids: elem_id list option
     ; _insertion: op ElemIdMap.t }
 
   type obj = op list KeyMap.t * obj_aux
@@ -218,7 +217,15 @@ module OpSet = struct
     ActorMap.get_or actor2 ~default:0 clock1 < seq2
     && ActorMap.get_or actor1 ~default:0 clock2 < seq1
 
-  let update_list_element t obj_id elem_id =
+  let get_field_ops t obj_id (key : elem_id) =
+    let (obj_map, _) = (CCOpt.get_exn (ObjectIdMap.get key t.by_object)) in
+    KeyMap.get_or key obj_map ~default:[]
+
+
+  let update_list_element t obj_id (elem_id : elem_id) =
+    let ops = get_field_ops t obj_id elem_id in
+    let (_, {_elem_ids}) = ObjectIdMap.find obj_id t.by_object in
+    let index = CCList.find_idx (fun id -> id == elem_id) (CCOpt.get_exn _elem_ids) in
     (t, [])
 
   let update_map_key t obj_id elem_id =
