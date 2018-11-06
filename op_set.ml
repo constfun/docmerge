@@ -14,7 +14,9 @@ module ObjectIdSet = CCSet.Make (CCString)
 module ElemIdMap = CCMap.Make (CCString)
 module KeyMap = CCMap.Make (CCString)
 
-module OpSet = struct
+let _ROOT_ID = "00000000-0000-0000-0000-000000000000"
+
+module OpSetBackend = struct
   type actor = string
 
   (* GUID *)
@@ -54,11 +56,16 @@ module OpSet = struct
 
   type state = {change: change; allDeps: seq ActorMap.t}
 
-  type edit_action = Create
+  type edit_action = Create | Insert | Remove | Set
 
   type edit_type = Map | Text | List
 
-  type edit = {_type: edit_type; action: edit_action; obj: obj_id}
+  type edit =
+    { _type: edit_type
+    ; action: edit_action
+    ; obj: obj_id
+    ; index: int option
+    ; path: [`IntPath of int | `StrPath of key] list option }
 
   type ref = {action: action; obj: obj_id; key: key; value: string option}
 
@@ -137,7 +144,9 @@ module OpSet = struct
     let edit, obj_aux =
       match op.action with
       | MakeMap ->
-          let e = {action= Create; _type= Map; obj= op.obj} in
+          let e =
+            {action= Create; _type= Map; obj= op.obj; index= None; path= None}
+          in
           let o =
             { _max_elem= 0
             ; _following= KeyMap.empty
@@ -148,7 +157,9 @@ module OpSet = struct
           in
           (e, o)
       | MakeText ->
-          let e = {action= Create; _type= Text; obj= op.obj} in
+          let e =
+            {action= Create; _type= Text; obj= op.obj; index= None; path= None}
+          in
           let o =
             { _max_elem= 0
             ; _following= KeyMap.empty
@@ -159,7 +170,9 @@ module OpSet = struct
           in
           (e, o)
       | MakeList ->
-          let e = {action= Create; _type= List; obj= op.obj} in
+          let e =
+            {action= Create; _type= List; obj= op.obj; index= None; path= None}
+          in
           let o =
             { _max_elem= 0
             ; _following= KeyMap.empty
@@ -203,6 +216,44 @@ module OpSet = struct
     let t = {t with by_object} in
     (t, [])
 
+  (* Returns the path from the root object to the given objectId, as an array of string keys
+ (for ancestor maps) and integer indexes (for ancestor lists). If there are several paths
+ to the same object, returns one of the paths arbitrarily. If the object is not reachable
+ from the root, returns null. *)
+  let rec get_path t obj_id path =
+    if obj_id == _ROOT_ID then path
+    else
+      match ObjectIdMap.get obj_id t.by_object with
+      | None -> None
+      | Some (_, obj_aux) -> (
+        match OpSet.choose_opt obj_aux._inbound with
+        | None -> None
+        | Some ref -> (
+          match ObjectIdMap.get ref.obj t.by_object with
+          | None -> None
+          | Some (_, obj_aux) -> (
+            match obj_aux._init.action with
+            | MakeList | MakeText -> (
+                let elem_ids = CCOpt.get_exn obj_aux._elem_ids in
+                match CCList.find_idx (fun el -> el == ref.key) elem_ids with
+                | None -> None
+                | Some (index, _) ->
+                    get_path t ref.obj
+                      (CCOpt.map (fun p -> `IntPath index :: p) path) )
+            | _ ->
+                get_path t ref.obj
+                  (CCOpt.map (fun p -> `StrPath ref.key :: p) path) ) ) )
+
+  let patch_list (t : t) obj_id index elem_id (action : edit_action)
+      (ops : op list) =
+    let _type =
+      let _, obj_aux = ObjectIdMap.get obj_id t.by_object |> CCOpt.get_exn in
+      match obj_aux._init.action with MakeText -> Text | _ -> List
+    in
+    let path = get_path t obj_id (Some []) in
+    let edit : edit = {action; _type; obj= obj_id; index= Some index; path} in
+    ()
+
   (* Returns true if the two operations are concurrent, that is, they happened without being aware of
   each other (neither happened before the other). Returns false if one supersedes the other. *)
   let is_concurrent t (op1 : op) (op2 : op) =
@@ -218,18 +269,20 @@ module OpSet = struct
     && ActorMap.get_or actor1 ~default:0 clock2 < seq1
 
   let get_field_ops t obj_id (key : elem_id) =
-    let (obj_map, _) = (CCOpt.get_exn (ObjectIdMap.get key t.by_object)) in
+    let obj_map, _ = CCOpt.get_exn (ObjectIdMap.get key t.by_object) in
     KeyMap.get_or key obj_map ~default:[]
-
 
   let update_list_element t obj_id (elem_id : elem_id) =
     let ops = get_field_ops t obj_id elem_id in
-    let (_, {_elem_ids}) = ObjectIdMap.find obj_id t.by_object in
-    let index = CCList.find_idx (fun id -> id == elem_id) (CCOpt.get_exn _elem_ids) in
-    (t, [])
+    let _, {_elem_ids} = ObjectIdMap.find obj_id t.by_object in
+    let index =
+      CCList.find_idx (fun id -> id == elem_id) (CCOpt.get_exn _elem_ids)
+    in
+    if index >= 0 then
+      if CCList.is_empty ops then
+        patch_list t obj_id index elem_id `Remove None (t, [])
 
-  let update_map_key t obj_id elem_id =
-    (t, [])
+  let update_map_key t obj_id elem_id = (t, [])
 
   (* Processes a 'set', 'del', or 'link' operation *)
   let apply_assign t (op : op) is_top_level =
@@ -326,7 +379,9 @@ module OpSet = struct
           t.by_object
       in
       let t = {t with by_object} in
-      let obj_type = (snd (ObjectIdMap.find op.obj t.by_object))._init.action in
+      let obj_type =
+        (snd (ObjectIdMap.find op.obj t.by_object))._init.action
+      in
       match obj_type with
       | MakeList | MakeText -> update_list_element t op.obj op.key
       | _ -> update_map_key t op.obj op.key
