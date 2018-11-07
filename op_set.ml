@@ -6,6 +6,7 @@ type exn +=
   | Not_supported
   | Modification_of_unknown_object
   | Duplicate_list_element_id
+  | Unknown_action_type
 
 module ActorMap = CCMap.Make (CCString)
 module SeqMap = CCMap.Make (CCInt)
@@ -24,11 +25,34 @@ module OpSetBackend = struct
 
   type obj_id = string
 
-  type elem_id = string
-
   type key = string
 
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
+
+  type value = Value of string | Link of {obj: value}
+
+  type elem_id = key * value option
+
+  (* Ineficient but simple implementation of skip list from original *)
+  module SkipList = struct
+    type t = elem_id list
+
+    let empty = []
+
+    let insert_index index k v (t : t) = CCList.insert_at_idx index (k, v) t
+
+    let index_of k t =
+      match CCList.find_idx (fun (itmk, _) -> itmk == k) t with
+      | Some (idx, _) -> Some idx
+      | None -> None
+
+    let set_value k v (t : t) =
+      match index_of k t with
+      | Some idx -> CCList.set_at_idx idx (k, v) t
+      | None -> raise Not_found
+
+    let remove_index index (t : t) = CCList.remove_at_idx index t
+  end
 
   type op =
     { key: key
@@ -37,7 +61,7 @@ module OpSetBackend = struct
     ; seq: seq
     ; obj: obj_id
     ; elem: int
-    ; value: string option }
+    ; value: value option }
 
   module OpSet = CCSet.Make (struct
     type t = op
@@ -63,7 +87,10 @@ module OpSetBackend = struct
   type edit =
     { _type: edit_type
     ; action: edit_action
+    ; elem_id: elem_id option
+    ; value: value option
     ; obj: obj_id
+    ; link: bool
     ; index: int option
     ; path: [`IntPath of int | `StrPath of key] list option }
 
@@ -74,7 +101,7 @@ module OpSetBackend = struct
     ; _following: op list KeyMap.t
     ; _init: op
     ; _inbound: OpSet.t
-    ; _elem_ids: elem_id list option
+    ; _elem_ids: SkipList.t option
     ; _insertion: op ElemIdMap.t }
 
   type obj = op list KeyMap.t * obj_aux
@@ -95,6 +122,11 @@ module OpSetBackend = struct
       states: state list ActorMap.t
     ; history: change list
     ; by_object: obj ObjectIdMap.t }
+
+  (* Helpers not found in original *)
+  let get_obj_aux t obj_id = CCOpt.map snd (ObjectIdMap.get obj_id t.by_object)
+
+  let get_obj_aux_exn t obj_id = CCOpt.get_exn (get_obj_aux t obj_id)
 
   (* Returns true if all changes that causally precede the given change *)
   (* have already been applied in `opSet`. *)
@@ -235,7 +267,7 @@ module OpSetBackend = struct
             match obj_aux._init.action with
             | MakeList | MakeText -> (
                 let elem_ids = CCOpt.get_exn obj_aux._elem_ids in
-                match CCList.find_idx (fun el -> el == ref.key) elem_ids with
+                match SkipList.index_of ref.key elem_ids with
                 | None -> None
                 | Some (index, _) ->
                     get_path t ref.obj
@@ -245,13 +277,42 @@ module OpSetBackend = struct
                   (CCOpt.map (fun p -> `StrPath ref.key :: p) path) ) ) )
 
   let patch_list (t : t) obj_id index elem_id (action : edit_action)
-      (ops : op list) =
+      (ops : op list option) =
     let _type =
       let _, obj_aux = ObjectIdMap.get obj_id t.by_object |> CCOpt.get_exn in
       match obj_aux._init.action with MakeText -> Text | _ -> List
     in
+    let first_op = CCOpt.flat_map (fun ops -> CCList.nth_opt ops 0) ops in
+    let elem_ids = CCOpt.get_exn (get_obj_aux_exn t obj_id)._elem_ids in
+    let value = CCOpt.flat_map (fun (fop : op) -> fop.value) first_op in
     let path = get_path t obj_id (Some []) in
-    let edit : edit = {action; _type; obj= obj_id; index= Some index; path} in
+    let edit : edit =
+      { action
+      ; _type
+      ; obj= obj_id
+      ; index= Some index
+      ; path
+      ; link= false
+      ; value= None
+      ; elem_id= None }
+    in
+    (* TODO: firstOp && link *)
+    let elem_ids, edit =
+      match action with
+      | Insert ->
+          let elem_ids =
+            SkipList.insert_index index (CCOpt.get_exn first_op).key value
+              elem_ids
+          in
+          (elem_ids, {edit with elem_id; value})
+      | Set ->
+          let elem_ids =
+            SkipList.set_value (CCOpt.get_exn first_op).key value elem_ids
+          in
+          (elem_ids, {edit with value})
+      | Remove -> (SkipList.remove_index index elem_ids, edit)
+      | Create -> raise Unknown_action_type
+    in
     ()
 
   (* Returns true if the two operations are concurrent, that is, they happened without being aware of
