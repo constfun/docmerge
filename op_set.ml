@@ -37,6 +37,7 @@ module OpSetBackend = struct
   module SkipList = struct
     type t = elem_id list
 
+
     let empty = []
 
     let insert_index index k v (t : t) = CCList.insert_at_idx index (k, v) t
@@ -61,7 +62,7 @@ module OpSetBackend = struct
     ; seq: seq
     ; obj: obj_id
     ; elem: int
-    ; value: value option }
+    ; value: string option }
 
   module OpSet = CCSet.Make (struct
     type t = op
@@ -94,7 +95,7 @@ module OpSetBackend = struct
     ; index: int option
     ; path: [`IntPath of int | `StrPath of key] list option }
 
-  type ref = {action: action; obj: obj_id; key: key; value: string option}
+  type ref = {action: action; obj: obj_id; key: key; value: value option}
 
   type obj_aux =
     { _max_elem: int
@@ -177,7 +178,14 @@ module OpSetBackend = struct
       match op.action with
       | MakeMap ->
           let e =
-            {action= Create; _type= Map; obj= op.obj; index= None; path= None}
+            { action= Create
+            ; _type= Map
+            ; obj= op.obj
+            ; index= None
+            ; path= None
+            ; link= false
+            ; elem_id= None
+            ; value= None }
           in
           let o =
             { _max_elem= 0
@@ -190,7 +198,14 @@ module OpSetBackend = struct
           (e, o)
       | MakeText ->
           let e =
-            {action= Create; _type= Text; obj= op.obj; index= None; path= None}
+            { action= Create
+            ; _type= Text
+            ; obj= op.obj
+            ; index= None
+            ; path= None
+            ; link= false
+            ; elem_id= None
+            ; value= None }
           in
           let o =
             { _max_elem= 0
@@ -203,7 +218,14 @@ module OpSetBackend = struct
           (e, o)
       | MakeList ->
           let e =
-            {action= Create; _type= List; obj= op.obj; index= None; path= None}
+            { action= Create
+            ; _type= List
+            ; obj= op.obj
+            ; index= None
+            ; path= None
+            ; link= false
+            ; elem_id= None
+            ; value= None }
           in
           let o =
             { _max_elem= 0
@@ -269,7 +291,7 @@ module OpSetBackend = struct
                 let elem_ids = CCOpt.get_exn obj_aux._elem_ids in
                 match SkipList.index_of ref.key elem_ids with
                 | None -> None
-                | Some (index, _) ->
+                | Some index ->
                     get_path t ref.obj
                       (CCOpt.map (fun p -> `IntPath index :: p) path) )
             | _ ->
@@ -285,6 +307,7 @@ module OpSetBackend = struct
     let first_op = CCOpt.flat_map (fun ops -> CCList.nth_opt ops 0) ops in
     let elem_ids = CCOpt.get_exn (get_obj_aux_exn t obj_id)._elem_ids in
     let value = CCOpt.flat_map (fun (fop : op) -> fop.value) first_op in
+    let value = CCOpt.map (fun v -> Value v) value in
     let path = get_path t obj_id (Some []) in
     let edit : edit =
       { action
@@ -301,9 +324,7 @@ module OpSetBackend = struct
       match action with
       | Insert ->
           let elem_ids =
-            SkipList.insert_index index (CCOpt.get_exn first_op).key value
-              elem_ids
-          in
+            SkipList.insert_index index (CCOpt.get_exn first_op).key value elem_ids in
           (elem_ids, {edit with elem_id; value})
       | Set ->
           let elem_ids =
@@ -329,19 +350,20 @@ module OpSetBackend = struct
     ActorMap.get_or actor2 ~default:0 clock1 < seq2
     && ActorMap.get_or actor1 ~default:0 clock2 < seq1
 
-  let get_field_ops t obj_id (key : elem_id) =
+  let get_field_ops t obj_id (key : key) =
     let obj_map, _ = CCOpt.get_exn (ObjectIdMap.get key t.by_object) in
     KeyMap.get_or key obj_map ~default:[]
 
-  let update_list_element t obj_id (elem_id : elem_id) =
+  let update_list_element t obj_id (elem_id : key) =
     let ops = get_field_ops t obj_id elem_id in
     let _, {_elem_ids} = ObjectIdMap.find obj_id t.by_object in
     let index =
-      CCList.find_idx (fun id -> id == elem_id) (CCOpt.get_exn _elem_ids)
+      SkipList.index_of elem_id (CCOpt.get_exn _elem_ids)
     in
-    if index >= 0 then
-      if CCList.is_empty ops then
-        patch_list t obj_id index elem_id `Remove None (t, [])
+    ()
+    (* if index >= 0 then *)
+    (*   if CCList.is_empty ops then *)
+    (*     patch_list t obj_id index elem_id `Remove None (t, []) *)
 
   let update_map_key t obj_id elem_id = (t, [])
 
