@@ -7,6 +7,7 @@ type exn +=
   | Modification_of_unknown_object
   | Duplicate_list_element_id
   | Unknown_action_type
+  | Missing_index_for_list_element
 
 module ActorMap = CCMap.Make (CCString)
 module SeqMap = CCMap.Make (CCInt)
@@ -282,7 +283,7 @@ module OpSetBackend = struct
           (fun conflicts (op : op) ->
             let link = match op.action with Link -> true | _ -> false in
             let conf : conflict = {actor= op.actor; value= op.value; link} in
-            CCOpt.map (fun cs -> cs @ [conf]) conflicts)
+            CCOpt.map (fun cs -> cs @ [conf]) conflicts )
           (Some []) ops_rest
     | [] -> None
 
@@ -393,21 +394,52 @@ module OpSetBackend = struct
     let obj_map, _ = CCOpt.get_exn (ObjectIdMap.get key t.by_object) in
     KeyMap.get_or key obj_map ~default:[]
 
+  let get_parent t obj_id key =
+    if key == "_head" then None
+    else
+      let open CCOpt.Infix in
+      let insertion =
+        ObjectIdMap.get obj_id t.by_object
+        >>= fun (_, obj_aux) ->
+        ElemIdMap.get key obj_aux._insertion >|= fun op -> op.key
+      in
+      match insertion with
+      | None -> raise Missing_index_for_list_element
+      | Some k -> Some k
+
+
+  let insertions_after t obj_id parent_id child_id =
+    (* Child id is of the format `actor:elem_digits` *)
+    raise Not_supported
+
+  (*  Given the ID of a list element, returns the ID of the immediate predecessor list element, *)
+  (*  or null if the given list element is at the head. *)
+  let get_previous t obj_id key =
+    let parent_id = get_parent t obj_id key in
+    let children = insertions_after t obj_id parent_id in
+    raise Not_supported
+
   let update_list_element t obj_id (elem_id__key : key) =
     let ops = get_field_ops t obj_id elem_id__key in
     let _, {_elem_ids} = ObjectIdMap.find obj_id t.by_object in
     let index = SkipList.index_of elem_id__key (CCOpt.get_exn _elem_ids) in
-    let t, edit_lis =
-      match index with
-      | Some index ->
-          if CCList.is_empty ops then
-            patch_list t obj_id index elem_id__key Remove None
-          else patch_list t obj_id index elem_id__key Set (Some ops)
-      | None -> (t, [])
-    in
-    (t, edit_lis)
-
-  (* TODO: finish fun *)
+    match index with
+    | Some index ->
+        if CCList.is_empty ops then
+          patch_list t obj_id index elem_id__key Remove None
+        else patch_list t obj_id index elem_id__key Set (Some ops)
+    | None ->
+        (* Deleting a non-existent element = no-op *)
+        if CCList.is_empty ops then [(t, [])]
+        else
+          let rec find_closest_el_idx prev_id =
+            let idx = -1 in
+            let prevId = get_previous t obj_id prev_id in
+            (* TODO *)
+            raise Not_supported
+          in
+          (* TODO *)
+          raise Not_supported
 
   let update_map_key t obj_id elem_id = (t, [])
 
