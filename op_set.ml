@@ -463,7 +463,7 @@ module OpSetBackend = struct
     if (CCList.hd children) == key then
       match parent_id with
       | Some "_head" -> None
-      | _ -> Some parent_id
+      | _ -> parent_id
     else
       (* In the original code, there seems to be a bug here, where prev_id will still be undefined when fist child is equal to key.
          We replicate the behavior anyway to preserve the semantics. *)
@@ -479,12 +479,13 @@ module OpSetBackend = struct
         if CCList.is_empty children then prev_id else
         loop children (CCList.last_opt children)
       in
-      Some (loop children prev_id)
+      loop children prev_id
 
   let update_list_element t obj_id (elem_id__key : key) =
     let ops = get_field_ops t obj_id elem_id__key in
     let _, {_elem_ids} = ObjectIdMap.find obj_id t.by_object in
-    let index = SkipList.index_of elem_id__key (CCOpt.get_exn _elem_ids) in
+    let elem_ids = CCOpt.get_exn _elem_ids in
+    let index = SkipList.index_of elem_id__key elem_ids in
     match index with
     | Some index ->
         if CCList.is_empty ops then
@@ -492,16 +493,20 @@ module OpSetBackend = struct
         else patch_list t obj_id index elem_id__key Set (Some ops)
     | None ->
         (* Deleting a non-existent element = no-op *)
-        if CCList.is_empty ops then [(t, [])]
+        if CCList.is_empty ops then t, []
         else
-          let rec find_closest_el_idx prev_id =
-            let idx = -1 in
-            let prevId = get_previous t obj_id prev_id in
-            (* TODO *)
-            raise Not_supported
+          let rec loop prev_id =
+            match get_previous t obj_id prev_id with
+            | None -> -1
+            | Some prev_id ->
+              match SkipList.index_of prev_id elem_ids with
+              | Some index -> index
+              | None -> loop prev_id
           in
-          (* TODO *)
-          raise Not_supported
+          (* Index can be -1 here, this feels like an error, but we keep going to preserve semantics *)
+          let index = loop elem_id__key in
+          patch_list t obj_id (index + 1) elem_id__key Insert (Some ops)
+
 
   let update_map_key t obj_id elem_id = (t, [])
 
