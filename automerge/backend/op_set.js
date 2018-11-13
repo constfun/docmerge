@@ -324,6 +324,7 @@ function addChange(opSet, change, isUndoable) {
   }
 }
 
+// TODO
 function getMissingChanges(opSet, haveDeps) {
   const allDeps = transitiveDeps(opSet, haveDeps)
   return opSet.get('states')
@@ -333,6 +334,7 @@ function getMissingChanges(opSet, haveDeps) {
     .map(state => state.get('change'))
 }
 
+// TODO
 function getChangesForActor(opSet, forActor, afterSeq) {
   afterSeq = afterSeq || 0
 
@@ -344,6 +346,7 @@ function getChangesForActor(opSet, forActor, afterSeq) {
     .map(state => state.get('change'))
 }
 
+// TODO
 function getMissingDeps(opSet) {
   let missing = {}
   for (let change of opSet.get('queue')) {
@@ -389,6 +392,7 @@ function insertionsAfter(opSet, objectId, parentId, childId) {
     .map(op => op.get('actor') + ':' + op.get('elem'))
 }
 
+// TODO
 function getNext(opSet, objectId, key) {
   const children = insertionsAfter(opSet, objectId, key)
   if (!children.isEmpty()) return children.first()
@@ -424,6 +428,7 @@ function getPrevious(opSet, objectId, key) {
   }
 }
 
+// TODO
 function getOpValue(opSet, op, context) {
   if (typeof op !== 'object' || op === null) return op
   switch (op.get('action')) {
@@ -432,14 +437,17 @@ function getOpValue(opSet, op, context) {
   }
 }
 
+// TODO
 function validFieldName(key) {
   return (typeof key === 'string' && key !== '' && !key.startsWith('_'))
 }
 
+// TODO
 function isFieldPresent(opSet, objectId, key) {
   return validFieldName(key) && !getFieldOps(opSet, objectId, key).isEmpty()
 }
 
+// TODO
 function getObjectFields(opSet, objectId) {
   return opSet.getIn(['byObject', objectId])
     .keySeq()
@@ -447,12 +455,14 @@ function getObjectFields(opSet, objectId) {
     .toSet()
 }
 
+// TODO
 function getObjectField(opSet, objectId, key, context) {
   if (!validFieldName(key)) return undefined
   const ops = getFieldOps(opSet, objectId, key)
   if (!ops.isEmpty()) return getOpValue(opSet, ops.first(), context)
 }
 
+// TODO
 function getObjectConflicts(opSet, objectId, context) {
   return opSet.getIn(['byObject', objectId])
     .filter((field, key) => validFieldName(key) && getFieldOps(opSet, objectId, key).size > 1)
@@ -461,6 +471,7 @@ function getObjectConflicts(opSet, objectId, context) {
     ])
 }
 
+// TODO
 function listElemByIndex(opSet, objectId, index, context) {
   const elemId = opSet.getIn(['byObject', objectId, '_elemIds']).keyOf(index)
   if (elemId) {
@@ -469,10 +480,12 @@ function listElemByIndex(opSet, objectId, index, context) {
   }
 }
 
+// TODO
 function listLength(opSet, objectId) {
   return opSet.getIn(['byObject', objectId, '_elemIds']).length
 }
 
+// TODO
 function listIterator(opSet, listId, mode, context) {
   let elem = '_head', index = -1
   const next = () => {
