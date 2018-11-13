@@ -459,8 +459,27 @@ module OpSetBackend = struct
   (*  or null if the given list element is at the head. *)
   let get_previous t obj_id key =
     let parent_id = get_parent t obj_id key in
-    let children = insertions_after t obj_id parent_id in
-    raise Not_supported
+    let children = insertions_after t obj_id parent_id None in
+    if (CCList.hd children) == key then
+      match parent_id with
+      | Some "_head" -> None
+      | _ -> Some parent_id
+    else
+      (* In the original code, there seems to be a bug here, where prev_id will still be undefined when fist child is equal to key.
+         We replicate the behavior anyway to preserve the semantics. *)
+      let prev_id =
+        match CCList.find_idx (fun child -> child == key) children with
+        | Some (idx, _) ->
+          if idx == 0 then None
+          else Some (CCList.nth children (idx - 1))
+        | None -> CCList.last_opt children
+      in
+      let rec loop children prev_id =
+        let children = insertions_after t obj_id prev_id None in
+        if CCList.is_empty children then prev_id else
+        loop children (CCList.last_opt children)
+      in
+      Some (loop children prev_id)
 
   let update_list_element t obj_id (elem_id__key : key) =
     let ops = get_field_ops t obj_id elem_id__key in
