@@ -93,6 +93,7 @@ module OpSetBackend = struct
     { _type: edit_type
     ; action: edit_action
     ; elem_id__key: key option
+    ; key: string option
     ; value: value option
     ; obj: obj_id
     ; link: bool
@@ -186,6 +187,7 @@ module OpSetBackend = struct
             { action= Create
             ; _type= Map
             ; obj= op.obj
+            ; key= None
             ; index= None
             ; path= None
             ; conflicts= None
@@ -211,6 +213,7 @@ module OpSetBackend = struct
             ; conflicts= None
             ; path= None
             ; link= false
+            ; key= None
             ; elem_id__key= None
             ; value= None }
           in
@@ -226,6 +229,7 @@ module OpSetBackend = struct
       | MakeList ->
           let e =
             { action= Create
+            ; key= None
             ; _type= List
             ; conflicts= None
             ; obj= op.obj
@@ -333,6 +337,7 @@ module OpSetBackend = struct
       ; _type
       ; obj= obj_id
       ; index= Some index
+      ; key= None
       ; path
       ; link= false
       ; value= None
@@ -460,24 +465,21 @@ module OpSetBackend = struct
   let get_previous t obj_id key =
     let parent_id = get_parent t obj_id key in
     let children = insertions_after t obj_id parent_id None in
-    if (CCList.hd children) == key then
-      match parent_id with
-      | Some "_head" -> None
-      | _ -> parent_id
+    if CCList.hd children == key then
+      match parent_id with Some "_head" -> None | _ -> parent_id
     else
       (* In the original code, there seems to be a bug here, where prev_id will still be undefined when fist child is equal to key.
          We replicate the behavior anyway to preserve the semantics. *)
       let prev_id =
         match CCList.find_idx (fun child -> child == key) children with
         | Some (idx, _) ->
-          if idx == 0 then None
-          else Some (CCList.nth children (idx - 1))
+            if idx == 0 then None else Some (CCList.nth children (idx - 1))
         | None -> CCList.last_opt children
       in
       let rec loop children prev_id =
         let children = insertions_after t obj_id prev_id None in
-        if CCList.is_empty children then prev_id else
-        loop children (CCList.last_opt children)
+        if CCList.is_empty children then prev_id
+        else loop children (CCList.last_opt children)
       in
       loop children prev_id
 
@@ -493,22 +495,53 @@ module OpSetBackend = struct
         else patch_list t obj_id index elem_id__key Set (Some ops)
     | None ->
         (* Deleting a non-existent element = no-op *)
-        if CCList.is_empty ops then t, []
+        if CCList.is_empty ops then (t, [])
         else
           let rec loop prev_id =
             match get_previous t obj_id prev_id with
             | None -> -1
-            | Some prev_id ->
+            | Some prev_id -> (
               match SkipList.index_of prev_id elem_ids with
               | Some index -> index
-              | None -> loop prev_id
+              | None -> loop prev_id )
           in
           (* Index can be -1 here, this feels like an error, but we keep going to preserve semantics *)
           let index = loop elem_id__key in
           patch_list t obj_id (index + 1) elem_id__key Insert (Some ops)
 
-
-  let update_map_key t obj_id elem_id = (t, [])
+  let update_map_key t obj_id key =
+    let ops = get_field_ops t obj_id key in
+    let path = get_path t obj_id (Some []) in
+    let edit =
+      if CCList.is_empty ops then
+        { action= Remove
+        ; key= Some key
+        ; _type= Map
+        ; conflicts= None
+        ; obj= obj_id
+        ; index= None
+        ; path
+        ; link= false
+        ; elem_id__key= None
+        ; value= None }
+      else
+        let fst = CCList.hd ops in
+        let value = CCOpt.map (fun s -> Value s) fst.value in
+        let conflicts =
+          if CCList.length ops > 1 then get_conflicts ops else None
+        in
+        { action= Set
+        ; _type= Map
+        ; obj= obj_id
+        ; key= Some key
+        ; path
+        ; value
+        ; link= fst.action == Link
+        ; conflicts
+        ; index= None
+        ; elem_id__key= None }
+    in
+    (t, [edit])
 
   (* Processes a 'set', 'del', or 'link' operation *)
   let apply_assign t (op : op) is_top_level =
