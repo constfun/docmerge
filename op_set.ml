@@ -16,9 +16,9 @@ module ObjectIdSet = CCSet.Make (CCString)
 module ElemIdMap = CCMap.Make (CCString)
 module KeyMap = CCMap.Make (CCString)
 
-let _ROOT_ID = "00000000-0000-0000-0000-000000000000"
-
 module OpSetBackend = struct
+  let _ROOT_ID = "00000000-0000-0000-0000-000000000000"
+
   type actor = string
 
   (* GUID *)
@@ -114,21 +114,21 @@ module OpSetBackend = struct
   type obj = op list KeyMap.t * obj_aux
 
   type t =
-    { actor: actor
-    ; seq: seq
-    ; undo_local: ref list option
+    { states:
+        state list ActorMap.t
+        (* List of states for every actor for every seq *)
+    ; history: change list
+    ; by_object: obj ObjectIdMap.t
+    ; clock:
+        seq ActorMap.t
+        (* All observed actor clocks. *)
+        (* As you receieve new ops, the corresponding actor clock is updated. *)
+    ; deps: seq ActorMap.t
     ; undo_pos: int
     ; undo_stack: ref list list
     ; redo_stack: ref list list
-    ; deps: seq ActorMap.t
-    ; (* All observed actor clocks. *)
-      (* As you receieve new ops, the corresponding actor clock is updated. *)
-      clock: seq ActorMap.t
     ; queue: change CCFQueue.t
-    ; (* List of states for every actor for every seq *)
-      states: state list ActorMap.t
-    ; history: change list
-    ; by_object: obj ObjectIdMap.t }
+    ; undo_local: ref list option }
 
   (* Helpers not found in original *)
   let get_obj_aux t obj_id = CCOpt.map snd (ObjectIdMap.get obj_id t.by_object)
@@ -737,4 +737,16 @@ module OpSetBackend = struct
       let t = push_undo_history t in
       (t, diffs)
     else apply_queued_ops t []
+
+  let init () =
+    { states= ActorMap.empty
+    ; history= []
+    ; by_object= ObjectIdMap.empty
+    ; clock= ActorMap.empty
+    ; deps= ActorMap.empty
+    ; undo_pos= 0
+    ; undo_stack= []
+    ; redo_stack= []
+    ; queue= CCFQueue.empty
+    ; undo_local= None }
 end
