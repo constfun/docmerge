@@ -64,6 +64,8 @@ module OpSetBackend = struct
     ; elem: int
     ; value: string option }
 
+  type lamport_op = {actor: actor; elem: int}
+
   module OpSet = CCSet.Make (struct
     type t = op
 
@@ -407,10 +409,51 @@ module OpSetBackend = struct
       | None -> raise Missing_index_for_list_element
       | Some k -> Some k
 
+  let lamport_compare op1 op2 =
+    if op1.elem < op2.elem then -1
+    else if op1.elem > op2.elem then 1
+    else if op1.actor < op2.actor then -1
+    else if op1.actor > op2.actor then 1
+    else 0
 
-  let insertions_after t obj_id parent_id child_id =
-    (* Child id is of the format `actor:elem_digits` *)
-    raise Not_supported
+  let insertions_after t obj_id (parent_id : key option)
+      (child_id : key option) =
+    let child_key =
+      match child_id with
+      | Some child_id ->
+          (* Child id is of the format `actor:elem_digits` *)
+          let regx = Str.regexp "^\\(.*\\):\\(\\d+\\)$" in
+          if Str.string_match regx child_id 0 then
+            let actor = Str.matched_group 1 child_id in
+            let elem = int_of_string (Str.matched_group 2 child_id) in
+            Some {actor; elem}
+          else None
+      | None -> None
+    in
+    let following =
+      match get_obj_aux t obj_id with
+      | Some obj_aux -> (
+        match parent_id with
+        | None -> []
+        | Some parent_id ->
+            KeyMap.get_or ~default:[] parent_id obj_aux._following )
+      | None -> []
+    in
+    CCList.filter
+      (fun (op : op) -> match op.action with Ins -> true | _ -> false)
+      following
+    |> CCList.filter (fun (op : op) ->
+           match child_key with
+           | None -> true
+           | Some child_key ->
+               lamport_compare {actor= op.actor; elem= op.elem} child_key < 0
+       )
+    |> CCList.sort (fun (op1 : op) (op2 : op) ->
+           lamport_compare
+             {actor= op1.actor; elem= op1.elem}
+             {actor= op2.actor; elem= op2.elem} )
+    |> CCList.rev
+    |> CCList.map (fun (op : op) -> op.actor ^ ":" ^ string_of_int op.elem)
 
   (*  Given the ID of a list element, returns the ID of the immediate predecessor list element, *)
   (*  or null if the given list element is at the head. *)
