@@ -749,4 +749,12 @@ module OpSetBackend = struct
     ; redo_stack= []
     ; queue= CCFQueue.empty
     ; undo_local= None }
+
+  let get_missing_changes t have_deps =
+    let all_deps = transitive_deps t have_deps in
+    ActorMap.mapi (fun actor states -> CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states) t.states
+    |> ActorMap.values
+    |> CCList.of_seq
+    |> CCList.flatten
+    |> CCList.map (fun state -> state.change)
 end
