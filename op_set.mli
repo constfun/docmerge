@@ -72,5 +72,5 @@ module OpSetBackend :
     (* list_elem_by_index *)
     (* list_length *)
     (* list_iterator *)
-    val _ROOT_ID : string
+    val root_id : string
   end

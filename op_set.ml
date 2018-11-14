@@ -17,7 +17,7 @@ module ElemIdMap = CCMap.Make (CCString)
 module KeyMap = CCMap.Make (CCString)
 
 module OpSetBackend = struct
-  let _ROOT_ID = "00000000-0000-0000-0000-000000000000"
+  let root_id = "00000000-0000-0000-0000-000000000000"
 
   type actor = string
 
@@ -298,7 +298,7 @@ module OpSetBackend = struct
      to the same object, returns one of the paths arbitrarily. If the object is not reachable
      from the root, returns null. *)
   let rec get_path t obj_id path =
-    if obj_id == _ROOT_ID then path
+    if obj_id == root_id then path
     else
       match ObjectIdMap.get obj_id t.by_object with
       | None -> None
