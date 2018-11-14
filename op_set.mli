@@ -68,7 +68,7 @@ module OpSetBackend :
     (* get_object_fields *)
     (* get_object_field *)
     (* get_object_conflicts *)
-    val get_field_ops : t -> 'a -> key -> op list
+    val get_field_ops : t -> obj_id -> key -> op list
     (* list_elem_by_index *)
     (* list_length *)
     (* list_iterator *)
