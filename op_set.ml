@@ -750,9 +750,19 @@ module OpSetBackend = struct
     ; queue= CCFQueue.empty
     ; undo_local= None }
 
+  (* The following form the public API *)
+
   let get_missing_changes t have_deps =
     let all_deps = transitive_deps t have_deps in
     ActorMap.mapi (fun actor states -> CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states) t.states
+    |> ActorMap.values
+    |> CCList.of_seq
+    |> CCList.flatten
+    |> CCList.map (fun state -> state.change)
+
+  let get_changes_for_actor t ?(after_seq = 0) for_actor =
+    ActorMap.filter (fun actor states -> actor == for_actor) t.states
+    |> ActorMap.map (fun states -> CCList.drop after_seq states)
     |> ActorMap.values
     |> CCList.of_seq
     |> CCList.flatten
