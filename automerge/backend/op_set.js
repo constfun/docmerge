@@ -324,7 +324,6 @@ function addChange(opSet, change, isUndoable) {
   }
 }
 
-// TODO
 function getMissingChanges(opSet, haveDeps) {
   const allDeps = transitiveDeps(opSet, haveDeps)
   return opSet.get('states')
@@ -334,7 +333,6 @@ function getMissingChanges(opSet, haveDeps) {
     .map(state => state.get('change'))
 }
 
-// TODO
 function getChangesForActor(opSet, forActor, afterSeq) {
   afterSeq = afterSeq || 0
 
@@ -346,7 +344,6 @@ function getChangesForActor(opSet, forActor, afterSeq) {
     .map(state => state.get('change'))
 }
 
-// TODO
 function getMissingDeps(opSet) {
   let missing = {}
   for (let change of opSet.get('queue')) {

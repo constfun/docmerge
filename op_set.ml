@@ -754,17 +754,29 @@ module OpSetBackend = struct
 
   let get_missing_changes t have_deps =
     let all_deps = transitive_deps t have_deps in
-    ActorMap.mapi (fun actor states -> CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states) t.states
-    |> ActorMap.values
-    |> CCList.of_seq
-    |> CCList.flatten
+    ActorMap.mapi
+      (fun actor states ->
+        CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states )
+      t.states
+    |> ActorMap.values |> CCList.of_seq |> CCList.flatten
     |> CCList.map (fun state -> state.change)
 
   let get_changes_for_actor t ?(after_seq = 0) for_actor =
     ActorMap.filter (fun actor states -> actor == for_actor) t.states
     |> ActorMap.map (fun states -> CCList.drop after_seq states)
-    |> ActorMap.values
-    |> CCList.of_seq
-    |> CCList.flatten
+    |> ActorMap.values |> CCList.of_seq |> CCList.flatten
     |> CCList.map (fun state -> state.change)
+
+  let get_missing_deps t =
+    CCFQueue.fold
+      (fun missing (change : change) ->
+        let deps = ActorMap.add change.actor (change.seq - 1) change.deps in
+        ActorMap.fold
+          (fun depActor depSeq missing ->
+            if ActorMap.get_or depActor t.clock ~default:0 < depSeq then
+              let curr = ActorMap.get_or depActor missing ~default:0 in
+              ActorMap.add depActor (max depSeq curr) missing
+            else missing )
+          missing deps )
+      ActorMap.empty t.queue
 end

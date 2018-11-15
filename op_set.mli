@@ -64,7 +64,7 @@ module OpSetBackend :
     val add_change : t -> change -> bool -> t * edit list list
     val get_missing_changes : t -> seq ActorMap.t -> change list
     val get_changes_for_actor : t -> ?after_seq:int -> actor -> change list
-    (* get_missing_deps *)
+    val get_missing_deps : t -> seq ActorMap.t
     (* get_object_fields *)
     (* get_object_field *)
     (* get_object_conflicts *)
