@@ -60,6 +60,7 @@ module OpSetBackend :
       path : [ `IntPath of int | `StrPath of key ] list option;
     }
     type obj
+    type context = {instantiate_object: t -> obj_id -> value}
 
     val init : unit -> t
     val add_change : t -> change -> bool -> t * edit list list
@@ -67,7 +68,7 @@ module OpSetBackend :
     val get_changes_for_actor : t -> ?after_seq:int -> actor -> change list
     val get_missing_deps : t -> seq ActorMap.t
     val get_object_fields : t -> obj_id -> KeySet.t option
-    (* get_object_field *)
+    val get_object_field: t -> obj_id -> key -> context -> value option
     (* get_object_conflicts *)
     val get_field_ops : t -> obj_id -> key -> op list
     (* list_elem_by_index *)

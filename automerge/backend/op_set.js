@@ -425,7 +425,6 @@ function getPrevious(opSet, objectId, key) {
   }
 }
 
-// TODO
 function getOpValue(opSet, op, context) {
   if (typeof op !== 'object' || op === null) return op
   switch (op.get('action')) {
@@ -449,7 +448,6 @@ function getObjectFields(opSet, objectId) {
     .toSet()
 }
 
-// TODO
 function getObjectField(opSet, objectId, key, context) {
   if (!validFieldName(key)) return undefined
   const ops = getFieldOps(opSet, objectId, key)

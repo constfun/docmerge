@@ -131,6 +131,8 @@ module OpSetBackend = struct
     ; queue: change CCFQueue.t
     ; undo_local: ref list option }
 
+  type context = {instantiate_object: t -> obj_id -> value}
+
   (* Helpers not found in original *)
   let get_obj_aux t obj_id = CCOpt.map snd (ObjectIdMap.get obj_id t.by_object)
 
@@ -796,4 +798,20 @@ module OpSetBackend = struct
     CCList.of_seq >|=
     CCList.filter (fun key -> is_field_present t obj_id key) >|=
     KeySet.of_list
+
+  (* This function does not look very safe. *)
+  let get_op_value t (op: op) context =
+    CCOpt.flat_map (fun value ->
+      match op.action with
+      | Set -> Some (Value value)
+      | Link -> Some (context.instantiate_object t value)
+      | _ -> None
+    ) op.value
+
+  let get_object_field t obj_id key context =
+    if not (valid_field_name key) then None
+    else
+      match get_field_ops t obj_id key with
+      | [] -> None
+      | hd :: _ -> get_op_value t hd context
 end
