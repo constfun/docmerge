@@ -13,6 +13,7 @@ module ObjectIdMap : CCMap.S
 module ObjectIdSet : CCSet.S
 module ElemIdMap : CCMap.S
 module KeyMap : CCMap.S
+module KeySet : CCSet.S
 
 module OpSetBackend :
   sig
@@ -65,7 +66,7 @@ module OpSetBackend :
     val get_missing_changes : t -> seq ActorMap.t -> change list
     val get_changes_for_actor : t -> ?after_seq:int -> actor -> change list
     val get_missing_deps : t -> seq ActorMap.t
-    (* get_object_fields *)
+    val get_object_fields : t -> obj_id -> KeySet.t option
     (* get_object_field *)
     (* get_object_conflicts *)
     val get_field_ops : t -> obj_id -> key -> op list

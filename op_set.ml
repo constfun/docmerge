@@ -15,6 +15,7 @@ module ObjectIdMap = CCMap.Make (CCString)
 module ObjectIdSet = CCSet.Make (CCString)
 module ElemIdMap = CCMap.Make (CCString)
 module KeyMap = CCMap.Make (CCString)
+module KeySet = CCSet.Make (CCString)
 
 module OpSetBackend = struct
   let root_id = "00000000-0000-0000-0000-000000000000"
@@ -779,4 +780,20 @@ module OpSetBackend = struct
             else missing )
           missing deps )
       ActorMap.empty t.queue
+
+  (* I dont think this function is needed, since, unlike the original which uses underscore fields to keep auxulary information, we use a separate `obj_aux` record. *)
+  let valid_field_name key =
+    key != "" && Str.first_chars key 1 != "_"
+
+  let is_field_present t obj_id key =
+    valid_field_name key && not (CCList.is_empty (get_field_ops t obj_id key))
+
+  let get_object_fields t obj_id =
+    let open CCOpt.Infix in
+    ActorMap.get obj_id t.by_object >|=
+    fst >|=
+    KeyMap.keys >|=
+    CCList.of_seq >|=
+    CCList.filter (fun key -> is_field_present t obj_id key) >|=
+    KeySet.of_list
 end

@@ -434,17 +434,14 @@ function getOpValue(opSet, op, context) {
   }
 }
 
-// TODO
 function validFieldName(key) {
   return (typeof key === 'string' && key !== '' && !key.startsWith('_'))
 }
 
-// TODO
 function isFieldPresent(opSet, objectId, key) {
   return validFieldName(key) && !getFieldOps(opSet, objectId, key).isEmpty()
 }
 
-// TODO
 function getObjectFields(opSet, objectId) {
   return opSet.getIn(['byObject', objectId])
     .keySeq()
