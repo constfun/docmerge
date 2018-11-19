@@ -784,29 +784,27 @@ module OpSetBackend = struct
       ActorMap.empty t.queue
 
   (* I dont think this function is needed, since, unlike the original which uses underscore fields to keep auxulary information, we use a separate `obj_aux` record. *)
-  let valid_field_name key =
-    key != "" && Str.first_chars key 1 != "_"
+  let valid_field_name key = key != "" && Str.first_chars key 1 != "_"
 
   let is_field_present t obj_id key =
     valid_field_name key && not (CCList.is_empty (get_field_ops t obj_id key))
 
   let get_object_fields t obj_id =
     let open CCOpt.Infix in
-    ActorMap.get obj_id t.by_object >|=
-    fst >|=
-    KeyMap.keys >|=
-    CCList.of_seq >|=
-    CCList.filter (fun key -> is_field_present t obj_id key) >|=
-    KeySet.of_list
+    ActorMap.get obj_id t.by_object
+    >|= fst >|= KeyMap.keys >|= CCList.of_seq
+    >|= CCList.filter (fun key -> is_field_present t obj_id key)
+    >|= KeySet.of_list
 
   (* This function does not look very safe. *)
-  let get_op_value t (op: op) context =
-    CCOpt.flat_map (fun value ->
-      match op.action with
-      | Set -> Some (Value value)
-      | Link -> Some (context.instantiate_object t value)
-      | _ -> None
-    ) op.value
+  let get_op_value t (op : op) context =
+    CCOpt.flat_map
+      (fun value ->
+        match op.action with
+        | Set -> Some (Value value)
+        | Link -> Some (context.instantiate_object t value)
+        | _ -> None )
+      op.value
 
   let get_object_field t obj_id key context =
     if not (valid_field_name key) then None
