@@ -454,7 +454,6 @@ function getObjectField(opSet, objectId, key, context) {
   if (!ops.isEmpty()) return getOpValue(opSet, ops.first(), context)
 }
 
-// TODO
 function getObjectConflicts(opSet, objectId, context) {
   return opSet.getIn(['byObject', objectId])
     .filter((field, key) => validFieldName(key) && getFieldOps(opSet, objectId, key).size > 1)

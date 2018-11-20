@@ -16,6 +16,7 @@ module ObjectIdSet = CCSet.Make (CCString)
 module ElemIdMap = CCMap.Make (CCString)
 module KeyMap = CCMap.Make (CCString)
 module KeySet = CCSet.Make (CCString)
+module OpMap = CCMap.Make (CCInt)
 
 module OpSetBackend = struct
   let root_id = "00000000-0000-0000-0000-000000000000"
@@ -796,7 +797,6 @@ module OpSetBackend = struct
     >|= CCList.filter (fun key -> is_field_present t obj_id key)
     >|= KeySet.of_list
 
-  (* This function does not look very safe. *)
   let get_op_value t (op : op) context =
     CCOpt.flat_map
       (fun value ->
@@ -812,4 +812,19 @@ module OpSetBackend = struct
       match get_field_ops t obj_id key with
       | [] -> None
       | hd :: _ -> get_op_value t hd context
+
+  let get_object_conflicts t obj_id context =
+    let open CCOpt.Infix in
+    ActorMap.get obj_id t.by_object
+    >|= fst
+    >|= KeyMap.filter (fun key field ->
+            valid_field_name key
+            && CCList.length (get_field_ops t obj_id key) > 1 )
+    >|= KeyMap.map (fun field ->
+            CCList.drop 1 field
+            |> CCList.foldi
+                 (fun op_map idx op -> OpMap.add idx op op_map)
+                 OpMap.empty
+            |> OpMap.map (fun (op : op) -> (op.actor, get_op_value t op context)
+               ) )
 end
