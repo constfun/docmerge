@@ -836,16 +836,33 @@ module OpSetBackend = struct
   let list_elem_by_index t obj_id index context =
     let open CCOpt.Infix in
     get_obj_aux t obj_id
-    >>= fun obj_aux -> obj_aux._elem_ids
-    >>= SkipList.key_of index
+    >>= fun obj_aux ->
+    obj_aux._elem_ids >>= SkipList.key_of index
     >>= fun elem_id ->
-      match get_field_ops t obj_id elem_id with
-      | [] -> None
-      | hd :: _ -> get_op_value t hd context
+    match get_field_ops t obj_id elem_id with
+    | [] -> None
+    | hd :: _ -> get_op_value t hd context
 
   let list_length t obj_id =
     let open CCOpt.Infix in
-    get_obj_aux t obj_id
-    >>= fun obj_aux -> obj_aux._elem_ids
-    >|= CCList.length
+    get_obj_aux t obj_id >>= fun obj_aux -> obj_aux._elem_ids >|= CCList.length
+
+  let get_next t obj_id key =
+    match insertions_after t obj_id (Some key) None with
+    | hd :: _ -> Some hd
+    | [] ->
+        let rec find_ancestor key =
+          match get_parent t obj_id key with
+          | None -> None
+          | Some ancestor -> (
+            match insertions_after t obj_id (Some ancestor) (Some key) with
+            | hd :: _ -> Some hd
+            | [] -> find_ancestor ancestor )
+        in
+        find_ancestor key
+
+  let list_iterator t list_id mode context =
+    let ref elem = "_head" in
+    let ref index = -1 in
+    ()
 end
