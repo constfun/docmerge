@@ -72,7 +72,7 @@ module OpSetBackend :
     val get_object_field: t -> obj_id -> key -> context -> value option
     val get_object_conflicts: t -> obj_id -> context -> (actor * value option) OpMap.t KeyMap.t option
     val get_field_ops : t -> obj_id -> key -> op list
-    (* list_elem_by_index *)
+    val list_elem_by_index: t -> obj_id -> int -> context -> value option
     (* list_length *)
     (* list_iterator *)
     val root_id : string

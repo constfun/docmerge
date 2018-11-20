@@ -462,7 +462,6 @@ function getObjectConflicts(opSet, objectId, context) {
     ])
 }
 
-// TODO
 function listElemByIndex(opSet, objectId, index, context) {
   const elemId = opSet.getIn(['byObject', objectId, '_elemIds']).keyOf(index)
   if (elemId) {

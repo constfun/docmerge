@@ -49,6 +49,11 @@ module OpSetBackend = struct
       | Some (idx, _) -> Some idx
       | None -> None
 
+    let key_of idx t =
+      match CCList.nth_opt t idx with
+      | Some (key, _) -> Some key
+      | None -> None
+
     let set_value k v (t : t) =
       match index_of k t with
       | Some idx -> CCList.set_at_idx idx (k, v) t
@@ -827,4 +832,14 @@ module OpSetBackend = struct
                  OpMap.empty
             |> OpMap.map (fun (op : op) -> (op.actor, get_op_value t op context)
                ) )
+
+  let list_elem_by_index t obj_id index context =
+    let open CCOpt.Infix in
+    get_obj_aux t obj_id
+    >>= fun obj_aux -> obj_aux._elem_ids
+    >>= SkipList.key_of index
+    >>= fun elem_id ->
+      match get_field_ops t obj_id elem_id with
+      | [] -> None
+      | hd :: _ -> get_op_value t hd context
 end
