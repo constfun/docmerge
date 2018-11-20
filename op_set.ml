@@ -842,4 +842,10 @@ module OpSetBackend = struct
       match get_field_ops t obj_id elem_id with
       | [] -> None
       | hd :: _ -> get_op_value t hd context
+
+  let list_length t obj_id =
+    let open CCOpt.Infix in
+    get_obj_aux t obj_id
+    >>= fun obj_aux -> obj_aux._elem_ids
+    >|= CCList.length
 end

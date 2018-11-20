@@ -470,7 +470,6 @@ function listElemByIndex(opSet, objectId, index, context) {
   }
 }
 
-// TODO
 function listLength(opSet, objectId) {
   return opSet.getIn(['byObject', objectId, '_elemIds']).length
 }
