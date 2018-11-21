@@ -63,6 +63,19 @@ module OpSetBackend :
     type obj
     type context = {instantiate_object: t -> obj_id -> value}
 
+    type iterator_mode = Keys | Values | Entries | Elems | Conflicts
+
+    type iterator_val =
+      | KeyValue of int
+      | ValueValue of value option
+      | EntryValue of int * value option
+      | ElemValue of int * string
+      | ConflictValue of op OpMap.t
+
+    type iterator_res = {done_: bool; value: iterator_val option}
+
+    type iterator = {next: unit -> iterator_res option}
+
     val init : unit -> t
     val add_change : t -> change -> bool -> t * edit list list
     val get_missing_changes : t -> seq ActorMap.t -> change list
@@ -74,6 +87,6 @@ module OpSetBackend :
     val get_field_ops : t -> obj_id -> key -> op list
     val list_elem_by_index: t -> obj_id -> int -> context -> value option
     val list_length: t -> obj_id -> int option
-    (* list_iterator *)
+    val list_iterator: t -> obj_id -> iterator_mode -> context -> iterator
     val root_id : string
   end

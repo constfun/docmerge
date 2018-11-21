@@ -389,7 +389,6 @@ function insertionsAfter(opSet, objectId, parentId, childId) {
     .map(op => op.get('actor') + ':' + op.get('elem'))
 }
 
-// TODO
 function getNext(opSet, objectId, key) {
   const children = insertionsAfter(opSet, objectId, key)
   if (!children.isEmpty()) return children.first()
@@ -474,7 +473,6 @@ function listLength(opSet, objectId) {
   return opSet.getIn(['byObject', objectId, '_elemIds']).length
 }
 
-// TODO
 function listIterator(opSet, listId, mode, context) {
   let elem = '_head', index = -1
   const next = () => {
