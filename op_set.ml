@@ -917,10 +917,17 @@ module OpSetBackend = struct
     {next}
 end
 
-let _ =
-  Js.export "OpSet"
-    (object%js
-      method init = OpSetBackend.init
-      method abs x = abs_float x
-      val zero = 0.
-    end)
+let _ = 
+  Js.export "init" OpSetBackend.init;
+  Js.export "addChange" OpSetBackend.add_change;
+  Js.export "getMissingChanges" OpSetBackend.get_missing_changes;
+  Js.export "getChangesForActor" OpSetBackend.get_changes_for_actor;
+  Js.export "getMissingDeps" OpSetBackend.get_missing_deps;
+  Js.export "getObjectFields" OpSetBackend.get_object_fields;
+  Js.export "getObjectField" OpSetBackend.get_object_field;
+  Js.export "getObjectConflicts" OpSetBackend.get_object_conflicts;
+  Js.export "getFieldOps" OpSetBackend.get_field_ops;
+  Js.export "listElemByIndex" OpSetBackend.list_elem_by_index;
+  Js.export "listLength" OpSetBackend.list_length;
+  Js.export "listIterator" OpSetBackend.list_iterator;
+  Js.export "root_id" OpSetBackend.root_id;
