@@ -2,6 +2,8 @@ const { Map, List, fromJS } = require('immutable')
 const { isObject, lessOrEqual } = require('../src/common')
 const OpSet = require('./op_set')
 
+console.log('OP_SET', OpSet);
+
 class MaterializationContext {
   constructor () {
     this.diffs = {}
