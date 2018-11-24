@@ -108,6 +108,7 @@ module OpSetBackend = struct
     ; conflicts: conflict list option
     ; path: [`IntPath of int | `StrPath of key] list option }
 
+
   type ref = {action: action; obj: obj_id; key: key; value: value option}
 
   type obj_aux =
@@ -759,7 +760,7 @@ module OpSetBackend = struct
     ; undo_stack= []
     ; redo_stack= []
     ; queue= CCFQueue.empty
-    ; undo_local= None }
+    ; undo_local = None }
 
   (* The following form the public API *)
 
@@ -915,19 +916,12 @@ module OpSetBackend = struct
     in
     (* TODO: Symbol.iterator *)
     {next}
-end
 
-let _ = 
-  Js.export "init" OpSetBackend.init;
-  Js.export "addChange" OpSetBackend.add_change;
-  Js.export "getMissingChanges" OpSetBackend.get_missing_changes;
-  Js.export "getChangesForActor" OpSetBackend.get_changes_for_actor;
-  Js.export "getMissingDeps" OpSetBackend.get_missing_deps;
-  Js.export "getObjectFields" OpSetBackend.get_object_fields;
-  Js.export "getObjectField" OpSetBackend.get_object_field;
-  Js.export "getObjectConflicts" OpSetBackend.get_object_conflicts;
-  Js.export "getFieldOps" OpSetBackend.get_field_ops;
-  Js.export "listElemByIndex" OpSetBackend.list_elem_by_index;
-  Js.export "listLength" OpSetBackend.list_length;
-  Js.export "listIterator" OpSetBackend.list_iterator;
-  Js.export "root_id" OpSetBackend.root_id;
+  let get_clock {clock} = clock
+
+  let get_deps {deps} = deps
+
+  let can_undo {undo_pos} = undo_pos > 0
+
+  let can_redo {redo_stack} = not (CCList.is_empty redo_stack)
+end

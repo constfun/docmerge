@@ -1,5 +1,5 @@
 (executable
-    (name op_set)
+    (name index)
     (flags -w -33)
     (libraries str containers containers.data js_of_ocaml)
     (preprocess (pps js_of_ocaml-ppx))

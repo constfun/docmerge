@@ -1,14 +1,14 @@
 .PHONY: build build-native test
 
 build:
-	dune build op_set.bc.js
-	cp _build/default/op_set.bc.js automerge/backend/op_set.js
+	dune build index.bc.js
+	cp _build/default/index.bc.js automerge/backend.js
 
 build-native:
 	dune build @all
 
 test: automerge/node_modules build
-	cd automerge && yarn test && cd -
+	./automerge/node_modules/mocha/bin/mocha ./automerge/test/backend_test.js
 
 automerge/node_modules:
 	cd automerge && yarn install && cd -

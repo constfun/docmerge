@@ -1,4 +1,4 @@
-module ActorMap : CCMap.S
+module ActorMap : CCMap.S with type key = string
 
 module SeqMap : CCMap.S
 
@@ -101,4 +101,10 @@ module OpSetBackend : sig
   val list_iterator : t -> obj_id -> iterator_mode -> context -> iterator
 
   val root_id : string
+
+  (* Auxulary funs required to not break encapsulation between index.js and op_set.js *)
+  val get_clock: t -> seq ActorMap.t
+  val get_deps: t -> seq ActorMap.t
+  val can_undo: t -> bool
+  val can_redo: t -> bool
 end
