@@ -65,7 +65,6 @@ let make_actor_map js_obj =
 let apply t changes undoable =
   let changes = Js.to_array changes in
   let t, diffs = CCArray.fold_left (fun (t, diffs) js_change ->
-      log "JS_CHANGE##deps" js_change;
       let change : OpSetBackend.change = {
         actor = js_change##.actor;
         seq = js_change##.seq;
@@ -81,7 +80,7 @@ let apply_changes t changes =
   apply t changes false
 
 let _ =
-  Js.export "init" OpSetBackend.init ;
+  Js.export "init" init ;
   Js.export "applyChanges" apply_changes ;
   Js.export "getMissingChanges" OpSetBackend.get_missing_changes ;
   Js.export "getChangesForActor" OpSetBackend.get_changes_for_actor ;
