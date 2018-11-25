@@ -48,29 +48,34 @@ let addChange {op_set} = freeze (OpSetBackend.add_change op_set)
    (*    deps: seq ActorMap.t *)
    (*  ; ops: op list } *)
 
+let log : string -> 'a Js.t -> unit = fun msg o ->
+  Js.Unsafe.fun_call (Js.Unsafe.js_expr "console.log") [|
+    Js.Unsafe.inject (Js.string msg);
+    Js.Unsafe.inject o;
+  |]
+
 let make_actor_map js_obj =
   Js.to_array (Js.object_keys js_obj)
   |> CCArray.fold (fun amap js_actor ->
       let value = Js.Unsafe.get js_obj js_actor in
-      print_endline value;
       ActorMap.add (Js.to_string js_actor) value amap
     )
   ActorMap.empty
 
 let apply t changes undoable =
   let changes = Js.to_array changes in
-  let op_set, diffs = CCArray.fold_left (fun (op_set, diffs) js_change ->
-      (* Js.Unsafe.fun_call (Js.Unsafe.js_expr "console.log") [|Js.Unsafe.inject js_change|]; *)
+  let t, diffs = CCArray.fold_left (fun (t, diffs) js_change ->
+      log "JS_CHANGE##deps" js_change;
       let change : OpSetBackend.change = {
         actor = js_change##.actor;
         seq = js_change##.seq;
         deps = make_actor_map js_change##.deps;
         ops = [];
       } in
-      let op_set, new_diffs = OpSetBackend.add_change op_set change false in
-      op_set, CCList.append diffs [new_diffs]
-    ) (t.op_set, []) changes in
-  ({op_set}, make_patch t diffs)
+      let op_set, new_diffs = OpSetBackend.add_change t.op_set change false in
+      {op_set}, CCList.append diffs [new_diffs]
+    ) (t, []) changes in
+  (t, make_patch t diffs)
 
 let apply_changes t changes =
   apply t changes false
