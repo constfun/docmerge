@@ -62,6 +62,13 @@ let make_actor_map js_obj =
     )
   ActorMap.empty
 
+let array_to_list arr =
+  CCArray.to_list (Js.to_array arr)
+
+let to_op_list arr =
+  array_to_list arr
+  |> {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}
+
 let apply t changes undoable =
   let changes = Js.to_array changes in
   let t, diffs = CCArray.fold_left (fun (t, diffs) js_change ->
@@ -69,7 +76,7 @@ let apply t changes undoable =
         actor = js_change##.actor;
         seq = js_change##.seq;
         deps = make_actor_map js_change##.deps;
-        ops = [];
+        ops = array_to_list js_change##.ops;
       } in
       let op_set, new_diffs = OpSetBackend.add_change t.op_set change false in
       {op_set}, CCList.append diffs [new_diffs]
@@ -82,14 +89,15 @@ let apply_changes t changes =
 let _ =
   Js.export "init" init ;
   Js.export "applyChanges" apply_changes ;
-  Js.export "getMissingChanges" OpSetBackend.get_missing_changes ;
-  Js.export "getChangesForActor" OpSetBackend.get_changes_for_actor ;
-  Js.export "getMissingDeps" OpSetBackend.get_missing_deps ;
-  Js.export "getObjectFields" OpSetBackend.get_object_fields ;
-  Js.export "getObjectField" OpSetBackend.get_object_field ;
-  Js.export "getObjectConflicts" OpSetBackend.get_object_conflicts ;
-  Js.export "getFieldOps" OpSetBackend.get_field_ops ;
-  Js.export "listElemByIndex" OpSetBackend.list_elem_by_index ;
-  Js.export "listLength" OpSetBackend.list_length ;
-  Js.export "listIterator" OpSetBackend.list_iterator ;
-  Js.export "root_id" OpSetBackend.root_id
+
+  (* Js.export "getMissingChanges" OpSetBackend.get_missing_changes ; *)
+  (* Js.export "getChangesForActor" OpSetBackend.get_changes_for_actor ; *)
+  (* Js.export "getMissingDeps" OpSetBackend.get_missing_deps ; *)
+  (* Js.export "getObjectFields" OpSetBackend.get_object_fields ; *)
+  (* Js.export "getObjectField" OpSetBackend.get_object_field ; *)
+  (* Js.export "getObjectConflicts" OpSetBackend.get_object_conflicts ; *)
+  (* Js.export "getFieldOps" OpSetBackend.get_field_ops ; *)
+  (* Js.export "listElemByIndex" OpSetBackend.list_elem_by_index ; *)
+  (* Js.export "listLength" OpSetBackend.list_length ; *)
+  (* Js.export "listIterator" OpSetBackend.list_iterator ; *)
+  (* Js.export "root_id" OpSetBackend.root_id *)
