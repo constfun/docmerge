@@ -1,5 +1,8 @@
 open Op_set
 
+type exn +=
+  | Not_supported
+
 let freeze (o : 'a) : 'a =
   Js.Unsafe.fun_call (Js.Unsafe.js_expr "Object.freeze") [|Js.Unsafe.inject o|]
 
@@ -54,7 +57,10 @@ let log : string -> 'a Js.t -> unit = fun msg o ->
     Js.Unsafe.inject o;
   |]
 
-let make_actor_map js_obj =
+let int_of_js_number n =
+  int_of_float (Js.float_of_number n)
+
+let actor_map_of_js_obj js_obj =
   Js.to_array (Js.object_keys js_obj)
   |> CCArray.fold (fun amap js_actor ->
       let value = Js.Unsafe.get js_obj js_actor in
@@ -65,18 +71,35 @@ let make_actor_map js_obj =
 let array_to_list arr =
   CCArray.to_list (Js.to_array arr)
 
+let action_from_str : Js.js_string Js.t -> OpSetBackend.action = fun js_s ->
+  let s = Js.to_string js_s in
+  if s == "set" then OpSetBackend.Set
+  else raise Not_supported
+
 let to_op_list arr =
   array_to_list arr
-  |> {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}
+  |> CCList.map (fun js_op ->
+      ({
+        actor = Js.to_string js_op##.actor;
+        action = action_from_str js_op##.action;
+        key = Js.to_string js_op##.key;
+        seq = int_of_js_number js_op##.seq; (* option? *)
+        elem = int_of_js_number js_op##.elem; (* option? *)
+        value = None; (* TODO *)
+        obj = Js.to_string js_op##.obj;
+      } : OpSetBackend.op)
+    )
+
+      (* let {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'} *)
 
 let apply t changes undoable =
   let changes = Js.to_array changes in
   let t, diffs = CCArray.fold_left (fun (t, diffs) js_change ->
       let change : OpSetBackend.change = {
-        actor = js_change##.actor;
-        seq = js_change##.seq;
-        deps = make_actor_map js_change##.deps;
-        ops = array_to_list js_change##.ops;
+        actor = Js.to_string js_change##.actor;
+        seq =  int_of_js_number js_change##.seq;
+        deps = actor_map_of_js_obj js_change##.deps;
+        ops = to_op_list js_change##.ops;
       } in
       let op_set, new_diffs = OpSetBackend.add_change t.op_set change false in
       {op_set}, CCList.append diffs [new_diffs]

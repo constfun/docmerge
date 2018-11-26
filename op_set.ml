@@ -66,7 +66,7 @@ module OpSetBackend = struct
     { key: key
     ; action: action
     ; actor: actor
-    ; seq: seq
+    ; seq: seq option
     ; obj: obj_id
     ; elem: int
     ; value: string option }
