@@ -35,10 +35,13 @@ module OpSetBackend : sig
     ; actor: actor
     ; seq: seq
     ; obj: obj_id
-    ; elem: int
+    ; elem: int option
     ; value: string option }
 
-  type change = {actor: actor; seq: seq; deps: seq ActorMap.t; ops: op list}
+  type change_op =
+    {key: key; action: action; obj: obj_id; elem: int option; value: string option}
+
+  type change = {actor: actor; seq: seq; deps: seq ActorMap.t; ops: change_op list}
 
   type state = {change: change; allDeps: seq ActorMap.t}
 

@@ -25,32 +25,6 @@ let init () = freeze {op_set= OpSetBackend.init ()}
 
 let addChange {op_set} = freeze (OpSetBackend.add_change op_set)
 
-
-   (* const change1 = { *)
-   (*                         actor, *)
-   (*                         seq: 1, *)
-   (*                         deps: {}, *)
-   (*                         ops: [ *)
-   (*      {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'} *)
-   (*    ]} *)
-
-
-  (* type op = *)
-   (*  { key: key *)
-   (*  ; action: action *)
-   (*  ; actor: actor *)
-   (*  ; seq: seq *)
-   (*  ; obj: obj_id *)
-   (*  ; elem: int *)
-   (*  ; value: string option } *)
-
-  (* type change = *)
-   (*  { actor: actor *)
-   (*  ; seq: seq *)
-   (*  ; (1* List of depended op sequences by actor. *1) *)
-   (*    deps: seq ActorMap.t *)
-   (*  ; ops: op list } *)
-
 let log : string -> 'a Js.t -> unit = fun msg o ->
   Js.Unsafe.fun_call (Js.Unsafe.js_expr "console.log") [|
     Js.Unsafe.inject (Js.string msg);
@@ -80,17 +54,13 @@ let to_op_list arr =
   array_to_list arr
   |> CCList.map (fun js_op ->
       ({
-        actor = Js.to_string js_op##.actor;
         action = action_from_str js_op##.action;
         key = Js.to_string js_op##.key;
-        seq = int_of_js_number js_op##.seq; (* option? *)
-        elem = int_of_js_number js_op##.elem; (* option? *)
-        value = None; (* TODO *)
+        elem = Js.Optdef.to_option js_op##.elem;
+        value = Js.Optdef.to_option js_op##.value;
         obj = Js.to_string js_op##.obj;
-      } : OpSetBackend.op)
+      } : OpSetBackend.change_op)
     )
-
-      (* let {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'} *)
 
 let apply t changes undoable =
   let changes = Js.to_array changes in
