@@ -425,8 +425,9 @@ module OpSetBackend = struct
     && ActorMap.get_or actor1 ~default:0 clock2 < seq1
 
   let get_field_ops t obj_id (key : key) =
-    let obj_map, _ = CCOpt.get_exn (ObjectIdMap.get key t.by_object) in
-    KeyMap.get_or key obj_map ~default:[]
+    match ObjectIdMap.get key t.by_object with
+    | Some (obj_map, _) -> KeyMap.get_or key obj_map ~default:[]
+    | None -> []
 
   let get_parent t obj_id (key : key option) =
     match key with
@@ -577,6 +578,7 @@ module OpSetBackend = struct
 
   (* Processes a 'set', 'del', or 'link' operation *)
   let apply_assign t (op : op) is_top_level =
+    Log.log_str op.obj;
     if not (ObjectIdMap.mem op.obj t.by_object) then
       raise Modification_of_unknown_object
     else
@@ -783,9 +785,26 @@ module OpSetBackend = struct
     else apply_queued_ops t []
 
   let init () =
+    let root_op = {
+      key="";
+      action=Set;
+      actor="";
+      seq=0;
+      obj="";
+      elem=None;
+      value=None;
+    } in
+    let root_obj = KeyMap.empty, {
+        _max_elem=0;
+        _following=KeyMap.empty;
+        _init= root_op;
+        _inbound=OpSet.empty;
+        _elem_ids=None;
+        _insertion=ElemIdMap.empty;
+    } in
     { states= ActorMap.empty
     ; history= []
-    ; by_object= ObjectIdMap.empty
+    ; by_object= ObjectIdMap.add root_id root_obj ObjectIdMap.empty
     ; clock= ActorMap.empty
     ; deps= ActorMap.empty
     ; undo_pos= 0

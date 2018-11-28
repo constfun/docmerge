@@ -25,12 +25,6 @@ let init () = freeze {op_set= OpSetBackend.init ()}
 
 let addChange {op_set} = freeze (OpSetBackend.add_change op_set)
 
-let log : string -> 'a Js.t -> unit = fun msg o ->
-  Js.Unsafe.fun_call (Js.Unsafe.js_expr "console.log") [|
-    Js.Unsafe.inject (Js.string msg);
-    Js.Unsafe.inject o;
-  |]
-
 let int_of_js_number n =
   int_of_float (Js.float_of_number n)
 
@@ -47,7 +41,7 @@ let array_to_list arr =
 
 let action_from_str : Js.js_string Js.t -> OpSetBackend.action = fun js_s ->
   let s = Js.to_string js_s in
-  if s == "set" then OpSetBackend.Set
+  if String.equal s "set" then OpSetBackend.Set
   else raise Not_supported
 
 let to_op_list arr =
