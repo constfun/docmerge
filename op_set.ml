@@ -207,6 +207,7 @@ module OpSetBackend = struct
       baseDeps ActorMap.empty
 
   let apply_make t (op : op) =
+    Log.log_str "APPLY MAKE";
     let edit, obj_aux =
       match op.action with
       | MakeMap ->

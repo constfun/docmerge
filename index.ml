@@ -98,11 +98,27 @@ let edit_action_to_js_edit_action v =
       | Remove -> "remove"
     )
 
+let type_to_js_type v =
+  Js.string OpSetBackend.(match v with
+      | Map -> "map"
+      | Text -> "text"
+      | List -> "list"
+    )
+
+let path_to_js_path v =
+  list_to_js_array (CCList.map OpSetBackend.(function
+      | `StrPath s -> Js.Unsafe.inject (Js.string s)
+      | `IntPath i -> Js.Unsafe.inject (Js.number_of_float (float_of_int i))
+    ) v)
+
 let edit_to_js_edit (edit: OpSetBackend.edit) =
   CCArray.empty
   |> obj_set edit_action_to_js_edit_action "action" edit.action
+  |> obj_set Js.string "obj" edit.obj
   |> obj_set_opt Js.string "key" edit.key
   |> obj_set_opt value_to_js_value "value" edit.value
+  |> obj_set type_to_js_type "type" edit._type
+  |> obj_set_opt path_to_js_path "path" edit.path
   |> Js.Unsafe.obj
 
 let apply t changes undoable =

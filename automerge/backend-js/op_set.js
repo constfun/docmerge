@@ -61,6 +61,7 @@ function getPath(opSet, objectId) {
 
 // Processes a 'makeMap', 'makeList', or 'makeText' operation
 function applyMake(opSet, op) {
+  console.log('APPLY MAKE')
   const objectId = op.get('obj')
   if (opSet.hasIn(['byObject', objectId])) throw new Error('Duplicate creation of object ' + objectId)
 
