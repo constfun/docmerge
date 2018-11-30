@@ -9,25 +9,6 @@ let freeze (o : 'a) : 'a =
 type t = {op_set: OpSetBackend.t}
 
 
-
-(* Constructs a patch object from the current node state `state` and the list *)
-(* of object modifications `diffs`. *)
-let make_patch t diffs =
-  object%js
-    val clock = OpSetBackend.get_clock t.op_set
-    val deps = OpSetBackend.get_deps t.op_set
-    val canUndo = OpSetBackend.can_undo t.op_set
-    val canRedo = OpSetBackend.can_redo t.op_set
-    val diffs = diffs
-  end
-
-let init () = freeze {op_set= OpSetBackend.init ()}
-
-let addChange {op_set} = freeze (OpSetBackend.add_change op_set)
-
-let int_of_js_number n =
-  int_of_float (Js.float_of_number n)
-
 let actor_map_of_js_obj js_obj =
   Js.to_array (Js.object_keys js_obj)
   |> CCArray.fold (fun amap js_actor ->
@@ -35,6 +16,35 @@ let actor_map_of_js_obj js_obj =
       ActorMap.add (Js.to_string js_actor) value amap
     )
   ActorMap.empty
+
+let js_obj_of_actor_map conv m =
+  (* string, any array *)
+  let kv =
+    CCArray.of_list (ActorMap.to_list m)
+    |> CCArray.map (fun (k, v) -> k, Js.Unsafe.inject (conv v))
+  in
+  Js.Unsafe.obj kv
+
+let js_number_of_int i = Js.number_of_float (float_of_int i)
+
+(* Constructs a patch object from the current node state `state` and the list *)
+(* of object modifications `diffs`. *)
+let make_patch t diffs =
+  let clock =OpSetBackend.get_clock t.op_set in
+  object%js
+    val clock = js_obj_of_actor_map js_number_of_int clock
+    val deps = js_obj_of_actor_map js_number_of_int (OpSetBackend.get_deps t.op_set)
+    val canUndo = Js.bool (OpSetBackend.can_undo t.op_set)
+    val canRedo = Js.bool (OpSetBackend.can_redo t.op_set)
+    val diffs = diffs
+  end
+
+let init () = {op_set= OpSetBackend.init ()}
+
+let addChange {op_set} = freeze (OpSetBackend.add_change op_set)
+
+let int_of_js_number n =
+  int_of_float (Js.float_of_number n)
 
 let array_to_list arr =
   CCArray.to_list (Js.to_array arr)
@@ -56,6 +66,45 @@ let to_op_list arr =
       } : OpSetBackend.change_op)
     )
 
+      (* assert.deepEqual(patch1, { *)
+      (*   canUndo: false, canRedo: false, clock: {[actor]: 1}, deps: {[actor]: 1}, *)
+      (*   diffs: [{action: 'set', obj: ROOT_ID, path: [], type: 'map', key: 'bird', value: 'magpie'}] *)
+      (* }) *)
+
+let list_to_js_array lis =
+  let arr = new%js Js.array_length (List.length lis) in
+  CCList.iteri (fun i el -> Js.array_set arr i (Js.Unsafe.inject el)) lis;
+  arr
+
+let obj_set conv name value obj_kv =
+  CCArray.append obj_kv [|name, (Js.Unsafe.inject (conv value))|]
+
+let obj_set_opt conv name value obj_kv =
+  match value with
+  | Some v -> CCArray.append obj_kv [|name, (Js.Unsafe.inject (conv v))|]
+  | None -> obj_kv
+
+let rec value_to_js_value = function
+  | OpSetBackend.Value s -> Js.Unsafe.inject (Js.string s)
+  | OpSetBackend.Link l -> Js.Unsafe.inject (Js.Unsafe.obj [|
+      "obj", value_to_js_value l.obj
+    |])
+
+let edit_action_to_js_edit_action v =
+  Js.string OpSetBackend.(match v with
+      | Create -> "create"
+      | Set -> "set"
+      | Insert -> "insert"
+      | Remove -> "remove"
+    )
+
+let edit_to_js_edit (edit: OpSetBackend.edit) =
+  CCArray.empty
+  |> obj_set edit_action_to_js_edit_action "action" edit.action
+  |> obj_set_opt Js.string "key" edit.key
+  |> obj_set_opt value_to_js_value "value" edit.value
+  |> Js.Unsafe.obj
+
 let apply t changes undoable =
   let changes = Js.to_array changes in
   let t, diffs = CCArray.fold_left (fun (t, diffs) js_change ->
@@ -66,9 +115,17 @@ let apply t changes undoable =
         ops = to_op_list js_change##.ops;
       } in
       let op_set, new_diffs = OpSetBackend.add_change t.op_set change false in
-      {op_set}, CCList.append diffs [new_diffs]
+      Log.log_str ("DLEN "  ^ (string_of_int (CCList.length new_diffs)));
+      {op_set}, CCList.concat [diffs; new_diffs]
     ) (t, []) changes in
-  (t, make_patch t diffs)
+  let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
+  let js_patch = make_patch t js_diffs in
+  Log.log_str ("LEN " ^ (string_of_int (CCList.length diffs)));
+  Log.log "JS_PATCH" js_patch;
+  let ret = new%js Js.array_length 2 in
+  Js.array_set ret 0 (Js.Unsafe.inject t);
+  Js.array_set ret 1 (Js.Unsafe.inject js_patch);
+  ret
 
 let apply_changes t changes =
   apply t changes false

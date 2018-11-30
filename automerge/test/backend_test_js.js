@@ -1,6 +1,6 @@
 const assert = require('assert')
 const Automerge = require('../src/automerge')
-const Backend = require('../backend')
+const Backend = require('../backend-js')
 const uuid = require('../src/uuid')
 const ROOT_ID = '00000000-0000-0000-0000-000000000000'
 
@@ -12,9 +12,7 @@ describe('Backend', () => {
         {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}
       ]}
       const s0 = Backend.init(actor)
-      console.log('S0', s0);
       const [s1, patch1] = Backend.applyChanges(s0, [change1])
-      console.log('PATCH1.clock', patch1.clock);
       assert.deepEqual(patch1, {
         canUndo: false, canRedo: false, clock: {[actor]: 1}, deps: {[actor]: 1},
         diffs: [{action: 'set', obj: ROOT_ID, path: [], type: 'map', key: 'bird', value: 'magpie'}]

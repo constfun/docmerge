@@ -46,7 +46,7 @@ module OpSetBackend = struct
     let insert_index index k v (t : t) = CCList.insert_at_idx index (k, v) t
 
     let index_of k t =
-      match CCList.find_idx (fun (itmk, _) -> itmk == k) t with
+      match CCList.find_idx (fun (itmk, _) -> String.equal itmk k) t with
       | Some (idx, _) -> Some idx
       | None -> None
 
@@ -325,7 +325,7 @@ module OpSetBackend = struct
      to the same object, returns one of the paths arbitrarily. If the object is not reachable
      from the root, returns null. *)
   let rec get_path t obj_id path =
-    if obj_id == root_id then path
+    if String.equal obj_id root_id then path
     else
       match ObjectIdMap.get obj_id t.by_object with
       | None -> None
@@ -373,7 +373,7 @@ module OpSetBackend = struct
     in
     let edit, value =
       match first_op with
-      | Some fop when fop.action == Link ->
+      | Some fop when fop.action = Link ->
           ( {edit with link= true}
           , Some (Link {obj= Value (CCOpt.get_exn fop.value)}) )
       | _ -> (edit, value)
@@ -425,14 +425,18 @@ module OpSetBackend = struct
     && ActorMap.get_or actor1 ~default:0 clock2 < seq1
 
   let get_field_ops t obj_id (key : key) =
-    match ObjectIdMap.get key t.by_object with
-    | Some (obj_map, _) -> KeyMap.get_or key obj_map ~default:[]
-    | None -> []
+    match ObjectIdMap.get obj_id t.by_object with
+    | Some (obj_map, _) ->
+      Log.log_str "YES";
+      KeyMap.get_or key obj_map ~default:[]
+    | None ->
+      Log.log_str "NO";
+      []
 
   let get_parent t obj_id (key : key option) =
     match key with
     | None -> None
-    | Some key when key == "_head" -> None
+    | Some key when String.equal key "_head" -> None
     | Some key -> (
         let open CCOpt.Infix in
         let insertion =
@@ -498,15 +502,15 @@ module OpSetBackend = struct
   let get_previous t obj_id key =
     let parent_id = get_parent t obj_id (Some key) in
     let children = insertions_after t obj_id parent_id None in
-    if CCList.hd children == key then
+    if String.equal (CCList.hd children) key then
       match parent_id with Some "_head" -> None | _ -> parent_id
     else
       (* In the original code, there seems to be a bug here, where prev_id will still be undefined when fist child is equal to key.
          We replicate the behavior anyway to preserve the semantics. *)
       let prev_id =
-        match CCList.find_idx (fun child -> child == key) children with
+        match CCList.find_idx (fun child -> String.equal child key) children with
         | Some (idx, _) ->
-            if idx == 0 then None else Some (CCList.nth children (idx - 1))
+            if idx = 0 then None else Some (CCList.nth children (idx - 1))
         | None -> CCList.last_opt children
       in
       let rec loop children prev_id =
@@ -544,6 +548,7 @@ module OpSetBackend = struct
 
   let update_map_key t obj_id key =
     let ops = get_field_ops t obj_id key in
+    Log.log_str ("OPS " ^ (string_of_int (CCList.length ops)) ^ " " ^ obj_id ^ " " ^ key);
     let path = get_path t obj_id (Some []) in
     let edit =
       if CCList.is_empty ops then
@@ -569,7 +574,7 @@ module OpSetBackend = struct
         ; key= Some key
         ; path
         ; value
-        ; link= fst.action == Link
+        ; link= fst.action = Link
         ; conflicts
         ; index= None
         ; elem_id__key= None }
@@ -604,7 +609,7 @@ module OpSetBackend = struct
         | _ -> t
       in
       let overwritten, remaining =
-        let obj_map, obj_aux = ObjectIdMap.find op.obj t.by_object in
+        let obj_map, _ = ObjectIdMap.find op.obj t.by_object in
         let refs = KeyMap.get_or op.key ~default:[] obj_map in
         CCList.fold_left
           (fun (over, rem) ref ->
@@ -663,6 +668,9 @@ module OpSetBackend = struct
           remaining
         |> CCList.rev
       in
+      Log.log_str ("REMAINING " ^ (string_of_int (CCList.length remaining)));
+
+      Log.log_str ("REMAINING " ^ (string_of_bool ((CCList.nth remaining 0).action = Set)));
       let by_object =
         ObjectIdMap.update op.obj
           (function
@@ -671,6 +679,7 @@ module OpSetBackend = struct
             | None -> raise Not_found)
           t.by_object
       in
+      Format.printf "map = @[<hov>%a@]@]@." (ObjectIdMap.pp CCFormat.string CCFormat.silent) by_object;
       let t = {t with by_object} in
       let obj_type =
         (snd (ObjectIdMap.find op.obj t.by_object))._init.action
@@ -693,8 +702,9 @@ module OpSetBackend = struct
               (t, List.append all_diffs diffs, new_objs)
           | Set | Del | Link ->
               let t, diffs =
-                apply_assign t op (ObjectIdSet.mem op.obj new_objs)
+                apply_assign t op (not (ObjectIdSet.mem op.obj new_objs))
               in
+              Log.log_str ("DIFFIES " ^ (string_of_bool ((CCList.nth diffs 0).action = Remove)));
               (t, List.append all_diffs diffs, new_objs) )
         (t, [], ObjectIdSet.empty) ops
     in
@@ -705,7 +715,7 @@ module OpSetBackend = struct
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
     if change.seq <= List.length prior then
       match List.nth_opt prior (change.seq - 1) with
-      | Some state when state.change == change ->
+      | Some state when state.change = change ->
           raise Inconsistent_reuse_of_sequence
       | _ -> (t, [])
     else
@@ -741,6 +751,8 @@ module OpSetBackend = struct
       let history = List.append t.history [change] in
       ({t with deps= remaining_deps; clock; history}, diffs)
 
+  let ($) f g x = (f (g x))
+
   (* Simon says...
 
      do drain op/change queue
@@ -757,14 +769,25 @@ module OpSetBackend = struct
     let new_t, diffs =
       CCFQueue.fold
         (fun (t, diffs) change ->
-          if causaly_ready t change then
+          if causaly_ready t change then (
+            Log.log_str "READY";
             let t, diff = apply_change t change in
-            (t, diff :: diffs)
-          else ({t with queue= CCFQueue.cons change t.queue}, diffs) )
+            Log.log_str ("DIFF " ^ (string_of_bool ((CCList.nth diff 0).action = Remove)));
+            (t, CCList.concat [diffs; diff])
+          )
+          else ({t with queue= CCFQueue.snoc t.queue change}, diffs) )
         (t, diffs) t.queue
     in
-    if CCFQueue.size new_t.queue == CCFQueue.size t.queue then (new_t, diffs)
-    else apply_queued_ops new_t diffs
+    Log.log_str ("SIZE1 " ^ (string_of_int (CCFQueue.size new_t.queue)));
+    Log.log_str ("SIZE2 " ^ (string_of_int (CCFQueue.size t.queue)));
+    if CCInt.equal (CCFQueue.size new_t.queue) (CCFQueue.size t.queue) then (
+      Log.log_str "EQ";
+      (new_t, diffs)
+    )
+    else (
+      Log.log_str "NOT EQ";
+      apply_queued_ops new_t diffs
+    )
 
   let push_undo_history t =
     let undo_stack =
@@ -776,7 +799,7 @@ module OpSetBackend = struct
       undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
 
   let add_change t change isUndoable =
-    let t = {t with queue= CCFQueue.cons change t.queue} in
+    let t = {t with queue = CCFQueue.snoc t.queue change} in
     if isUndoable then
       let t = {t with undo_local= Some []} in
       let d, diffs = apply_queued_ops t [] in
@@ -825,7 +848,7 @@ module OpSetBackend = struct
     |> CCList.map (fun state -> state.change)
 
   let get_changes_for_actor t ?(after_seq = 0) for_actor =
-    ActorMap.filter (fun actor states -> actor == for_actor) t.states
+    ActorMap.filter (fun actor states -> String.equal actor for_actor) t.states
     |> ActorMap.map (fun states -> CCList.drop after_seq states)
     |> ActorMap.values |> CCList.of_seq |> CCList.flatten
     |> CCList.map (fun state -> state.change)

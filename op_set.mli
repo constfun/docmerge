@@ -80,7 +80,7 @@ module OpSetBackend : sig
 
   val init : unit -> t
 
-  val add_change : t -> change -> bool -> t * edit list list
+  val add_change : t -> change -> bool -> t * edit list
 
   val get_missing_changes : t -> seq ActorMap.t -> change list
 

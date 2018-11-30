@@ -10,6 +10,9 @@ build-native:
 test: automerge/node_modules build
 	./automerge/node_modules/mocha/bin/mocha ./automerge/test/backend_test.js
 
+test-js: automerge/node_modules build
+	./automerge/node_modules/mocha/bin/mocha ./automerge/test/backend_test_js.js
+
 automerge/node_modules:
 	cd automerge && yarn install && cd -
 
