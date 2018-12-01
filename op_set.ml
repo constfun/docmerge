@@ -1,3 +1,5 @@
+open Sexplib.Conv
+
 (* TODO: Can we cross-compile this file and use it instead of the op_set.js file in automerge to run tests? *)
 (* TODO: How does automerge persist data? *)
 
@@ -22,20 +24,20 @@ module OpMap = CCMap.Make (CCInt)
 module OpSetBackend = struct
   let root_id = "00000000-0000-0000-0000-000000000000"
 
-  type actor = string
+  type actor = string [@@deriving sexp]
 
   (* GUID *)
-  type seq = int
+  type seq = int [@@deriving sexp]
 
-  type obj_id = string
+  type obj_id = string [@@deriving sexp]
 
-  type key = string
+  type key = string [@@deriving sexp]
 
-  type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
+  type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link [@@deriving sexp]
 
-  type value = Value of string | Link of {obj: value}
+  type value = Value of string | Link of {obj: value} [@@deriving sexp]
 
-  type elem_id = key * value option
+  type elem_id = key * value option  [@@deriving sexp]
 
   (* Ineficient but simple implementation of skip list from original *)
   module SkipList = struct
@@ -70,7 +72,7 @@ module OpSetBackend = struct
     ; seq: seq
     ; obj: obj_id
     ; elem: int option
-    ; value: string option }
+    ; value: string option } [@@deriving sexp]
 
   type change_op =
     { key: key
@@ -120,13 +122,13 @@ module OpSetBackend = struct
 
   type obj_aux =
     { _max_elem: int
-    ; _following: op list KeyMap.t
+    ; _following: op list KeyMap.t sexp_opaque
     ; _init: op
-    ; _inbound: OpSet.t
-    ; _elem_ids: SkipList.t option
-    ; _insertion: op ElemIdMap.t }
+    ; _inbound: OpSet.t sexp_opaque
+    ; _elem_ids: SkipList.t option sexp_opaque
+    ; _insertion: op ElemIdMap.t sexp_opaque }  [@@deriving sexp]
 
-  type obj = op list KeyMap.t * obj_aux
+  type obj = op list KeyMap.t sexp_opaque * obj_aux [@@deriving sexp]
 
   type t =
     { states:
@@ -582,6 +584,10 @@ module OpSetBackend = struct
     in
     (t, [edit])
 
+  let pp_obj fmt (obj : obj) =
+    let _, obj_aux = obj in
+    CCFormat.pp_print_string fmt (Sexplib.Sexp.to_string_hum (sexp_of_obj_aux obj_aux))
+
   (* Processes a 'set', 'del', or 'link' operation *)
   let apply_assign t (op : op) is_top_level =
     Log.log_str op.obj;
@@ -680,7 +686,7 @@ module OpSetBackend = struct
             | None -> raise Not_found)
           t.by_object
       in
-      Format.printf "map = @[<hov>%a@]@]@." (ObjectIdMap.pp CCFormat.string CCFormat.silent) by_object;
+      CCFormat.printf "map = @[<hov>%a@]@]@." (ObjectIdMap.pp CCFormat.string pp_obj) by_object;
       let t = {t with by_object} in
       let obj_type =
         (snd (ObjectIdMap.find op.obj t.by_object))._init.action
