@@ -787,11 +787,15 @@ module OpSetBackend = struct
   end
 
 
-  let show (type a) (module M : Map with type t = a) (vpp : a CCFormat.printer) (m : (a, Obj.t) app) : unit =
-    CCFormat.printf "map = @[<hov>%a@]@]@." (M.pp vpp) (Obj.prj m)
+  let show (type a) (module M : Map with type t = a) vpp m : unit =
+    CCFormat.printf "map = @[<hov>%a@]@]@." (M.pp vpp) m
 
+  let pp_obj_show fmt (obj : obj) =
+    let _, obj_aux = obj in
+    CCFormat.pp_print_string fmt
+      (Sexplib.Sexp.to_string_hum (sexp_of_obj_aux obj_aux))
 
-  let tt (a : obj ObjectIdMap.t) = show (module ObjMap) pp_obj (Obj.inj a)
+  let tt (a : obj ObjectIdMap.t) = show (module ObjMap) pp_obj_show a
 
 
 
