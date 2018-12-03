@@ -33,11 +33,12 @@ module OpSetBackend = struct
 
   type key = string [@@deriving sexp]
 
-  type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link [@@deriving sexp]
+  type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
+  [@@deriving sexp]
 
   type value = Value of string | Link of {obj: value} [@@deriving sexp]
 
-  type elem_id = key * value option  [@@deriving sexp]
+  type elem_id = key * value option [@@deriving sexp]
 
   (* Ineficient but simple implementation of skip list from original *)
   module SkipList = struct
@@ -72,7 +73,8 @@ module OpSetBackend = struct
     ; seq: seq
     ; obj: obj_id
     ; elem: int option
-    ; value: string option } [@@deriving sexp]
+    ; value: string option }
+  [@@deriving sexp]
 
   type change_op =
     { key: key
@@ -126,7 +128,8 @@ module OpSetBackend = struct
     ; _init: op
     ; _inbound: OpSet.t sexp_opaque
     ; _elem_ids: SkipList.t option sexp_opaque
-    ; _insertion: op ElemIdMap.t sexp_opaque }  [@@deriving sexp]
+    ; _insertion: op ElemIdMap.t sexp_opaque }
+  [@@deriving sexp]
 
   type obj = op list KeyMap.t sexp_opaque * obj_aux [@@deriving sexp]
 
@@ -209,7 +212,7 @@ module OpSetBackend = struct
       baseDeps ActorMap.empty
 
   let apply_make t (op : op) =
-    Log.log_str "APPLY MAKE";
+    Log.log_str "APPLY MAKE" ;
     let edit, obj_aux =
       match op.action with
       | MakeMap ->
@@ -430,11 +433,9 @@ module OpSetBackend = struct
   let get_field_ops t obj_id (key : key) =
     match ObjectIdMap.get obj_id t.by_object with
     | Some (obj_map, _) ->
-      Log.log_str "YES";
-      KeyMap.get_or key obj_map ~default:[]
-    | None ->
-      Log.log_str "NO";
-      []
+        Log.log_str "YES" ;
+        KeyMap.get_or key obj_map ~default:[]
+    | None -> Log.log_str "NO" ; []
 
   let get_parent t obj_id (key : key option) =
     match key with
@@ -511,7 +512,9 @@ module OpSetBackend = struct
       (* In the original code, there seems to be a bug here, where prev_id will still be undefined when fist child is equal to key.
          We replicate the behavior anyway to preserve the semantics. *)
       let prev_id =
-        match CCList.find_idx (fun child -> String.equal child key) children with
+        match
+          CCList.find_idx (fun child -> String.equal child key) children
+        with
         | Some (idx, _) ->
             if idx = 0 then None else Some (CCList.nth children (idx - 1))
         | None -> CCList.last_opt children
@@ -551,7 +554,8 @@ module OpSetBackend = struct
 
   let update_map_key t obj_id key =
     let ops = get_field_ops t obj_id key in
-    Log.log_str ("OPS " ^ (string_of_int (CCList.length ops)) ^ " " ^ obj_id ^ " " ^ key);
+    Log.log_str
+      ("OPS " ^ string_of_int (CCList.length ops) ^ " " ^ obj_id ^ " " ^ key) ;
     let path = get_path t obj_id (Some []) in
     let edit =
       if CCList.is_empty ops then
@@ -586,11 +590,12 @@ module OpSetBackend = struct
 
   let pp_obj fmt (obj : obj) =
     let _, obj_aux = obj in
-    CCFormat.pp_print_string fmt (Sexplib.Sexp.to_string_hum (sexp_of_obj_aux obj_aux))
+    CCFormat.pp_print_string fmt
+      (Sexplib.Sexp.to_string_hum (sexp_of_obj_aux obj_aux))
 
   (* Processes a 'set', 'del', or 'link' operation *)
   let apply_assign t (op : op) is_top_level =
-    Log.log_str op.obj;
+    Log.log_str op.obj ;
     if not (ObjectIdMap.mem op.obj t.by_object) then
       raise Modification_of_unknown_object
     else
@@ -675,9 +680,9 @@ module OpSetBackend = struct
           remaining
         |> CCList.rev
       in
-      Log.log_str ("REMAINING " ^ (string_of_int (CCList.length remaining)));
-
-      Log.log_str ("REMAINING " ^ (string_of_bool ((CCList.nth remaining 0).action = Set)));
+      Log.log_str ("REMAINING " ^ string_of_int (CCList.length remaining)) ;
+      Log.log_str
+        ("REMAINING " ^ string_of_bool ((CCList.nth remaining 0).action = Set)) ;
       let by_object =
         ObjectIdMap.update op.obj
           (function
@@ -686,7 +691,20 @@ module OpSetBackend = struct
             | None -> raise Not_found)
           t.by_object
       in
-      CCFormat.printf "map = @[<hov>%a@]@]@." (ObjectIdMap.pp CCFormat.string pp_obj) by_object;
+      let show_map (type a) (pp : a CCMap.printer) map =
+        CCFormat.printf "map = @[<hov>%a@]@]@." pp map
+      in
+      let bla a b = ObjectIdMap.pp a b in
+      let open Higher in
+      let module Obj = Newtype1 (ObjectIdMap) in
+      let a = Obj.inj by_object in
+      let b = ObjectIdMap.pp CCFormat.string  in
+      (* let show_map_2 (type a) (module M : CCMap.S with type key = a) (a : M.key CCMap.printer) (b : 'a CCMap.printer) = *)
+      (*   M.pp a b *)
+      (* in *)
+      (* let test = bla CCFormat.string pp_obj in *)
+      (* let test2 = show_map_2 (module ObjectIdMap) CCFormat.string pp_obj in *)
+      (* show_map (ObjectIdMap.pp CCFormat.string pp_obj) by_object; *)
       let t = {t with by_object} in
       let obj_type =
         (snd (ObjectIdMap.find op.obj t.by_object))._init.action
@@ -694,6 +712,124 @@ module OpSetBackend = struct
       match obj_type with
       | MakeList | MakeText -> update_list_element t op.obj op.key
       | _ -> update_map_key t op.obj op.key
+
+  open Higher
+
+  module type HCCMap = sig
+    type t
+    type key
+
+    val pp : 'a CCMap.printer -> ('a , t CCMap.printer) app
+  end
+
+  module HMap = Newtype1 (ObjectIdMap)
+  let run (x : ('a, HMap.t) app) : 'a ObjectIdMap.t = HMap.prj x
+
+
+  module Printer = Newtype1 (struct type 'a t = 'a CCFormat.printer end)
+
+  module type SMMap = sig
+    type t
+    type key
+    val pp : (key, Printer.t) app -> ('a, Printer.t) app -> (t, Printer.t) app
+  end
+
+  module MMap = Newtype1 (struct type 'a t = 'a end)
+
+  (* module MMMap : SMMap with type t = MMap.t = struct *)
+  (*   type t = MMap.t *)
+  (*   type key = string *)
+  (*   let pp a b = *)
+
+  (* end *)
+
+  let ppsimple a b =
+    let a' = Printer.prj a in
+    let b' = Printer.prj b in
+    Printer.inj (ObjectIdMap.pp a' b')
+
+  (* let pp (type a) (module M : SMMap with type t = a) a b = *)
+  (*   let a' = Printer.prj a in *)
+  (*   let b' = Printer.prj b in *)
+  (*   Printer.inj (M.pp a' b') *)
+
+  (* let show (type a) (module F : HCCMap with type t = a) vpp = *)
+  (*   F.pp vpp *)
+
+  (* let res = pp (Printer.inj CCFormat.string) (Printer.inj pp_obj) *)
+
+  (*   () *)
+  (* let bla (module M : CCMap.S) = *)
+  (* let outmap (type a) (module F : Functor with type t = a) f av = F.fmap f av *)
+  (*   () *)
+
+  module type Map = sig
+    type t
+    type key
+
+    val pp : 'a CCFormat.printer -> 'a ObjectIdMap.t CCFormat.printer
+  end
+
+  (* let show (type a) (type b) (module M : Map with type t = a and type key = b) kpp vpp m = M.pp kpp vpp m *)
+
+  module Obj = Newtype1 (ObjectIdMap)
+
+  module ObjMap : Map with type t = Obj.t = struct
+    type t = Obj.t
+    type key = string
+
+    let pp vpp =
+      ObjectIdMap.pp CCFormat.string vpp
+
+    (* let pp (vpp : 'a CCFormat.printer) (t : ('a, t) app) = *)
+    (*   let t' = Obj.prj t in *)
+    (*   ObjectIdMap.pp CCFormat.string vpp *)
+  end
+
+
+  let show (type a) (module M : Map with type t = a) (vpp : a CCFormat.printer) (m : (a, Obj.t) app) : unit =
+    CCFormat.printf "map = @[<hov>%a@]@]@." (M.pp vpp) (Obj.prj m)
+
+
+  let tt (a : obj ObjectIdMap.t) = show (module ObjMap) pp_obj (Obj.inj a)
+
+
+
+  module type Functor = sig
+    type t
+
+    val fmap : ('a -> 'b) -> ('a, t) app -> ('b, t) app
+  end
+
+  let outmap (type a) (module F : Functor with type t = a) f av = F.fmap f av
+
+  module Id = Newtype1 (struct
+    type 'a t = 'a
+  end)
+
+  module IdFunc : Functor with type t = Id.t = struct
+    type t = Id.t
+
+    let fmap f x = x |> Id.prj |> f |> Id.inj
+  end
+
+  let runId (x : ('a, Id.t) app) : 'a = Id.prj x
+
+
+  let test = runId (outmap (module IdFunc) (fun x -> (int_of_string x) + 1) (Id.inj "hi"))
+
+  module type Pp = sig
+    type t
+
+    val pp : Format.formatter -> t -> unit
+  end
+
+  let show_map (type a) (pp : a CCMap.printer) map =
+    CCFormat.printf "map = @[<hov>%a@]@]@." pp map
+
+  let show_map (type a b) (module Map : CCMap.S with type key = a)
+      (module Key : Pp with type t = Map.key) map =
+    ()
 
   let apply_ops t ops =
     let t, all_diffs, _ =
@@ -711,7 +847,9 @@ module OpSetBackend = struct
               let t, diffs =
                 apply_assign t op (not (ObjectIdSet.mem op.obj new_objs))
               in
-              Log.log_str ("DIFFIES " ^ (string_of_bool ((CCList.nth diffs 0).action = Remove)));
+              Log.log_str
+                ( "DIFFIES "
+                ^ string_of_bool ((CCList.nth diffs 0).action = Remove) ) ;
               (t, List.append all_diffs diffs, new_objs) )
         (t, [], ObjectIdSet.empty) ops
     in
@@ -758,7 +896,7 @@ module OpSetBackend = struct
       let history = List.append t.history [change] in
       ({t with deps= remaining_deps; clock; history}, diffs)
 
-  let ($) f g x = (f (g x))
+  let ( $ ) f g x = f (g x)
 
   (* Simon says...
 
@@ -777,24 +915,21 @@ module OpSetBackend = struct
       CCFQueue.fold
         (fun (t, diffs) change ->
           if causaly_ready t change then (
-            Log.log_str "READY";
+            Log.log_str "READY" ;
             let t, diff = apply_change t change in
-            Log.log_str ("DIFF " ^ (string_of_bool ((CCList.nth diff 0).action = Remove)));
-            (t, CCList.concat [diffs; diff])
-          )
+            Log.log_str
+              ("DIFF " ^ string_of_bool ((CCList.nth diff 0).action = Remove)) ;
+            (t, CCList.concat [diffs; diff]) )
           else ({t with queue= CCFQueue.snoc t.queue change}, diffs) )
         (t, diffs) t.queue
     in
-    Log.log_str ("SIZE1 " ^ (string_of_int (CCFQueue.size new_t.queue)));
-    Log.log_str ("SIZE2 " ^ (string_of_int (CCFQueue.size t.queue)));
+    Log.log_str ("SIZE1 " ^ string_of_int (CCFQueue.size new_t.queue)) ;
+    Log.log_str ("SIZE2 " ^ string_of_int (CCFQueue.size t.queue)) ;
     if CCInt.equal (CCFQueue.size new_t.queue) (CCFQueue.size t.queue) then (
-      Log.log_str "EQ";
-      (new_t, diffs)
-    )
+      Log.log_str "EQ" ; (new_t, diffs) )
     else (
-      Log.log_str "NOT EQ";
-      apply_queued_ops new_t diffs
-    )
+      Log.log_str "NOT EQ" ;
+      apply_queued_ops new_t diffs )
 
   let push_undo_history t =
     let undo_stack =
@@ -806,7 +941,7 @@ module OpSetBackend = struct
       undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
 
   let add_change t change isUndoable =
-    let t = {t with queue = CCFQueue.snoc t.queue change} in
+    let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then
       let t = {t with undo_local= Some []} in
       let d, diffs = apply_queued_ops t [] in
@@ -815,23 +950,24 @@ module OpSetBackend = struct
     else apply_queued_ops t []
 
   let init () =
-    let root_op = {
-      key="";
-      action=Set;
-      actor="";
-      seq=0;
-      obj="";
-      elem=None;
-      value=None;
-    } in
-    let root_obj = KeyMap.empty, {
-        _max_elem=0;
-        _following=KeyMap.empty;
-        _init= root_op;
-        _inbound=OpSet.empty;
-        _elem_ids=None;
-        _insertion=ElemIdMap.empty;
-    } in
+    let root_op =
+      { key= ""
+      ; action= Set
+      ; actor= ""
+      ; seq= 0
+      ; obj= ""
+      ; elem= None
+      ; value= None }
+    in
+    let root_obj =
+      ( KeyMap.empty
+      , { _max_elem= 0
+        ; _following= KeyMap.empty
+        ; _init= root_op
+        ; _inbound= OpSet.empty
+        ; _elem_ids= None
+        ; _insertion= ElemIdMap.empty } )
+    in
     { states= ActorMap.empty
     ; history= []
     ; by_object= ObjectIdMap.add root_id root_obj ObjectIdMap.empty
