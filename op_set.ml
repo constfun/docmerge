@@ -795,7 +795,12 @@ module OpSetBackend = struct
     CCFormat.pp_print_string fmt
       (Sexplib.Sexp.to_string_hum (sexp_of_obj_aux obj_aux))
 
+  let pp_int_show fmt (i : int) =
+    CCFormat.pp_print_string fmt (string_of_int i)
+
   let tt (a : obj ObjectIdMap.t) = show (module ObjMap) pp_obj_show a
+
+  let tt2 (a : int ObjectIdMap.t) = show (module ObjMap) pp_int_show a
 
 
 
