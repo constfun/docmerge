@@ -3,6 +3,8 @@ open Sexplib.Conv
 (* TODO: Can we cross-compile this file and use it instead of the op_set.js file in automerge to run tests? *)
 (* TODO: How does automerge persist data? *)
 
+(* let ( $ ) f g x = f (g x) *)
+
 type exn +=
   | Inconsistent_reuse_of_sequence
   | Not_supported
@@ -33,11 +35,12 @@ module OpSetBackend = struct
 
   type key = string [@@deriving sexp]
 
-  type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link [@@deriving sexp]
+  type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
+  [@@deriving sexp]
 
   type value = Value of string | Link of {obj: value} [@@deriving sexp]
 
-  type elem_id = key * value option  [@@deriving sexp]
+  type elem_id = key * value option [@@deriving sexp]
 
   (* Ineficient but simple implementation of skip list from original *)
   module SkipList = struct
@@ -72,14 +75,15 @@ module OpSetBackend = struct
     ; seq: seq
     ; obj: obj_id
     ; elem: int option
-    ; value: string option } [@@deriving sexp]
+    ; value: string option }
+  [@@deriving sexp]
 
   type change_op =
     { key: key
     ; action: action
     ; obj: obj_id
     ; elem: int option
-    ; value: string option }
+    ; value: string option } [@@deriving sexp_of]
 
   type lamport_op = {actor: actor; elem: int}
 
@@ -95,8 +99,8 @@ module OpSetBackend = struct
     { actor: actor
     ; seq: seq
     ; (* List of depended op sequences by actor. *)
-      deps: seq ActorMap.t
-    ; ops: change_op list }
+      deps: seq ActorMap.t sexp_opaque
+    ; ops: change_op list } [@@deriving sexp_of]
 
   type state = {change: change; allDeps: seq ActorMap.t}
 
@@ -126,7 +130,8 @@ module OpSetBackend = struct
     ; _init: op
     ; _inbound: OpSet.t sexp_opaque
     ; _elem_ids: SkipList.t option sexp_opaque
-    ; _insertion: op ElemIdMap.t sexp_opaque }  [@@deriving sexp]
+    ; _insertion: op ElemIdMap.t sexp_opaque }
+  [@@deriving sexp]
 
   type obj = op list KeyMap.t sexp_opaque * obj_aux [@@deriving sexp]
 
@@ -148,6 +153,26 @@ module OpSetBackend = struct
     ; undo_local: ref list option }
 
   type context = {instantiate_object: t -> obj_id -> value}
+
+  module Show = struct
+    let sexp =
+      Sexplib.Sexp.to_string_hum
+
+    let pp_obj fmt (_, obj_aux) =
+      CCFormat.pp_print_string fmt
+        (sexp (sexp_of_obj_aux obj_aux))
+
+    let str =
+      print_endline
+
+    let by_object v =
+      CCFormat.printf "map = @[<hov>%a@]@]@."
+        (ObjectIdMap.pp CCFormat.string pp_obj)
+        v
+
+    let change (ch: change) =
+      print_endline (sexp (sexp_of_change ch))
+  end
 
   (* Helpers not found in original *)
   let get_obj_aux t obj_id = CCOpt.map snd (ObjectIdMap.get obj_id t.by_object)
@@ -209,7 +234,6 @@ module OpSetBackend = struct
       baseDeps ActorMap.empty
 
   let apply_make t (op : op) =
-    Log.log_str "APPLY MAKE";
     let edit, obj_aux =
       match op.action with
       | MakeMap ->
@@ -429,12 +453,8 @@ module OpSetBackend = struct
 
   let get_field_ops t obj_id (key : key) =
     match ObjectIdMap.get obj_id t.by_object with
-    | Some (obj_map, _) ->
-      Log.log_str "YES";
-      KeyMap.get_or key obj_map ~default:[]
-    | None ->
-      Log.log_str "NO";
-      []
+    | Some (obj_map, _) -> KeyMap.get_or key obj_map ~default:[]
+    | None -> []
 
   let get_parent t obj_id (key : key option) =
     match key with
@@ -511,7 +531,9 @@ module OpSetBackend = struct
       (* In the original code, there seems to be a bug here, where prev_id will still be undefined when fist child is equal to key.
          We replicate the behavior anyway to preserve the semantics. *)
       let prev_id =
-        match CCList.find_idx (fun child -> String.equal child key) children with
+        match
+          CCList.find_idx (fun child -> String.equal child key) children
+        with
         | Some (idx, _) ->
             if idx = 0 then None else Some (CCList.nth children (idx - 1))
         | None -> CCList.last_opt children
@@ -551,7 +573,6 @@ module OpSetBackend = struct
 
   let update_map_key t obj_id key =
     let ops = get_field_ops t obj_id key in
-    Log.log_str ("OPS " ^ (string_of_int (CCList.length ops)) ^ " " ^ obj_id ^ " " ^ key);
     let path = get_path t obj_id (Some []) in
     let edit =
       if CCList.is_empty ops then
@@ -584,13 +605,8 @@ module OpSetBackend = struct
     in
     (t, [edit])
 
-  let pp_obj fmt (obj : obj) =
-    let _, obj_aux = obj in
-    CCFormat.pp_print_string fmt (Sexplib.Sexp.to_string_hum (sexp_of_obj_aux obj_aux))
-
   (* Processes a 'set', 'del', or 'link' operation *)
   let apply_assign t (op : op) is_top_level =
-    Log.log_str op.obj;
     if not (ObjectIdMap.mem op.obj t.by_object) then
       raise Modification_of_unknown_object
     else
@@ -675,9 +691,6 @@ module OpSetBackend = struct
           remaining
         |> CCList.rev
       in
-      Log.log_str ("REMAINING " ^ (string_of_int (CCList.length remaining)));
-
-      Log.log_str ("REMAINING " ^ (string_of_bool ((CCList.nth remaining 0).action = Set)));
       let by_object =
         ObjectIdMap.update op.obj
           (function
@@ -686,7 +699,7 @@ module OpSetBackend = struct
             | None -> raise Not_found)
           t.by_object
       in
-      CCFormat.printf "map = @[<hov>%a@]@]@." (ObjectIdMap.pp CCFormat.string pp_obj) by_object;
+      Show.by_object by_object ;
       let t = {t with by_object} in
       let obj_type =
         (snd (ObjectIdMap.find op.obj t.by_object))._init.action
@@ -711,13 +724,14 @@ module OpSetBackend = struct
               let t, diffs =
                 apply_assign t op (not (ObjectIdSet.mem op.obj new_objs))
               in
-              Log.log_str ("DIFFIES " ^ (string_of_bool ((CCList.nth diffs 0).action = Remove)));
               (t, List.append all_diffs diffs, new_objs) )
         (t, [], ObjectIdSet.empty) ops
     in
     (t, all_diffs)
 
   let apply_change t (change : change) =
+    Show.str "APPLY CHANGE";
+    Show.change change;
     (* Prior state by sequence *)
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
     if change.seq <= List.length prior then
@@ -758,7 +772,6 @@ module OpSetBackend = struct
       let history = List.append t.history [change] in
       ({t with deps= remaining_deps; clock; history}, diffs)
 
-  let ($) f g x = (f (g x))
 
   (* Simon says...
 
@@ -776,25 +789,15 @@ module OpSetBackend = struct
     let new_t, diffs =
       CCFQueue.fold
         (fun (t, diffs) change ->
-          if causaly_ready t change then (
-            Log.log_str "READY";
+          if causaly_ready t change then
             let t, diff = apply_change t change in
-            Log.log_str ("DIFF " ^ (string_of_bool ((CCList.nth diff 0).action = Remove)));
             (t, CCList.concat [diffs; diff])
-          )
           else ({t with queue= CCFQueue.snoc t.queue change}, diffs) )
         (t, diffs) t.queue
     in
-    Log.log_str ("SIZE1 " ^ (string_of_int (CCFQueue.size new_t.queue)));
-    Log.log_str ("SIZE2 " ^ (string_of_int (CCFQueue.size t.queue)));
-    if CCInt.equal (CCFQueue.size new_t.queue) (CCFQueue.size t.queue) then (
-      Log.log_str "EQ";
+    if CCInt.equal (CCFQueue.size new_t.queue) (CCFQueue.size t.queue) then
       (new_t, diffs)
-    )
-    else (
-      Log.log_str "NOT EQ";
-      apply_queued_ops new_t diffs
-    )
+    else apply_queued_ops new_t diffs
 
   let push_undo_history t =
     let undo_stack =
@@ -806,7 +809,7 @@ module OpSetBackend = struct
       undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
 
   let add_change t change isUndoable =
-    let t = {t with queue = CCFQueue.snoc t.queue change} in
+    let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then
       let t = {t with undo_local= Some []} in
       let d, diffs = apply_queued_ops t [] in
@@ -815,23 +818,24 @@ module OpSetBackend = struct
     else apply_queued_ops t []
 
   let init () =
-    let root_op = {
-      key="";
-      action=Set;
-      actor="";
-      seq=0;
-      obj="";
-      elem=None;
-      value=None;
-    } in
-    let root_obj = KeyMap.empty, {
-        _max_elem=0;
-        _following=KeyMap.empty;
-        _init= root_op;
-        _inbound=OpSet.empty;
-        _elem_ids=None;
-        _insertion=ElemIdMap.empty;
-    } in
+    let root_op =
+      { key= ""
+      ; action= Set
+      ; actor= ""
+      ; seq= 0
+      ; obj= ""
+      ; elem= None
+      ; value= None }
+    in
+    let root_obj =
+      ( KeyMap.empty
+      , { _max_elem= 0
+        ; _following= KeyMap.empty
+        ; _init= root_op
+        ; _inbound= OpSet.empty
+        ; _elem_ids= None
+        ; _insertion= ElemIdMap.empty } )
+    in
     { states= ActorMap.empty
     ; history= []
     ; by_object= ObjectIdMap.add root_id root_obj ObjectIdMap.empty

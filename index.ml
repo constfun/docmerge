@@ -1,5 +1,7 @@
 open Op_set
 
+let ( $ ) f g x = f (g x)
+
 type exn +=
   | Not_supported
 
@@ -60,16 +62,11 @@ let to_op_list arr =
       ({
         action = action_from_str js_op##.action;
         key = Js.to_string js_op##.key;
-        elem = Js.Optdef.to_option js_op##.elem;
-        value = Js.Optdef.to_option js_op##.value;
+        elem = Js.Optdef.(to_option (map js_op##.elem (int_of_float $ Js.to_float)));
+        value = Js.Optdef.(to_option (map js_op##.value Js.to_string));
         obj = Js.to_string js_op##.obj;
       } : OpSetBackend.change_op)
     )
-
-      (* assert.deepEqual(patch1, { *)
-      (*   canUndo: false, canRedo: false, clock: {[actor]: 1}, deps: {[actor]: 1}, *)
-      (*   diffs: [{action: 'set', obj: ROOT_ID, path: [], type: 'map', key: 'bird', value: 'magpie'}] *)
-      (* }) *)
 
 let list_to_js_array lis =
   let arr = new%js Js.array_length (List.length lis) in

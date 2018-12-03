@@ -30,7 +30,9 @@ describe('Backend', () => {
       ]}
       const s0 = Backend.init('actor1')
       const [s1, patch1] = Backend.applyChanges(s0, [change1])
+      console.log('S1', s0,s1, patch1);
       const [s2, patch2] = Backend.applyChanges(s1, [change2])
+      console.log('S2', patch2);
       assert.deepEqual(patch2, {
         canUndo: false, canRedo: false, clock: {actor1: 1, actor2: 1}, deps: {actor1: 1, actor2: 1},
         diffs: [{action: 'set', obj: ROOT_ID, path: [], type: 'map', key: 'bird', value: 'blackbird',
