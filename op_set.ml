@@ -14,14 +14,49 @@ type exn +=
   | Missing_index_for_list_element
   | Accessing_unefined_element_index
 
-module ActorMap = CCMap.Make (CCString)
-module SeqMap = CCMap.Make (CCInt)
-module ObjectIdMap = CCMap.Make (CCString)
+module type OrderedType = sig
+  type t
+  val compare: t -> t -> int
+  val sexp_of_t: t -> Sexplib.Sexp.t
+end
+
+module CCString = struct
+  include CCString
+  let sexp_of_t t = Sexplib.Sexp.Atom t
+end
+
+module CCInt = struct
+  include CCInt
+  let sexp_of_t t = Sexplib.Sexp.Atom (string_of_int t)
+end
+
+module CCMapMake (Key : OrderedType) = struct
+  include CCMap.Make (Key)
+
+  let sexp_of_t (sexp_of_value : 'a -> Sexplib.Sexp.t) (t : 'a t) =
+    let open Sexplib.Sexp in
+    List (fold (fun key value atm_lis ->
+        List [Key.sexp_of_t key; sexp_of_value value] :: atm_lis
+      ) t [])
+
+    (* let root_id = "00000000-0000-0000-0000-000000000000" in *)
+    (* let value = find root_id t in *)
+    (* List [Atom "key"; sexp_of_value (sexp_of_value (find (CCString.create "key"))] *)
+    (* Sexplib.Sexp.Atom "hello world" *)
+
+  (* ('a -> Sexplib0.Sexp.t) -> 'a Pervasives.ref -> Sexplib0.Sexp.t *)
+(* (module Sexp_of_m with type t = 'k) ‑> ('v ‑> Base.Sexp.t) ‑> ('k, 'v, 'cmp) t *)
+end
+
+module ActorMap = CCMapMake (CCString)
+module SeqMap = CCMapMake (CCInt)
+module ObjectIdMap = CCMapMake (CCString)
 module ObjectIdSet = CCSet.Make (CCString)
-module ElemIdMap = CCMap.Make (CCString)
-module KeyMap = CCMap.Make (CCString)
+module ElemIdMap = CCMapMake (CCString)
+module KeyMap = CCMapMake (CCString)
 module KeySet = CCSet.Make (CCString)
-module OpMap = CCMap.Make (CCInt)
+module OpMap = CCMapMake (CCInt)
+
 
 module OpSetBackend = struct
   let root_id = "00000000-0000-0000-0000-000000000000"
@@ -100,7 +135,7 @@ module OpSetBackend = struct
     { actor: actor
     ; seq: seq
     ; (* List of depended op sequences by actor. *)
-      deps: seq ActorMap.t sexp_opaque
+      deps: seq ActorMap.t
     ; ops: change_op list }
   [@@deriving sexp_of]
 
@@ -128,14 +163,19 @@ module OpSetBackend = struct
 
   type obj_aux =
     { _max_elem: int
-    ; _following: op list KeyMap.t sexp_opaque
+    ; _following: op list KeyMap.t
     ; _init: op
     ; _inbound: OpSet.t sexp_opaque
     ; _elem_ids: SkipList.t option sexp_opaque
-    ; _insertion: op ElemIdMap.t sexp_opaque }
-  [@@deriving sexp]
+    ; _insertion: op ElemIdMap.t }
+  [@@deriving sexp_of]
 
-  type obj = op list KeyMap.t sexp_opaque * obj_aux [@@deriving sexp]
+  type obj = op list KeyMap.t * obj_aux [@@deriving sexp_of]
+
+  (* type bla = { states: int list ActorMap.t } [@@deriving sexp_of] *)
+
+
+  let sexp_of_state state = Sexplib.Sexp.Atom "-"
 
   type t =
     { states:
@@ -149,10 +189,10 @@ module OpSetBackend = struct
     (* As you receieve new ops, the corresponding actor clock is updated. *)
     ; deps: seq ActorMap.t
     ; undo_pos: int
-    ; undo_stack: ref list list
-    ; redo_stack: ref list list
-    ; queue: change CCFQueue.t
-    ; undo_local: ref list option }
+    ; undo_stack: ref list list sexp_opaque
+    ; redo_stack: ref list list sexp_opaque
+    ; queue: change CCFQueue.t sexp_opaque
+    ; undo_local: ref list option sexp_opaque } [@@deriving sexp_of]
 
   type context = {instantiate_object: t -> obj_id -> value}
 
@@ -831,7 +871,8 @@ module OpSetBackend = struct
 
   let add_change t change isUndoable =
     Show.str "ADD CHANGE" ;
-    CCFormat.printf "%a@." Show.pp_t t ;
+    print_endline (Sexplib.Sexp.to_string_hum (sexp_of_t t));
+    (* CCFormat.printf "%a@." Show.pp_t t ; *)
     let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then
       let t = {t with undo_local= Some []} in
@@ -908,7 +949,7 @@ module OpSetBackend = struct
 
   let get_object_fields t obj_id =
     let open CCOpt.Infix in
-    ActorMap.get obj_id t.by_object
+    ObjectIdMap.get obj_id t.by_object
     >|= fst >|= KeyMap.keys >|= CCList.of_seq
     >|= CCList.filter (fun key -> is_field_present t obj_id key)
     >|= KeySet.of_list
@@ -931,7 +972,7 @@ module OpSetBackend = struct
 
   let get_object_conflicts t obj_id context =
     let open CCOpt.Infix in
-    ActorMap.get obj_id t.by_object
+    ObjectIdMap.get obj_id t.by_object
     >|= fst
     >|= KeyMap.filter (fun key field ->
         valid_field_name key
