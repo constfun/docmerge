@@ -128,13 +128,10 @@ let apply t changes undoable =
         ops = to_op_list js_change##.ops;
       } in
       let op_set, new_diffs = OpSetBackend.add_change t.op_set change false in
-      Log.log_str ("DLEN "  ^ (string_of_int (CCList.length new_diffs)));
       {op_set}, CCList.concat [diffs; new_diffs]
     ) (t, []) changes in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
   let js_patch = make_patch t js_diffs in
-  Log.log_str ("LEN " ^ (string_of_int (CCList.length diffs)));
-  Log.log "JS_PATCH" js_patch;
   let ret = new%js Js.array_length 2 in
   Js.array_set ret 0 (Js.Unsafe.inject t);
   Js.array_set ret 1 (Js.Unsafe.inject js_patch);

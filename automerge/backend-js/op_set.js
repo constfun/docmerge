@@ -61,7 +61,6 @@ function getPath(opSet, objectId) {
 
 // Processes a 'makeMap', 'makeList', or 'makeText' operation
 function applyMake(opSet, op) {
-  console.log('APPLY MAKE')
   const objectId = op.get('obj')
   if (opSet.hasIn(['byObject', objectId])) throw new Error('Duplicate creation of object ' + objectId)
 
@@ -161,7 +160,6 @@ function updateListElement(opSet, objectId, elemId) {
 
 function updateMapKey(opSet, objectId, key) {
   const ops = getFieldOps(opSet, objectId, key)
-  console.log("OPS", objectId, key);
   let edit = {action: '', type: 'map', obj: objectId, key, path: getPath(opSet, objectId)}
 
   if (ops.isEmpty()) {
@@ -211,7 +209,6 @@ function applyAssign(opSet, op, topLevel) {
     remaining = remaining.push(op)
   }
   remaining = remaining.sortBy(op => op.get('actor')).reverse()
-  console.log('REMAINING', remaining)
   opSet = opSet.setIn(['byObject', objectId, op.get('key')], remaining)
 
   if (objType === 'makeList' || objType === 'makeText') {
@@ -232,7 +229,6 @@ function applyOps(opSet, ops) {
       ;[opSet, diffs] = applyInsert(opSet, op)
     } else if (action === 'set' || action === 'del' || action === 'link') {
       ;[opSet, diffs] = applyAssign(opSet, op, !newObjects.contains(op.get('obj')))
-        console.log('DIFFIES', diffs);
     } else {
       throw new RangeError(`Unknown operation type ${action}`)
     }
@@ -242,6 +238,7 @@ function applyOps(opSet, ops) {
 }
 
 function applyChange(opSet, change) {
+  console.log("APPLY CHANGE", change)
   const actor = change.get('actor'), seq = change.get('seq')
   const prior = opSet.getIn(['states', actor], List())
   if (seq <= prior.size) {
@@ -273,22 +270,16 @@ function applyQueuedOps(opSet) {
   while (true) {
     for (let change of opSet.get('queue')) {
       if (causallyReady(opSet, change)) {
-        console.log("READY")
         ;[opSet, diff] = applyChange(opSet, change)
-          console.log("DIFF", diff)
         diffs.push(...diff)
       } else {
         queue = queue.push(change)
       }
     }
 
-    console.log('SIZE1', queue.count());
-    console.log('SIZE2', opSet.get('queue').count());
     if (queue.count() === opSet.get('queue').count()) {
-          console.log('EQ')
           return [opSet, diffs]
     }
-    console.log('NOT EQ')
     opSet = opSet.set('queue', queue)
     queue = List()
   }
@@ -322,6 +313,7 @@ function init() {
 }
 
 function addChange(opSet, change, isUndoable) {
+  console.log('ADD CHANGE', change);
   opSet = opSet.update('queue', queue => queue.push(change))
 
   if (isUndoable) {
