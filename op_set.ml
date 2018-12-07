@@ -48,6 +48,24 @@ module CCMapMake (Key : OrderedType) = struct
 (* (module Sexp_of_m with type t = 'k) ‑> ('v ‑> Base.Sexp.t) ‑> ('k, 'v, 'cmp) t *)
 end
 
+module CCSetMake (Key : OrderedType) = struct
+  include CCMap.Make (Key)
+
+  let sexp_of_t (sexp_of_value : 'a -> Sexplib.Sexp.t) (t : 'a t) =
+    let open Sexplib.Sexp in
+    List (fold (fun key value atm_lis ->
+        List [Key.sexp_of_t key; sexp_of_value value] :: atm_lis
+      ) t [])
+
+    (* let root_id = "00000000-0000-0000-0000-000000000000" in *)
+    (* let value = find root_id t in *)
+    (* List [Atom "key"; sexp_of_value (sexp_of_value (find (CCString.create "key"))] *)
+    (* Sexplib.Sexp.Atom "hello world" *)
+
+  (* ('a -> Sexplib0.Sexp.t) -> 'a Pervasives.ref -> Sexplib0.Sexp.t *)
+(* (module Sexp_of_m with type t = 'k) ‑> ('v ‑> Base.Sexp.t) ‑> ('k, 'v, 'cmp) t *)
+end
+
 module ActorMap = CCMapMake (CCString)
 module SeqMap = CCMapMake (CCInt)
 module ObjectIdMap = CCMapMake (CCString)
@@ -123,13 +141,36 @@ module OpSetBackend = struct
 
   type lamport_op = {actor: actor; elem: int}
 
-  module OpSet = CCSet.Make (struct
+  let lamport_compare op1 op2 =
+    if op1.elem < op2.elem then -1
+    else if op1.elem > op2.elem then 1
+    else if op1.actor < op2.actor then -1
+    else if op1.actor > op2.actor then 1
+    else 0
+
+  (* The original uses a single object for all ops, and discriminates op type based on op.action.
+     This is unsafe since the invariant that, for example, op.elem must be defined for Ins operations is implicit in the API and not actually enforced.
+     We at least make the elem field optional, to encode its potentially undefined nature.
+     We use the get_op_elem function to access the elem field and catch the invariant violation at runtime.
+  *)
+  let get_op_elem (op : op) =
+    match op.elem with
+    | Some idx -> idx
+    | None -> raise Accessing_unefined_element_index
+
+  module OpSet = struct
+    include CCSet.Make (struct
       type t = op
 
-      let compare op1 op2 =
-        (* TODO: compare lamport clocks *)
-        0
+      (* TODO: Is this the right compare fun? Should we be comparing seq instead of elem? *)
+      let compare (op1:op) (op2 :op)=
+        let lop1 = {actor= op1.actor; elem= get_op_elem op1} in
+        let lop2 = {actor= op1.actor; elem= get_op_elem op2} in
+        lamport_compare lop1 lop2
     end)
+
+    let sexp_of_t (t:t) = Sexplib.Sexp.Atom "-op-set-"
+  end
 
   type change =
     { actor: actor
@@ -139,7 +180,7 @@ module OpSetBackend = struct
     ; ops: change_op list }
   [@@deriving sexp_of]
 
-  type state = {change: change; allDeps: seq ActorMap.t}
+  type state = {change: change; allDeps: seq ActorMap.t} [@@deriving sexp_of]
 
   type edit_action = Create | Insert | Remove | Set
 
@@ -165,17 +206,12 @@ module OpSetBackend = struct
     { _max_elem: int
     ; _following: op list KeyMap.t
     ; _init: op
-    ; _inbound: OpSet.t sexp_opaque
+    ; _inbound: OpSet.t
     ; _elem_ids: SkipList.t option sexp_opaque
     ; _insertion: op ElemIdMap.t }
   [@@deriving sexp_of]
 
   type obj = op list KeyMap.t * obj_aux [@@deriving sexp_of]
-
-  (* type bla = { states: int list ActorMap.t } [@@deriving sexp_of] *)
-
-
-  let sexp_of_state state = Sexplib.Sexp.Atom "-"
 
   type t =
     { states:
@@ -233,8 +269,7 @@ module OpSetBackend = struct
         pp_print_space fmt () ;
         pp_deps fmt t.deps;
         pp_print_space fmt ();
-        pp_close_box fmt ();
-        pp_print_string fmt "}";
+        pp_close_box fmt (); pp_print_string fmt "}";
         pp_print_cut fmt ()
   end
 
@@ -242,16 +277,6 @@ module OpSetBackend = struct
   let get_obj_aux t obj_id = CCOpt.map snd (ObjectIdMap.get obj_id t.by_object)
 
   let get_obj_aux_exn t obj_id = CCOpt.get_exn (get_obj_aux t obj_id)
-
-  (* The original uses a single object for all ops, and discriminates op type based on op.action.
-     This is unsafe since the invariant that, for example, op.elem must be defined for Ins operations is implicit in the API and not actually enforced.
-     We at least make the elem field optional, to encode its potentially undefined nature.
-     We use the get_op_elem function to access the elem field and catch the invariant violation at runtime.
-  *)
-  let get_op_elem (op : op) =
-    match op.elem with
-    | Some idx -> idx
-    | None -> raise Accessing_unefined_element_index
 
   (* Returns true if all changes that causally precede the given change *)
   (* have already been applied in `opSet`. *)
@@ -534,13 +559,6 @@ module OpSetBackend = struct
         match insertion with
         | None -> raise Missing_index_for_list_element
         | Some k -> Some k )
-
-  let lamport_compare op1 op2 =
-    if op1.elem < op2.elem then -1
-    else if op1.elem > op2.elem then 1
-    else if op1.actor < op2.actor then -1
-    else if op1.actor > op2.actor then 1
-    else 0
 
   let insertions_after t obj_id (parent_id : key option)
       (child_id : key option) =
@@ -871,7 +889,7 @@ module OpSetBackend = struct
 
   let add_change t change isUndoable =
     Show.str "ADD CHANGE" ;
-    print_endline (Sexplib.Sexp.to_string_hum (sexp_of_t t));
+    print_endline (Sexplib.Sexp.to_string_hum ~indent:4 (sexp_of_t t));
     (* CCFormat.printf "%a@." Show.pp_t t ; *)
     let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then
