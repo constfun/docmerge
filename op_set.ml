@@ -232,47 +232,6 @@ module OpSetBackend = struct
 
   type context = {instantiate_object: t -> obj_id -> value}
 
-  module Show = struct
-    open CCFormat
-
-    let sexp = Sexplib.Sexp.to_string_hum ~indent:2
-
-    let str = print_endline
-
-    let pp_change fmt (ch : change) =
-      CCFormat.pp_print_string fmt (sexp (sexp_of_change ch))
-
-    let pp_obj fmt (obj, obj_aux) =
-      CCFormat.pp_print_string fmt (sexp (sexp_of_obj_aux obj_aux))
-
-    let pp_by_object fmt o =
-        pp_open_vbox fmt 1;
-        pp_print_string fmt "by_object=";
-        pp_print_space fmt ();
-        (ObjectIdMap.pp CCFormat.string pp_obj) fmt o;
-        pp_close_box fmt ()
-
-    let pp_deps fmt deps =
-        pp_open_vbox fmt 1 ;
-        pp_print_string fmt "deps=";
-        pp_print_space fmt ();
-        (ActorMap.pp CCFormat.string CCFormat.int) fmt deps;
-        pp_close_box fmt ()
-
-    let pp_t fmt t =
-        pp_open_vbox fmt 1 ;
-        pp_print_string fmt "t= {" ;
-        pp_print_space fmt () ;
-        fprintf fmt "undo_pos= %i" t.undo_pos ;
-        pp_print_space fmt () ;
-        pp_by_object fmt t.by_object ;
-        pp_print_space fmt () ;
-        pp_deps fmt t.deps;
-        pp_print_space fmt ();
-        pp_close_box fmt (); pp_print_string fmt "}";
-        pp_print_cut fmt ()
-  end
-
   (* Helpers not found in original *)
   let get_obj_aux t obj_id = CCOpt.map snd (ObjectIdMap.get obj_id t.by_object)
 
@@ -811,7 +770,6 @@ module OpSetBackend = struct
     (t, all_diffs)
 
   let apply_change t (change : change) =
-    Show.str "APPLY CHANGE" ;
     (* Prior state by sequence *)
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
     if change.seq <= List.length prior then
@@ -888,9 +846,7 @@ module OpSetBackend = struct
       undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
 
   let add_change t change isUndoable =
-    Show.str "ADD CHANGE" ;
     print_endline (Sexplib.Sexp.to_string_hum ~indent:4 (sexp_of_t t));
-    (* CCFormat.printf "%a@." Show.pp_t t ; *)
     let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then
       let t = {t with undo_local= Some []} in
