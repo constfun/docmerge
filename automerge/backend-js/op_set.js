@@ -311,8 +311,13 @@ function init() {
     .set('queue',    List())
 }
 
+function prettyJSON(obj) {
+    console.log(JSON.stringify(obj, null, 2));
+}
+
 function addChange(opSet, change, isUndoable) {
-  console.log('ADD CHANGE', opSet);
+  console.log('ADD CHANGE')
+  prettyJSON(opSet)
   opSet = opSet.update('queue', queue => queue.push(change))
 
   if (isUndoable) {

@@ -14,6 +14,9 @@ type exn +=
   | Missing_index_for_list_element
   | Accessing_unefined_element_index
 
+let log msg conv sexp =
+  Format.printf "DEBUG: %s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp)
+
 module type OrderedType = sig
   type t
   val compare: t -> t -> int
@@ -830,7 +833,7 @@ module OpSetBackend = struct
       undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
 
   let add_change t change isUndoable =
-    print_endline (Sexplib.Sexp.to_string_hum ~indent:4 (sexp_of_t t));
+    log "t" sexp_of_t t;
     let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then
       let t = {t with undo_local= Some []} in
