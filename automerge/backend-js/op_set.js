@@ -238,7 +238,6 @@ function applyOps(opSet, ops) {
 }
 
 function applyChange(opSet, change) {
-  console.log("APPLY CHANGE", change)
   const actor = change.get('actor'), seq = change.get('seq')
   const prior = opSet.getIn(['states', actor], List())
   if (seq <= prior.size) {
@@ -313,7 +312,7 @@ function init() {
 }
 
 function addChange(opSet, change, isUndoable) {
-  console.log('ADD CHANGE', change);
+  console.log('ADD CHANGE', opSet);
   opSet = opSet.update('queue', queue => queue.push(change))
 
   if (isUndoable) {
