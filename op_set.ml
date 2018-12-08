@@ -758,6 +758,7 @@ module OpSetBackend = struct
 
   let apply_change t (change : change) =
     (* Prior state by sequence *)
+    log "apply_change" sexp_of_change change;
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
     if change.seq <= List.length prior then
       match List.nth_opt prior (change.seq - 1) with
@@ -833,7 +834,6 @@ module OpSetBackend = struct
       undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
 
   let add_change t change isUndoable =
-    log "t" sexp_of_t t;
     let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then
       let t = {t with undo_local= Some []} in
