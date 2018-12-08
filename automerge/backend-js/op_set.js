@@ -2,6 +2,10 @@ const { Map, List, Set } = require('immutable')
 const { SkipList } = require('./skip_list')
 const ROOT_ID = '00000000-0000-0000-0000-000000000000'
 
+function log (msg, obj) {
+  console.log('DEBUG:', msg, JSON.stringify(obj, null, 2));
+}
+
 // Returns true if the two operations are concurrent, that is, they happened without being aware of
 // each other (neither happened before the other). Returns false if one supersedes the other.
 function isConcurrent(opSet, op1, op2) {
@@ -238,6 +242,7 @@ function applyOps(opSet, ops) {
 }
 
 function applyChange(opSet, change) {
+  log("applyChange", change)
   const actor = change.get('actor'), seq = change.get('seq')
   const prior = opSet.getIn(['states', actor], List())
   if (seq <= prior.size) {
@@ -268,6 +273,7 @@ function applyQueuedOps(opSet) {
   let queue = List(), diff, diffs = []
   while (true) {
     for (let change of opSet.get('queue')) {
+      log("applyOps", change)
       if (causallyReady(opSet, change)) {
         ;[opSet, diff] = applyChange(opSet, change)
         diffs.push(...diff)
@@ -311,15 +317,8 @@ function init() {
     .set('queue',    List())
 }
 
-function prettyJSON(obj) {
-    console.log(JSON.stringify(obj, null, 2));
-}
-
 function addChange(opSet, change, isUndoable) {
-  console.log('ADD CHANGE')
-  prettyJSON(opSet)
   opSet = opSet.update('queue', queue => queue.push(change))
-
   if (isUndoable) {
     // setting the undoLocal key enables undo history capture
     opSet = opSet.set('undoLocal', List())

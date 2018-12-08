@@ -814,6 +814,7 @@ module OpSetBackend = struct
     let new_t, diffs =
       CCFQueue.fold
         (fun (t, diffs) change ->
+           log "apply_ops" sexp_of_change change;
            if causaly_ready t change then
              let t, diff = apply_change t change in
              (t, CCList.concat [diffs; diff])
@@ -834,6 +835,7 @@ module OpSetBackend = struct
       undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
 
   let add_change t change isUndoable =
+    log "add_change" sexp_of_change change;
     let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then
       let t = {t with undo_local= Some []} in
