@@ -242,7 +242,7 @@ function applyOps(opSet, ops) {
 }
 
 function applyChange(opSet, change) {
-  log("applyChange", change)
+  // log("applyChange", opSet.get('queue'))
   const actor = change.get('actor'), seq = change.get('seq')
   const prior = opSet.getIn(['states', actor], List())
   if (seq <= prior.size) {
@@ -273,11 +273,12 @@ function applyQueuedOps(opSet) {
   let queue = List(), diff, diffs = []
   while (true) {
     for (let change of opSet.get('queue')) {
-      log("applyOps", change)
       if (causallyReady(opSet, change)) {
         ;[opSet, diff] = applyChange(opSet, change)
+        log("ready", opSet.get('queue'))
         diffs.push(...diff)
       } else {
+        log("else", change);
         queue = queue.push(change)
       }
     }

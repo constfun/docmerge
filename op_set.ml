@@ -53,6 +53,13 @@ module CCSetMake (Key : OrderedType) = struct
       ) t [])
 end
 
+module CCFQueueWithSexp = struct
+  include CCFQueue
+
+  let sexp_of_t (sexp_of_value : 'a -> Sexplib.Sexp.t) (t : 'a t) =
+    Sexplib.Sexp.List (CCList.map sexp_of_value (CCFQueue.to_list t))
+end
+
 module ActorMap = CCMapMake (CCString)
 module SeqMap = CCMapMake (CCInt)
 module ObjectIdMap = CCMapMake (CCString)
@@ -214,7 +221,7 @@ module OpSetBackend = struct
     ; undo_pos: int
     ; undo_stack: ref list list sexp_opaque
     ; redo_stack: ref list list sexp_opaque
-    ; queue: change CCFQueue.t sexp_opaque
+    ; queue: change CCFQueueWithSexp.t
     ; undo_local: ref list option sexp_opaque } [@@deriving sexp_of]
 
   type context = {instantiate_object: t -> obj_id -> value}
@@ -758,7 +765,7 @@ module OpSetBackend = struct
 
   let apply_change t (change : change) =
     (* Prior state by sequence *)
-    log "apply_change" sexp_of_change change;
+    (* log "apply_change" (CCFQueueWithSexp.sexp_of_t sexp_of_change) t.queue; *)
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
     if change.seq <= List.length prior then
       match List.nth_opt prior (change.seq - 1) with
@@ -811,19 +818,23 @@ module OpSetBackend = struct
 
   *)
   let rec apply_queued_ops t diffs =
-    let new_t, diffs =
+    let t, diffs, queue =
       CCFQueue.fold
-        (fun (t, diffs) change ->
-           log "apply_ops" sexp_of_change change;
-           if causaly_ready t change then
+        (fun (t, diffs, queue) change ->
+           if causaly_ready t change then (
              let t, diff = apply_change t change in
-             (t, CCList.concat [diffs; diff])
-           else ({t with queue= CCFQueue.snoc t.queue change}, diffs) )
-        (t, diffs) t.queue
+             log "causally ready" (CCFQueueWithSexp.sexp_of_t sexp_of_change) t.queue;
+             (t, CCList.concat [diffs; diff], queue)
+           )
+           else (
+             log "not causally ready" sexp_of_change change;
+             (t, diffs, CCFQueue.snoc t.queue change)
+           ))
+        (t, diffs, CCFQueueWithSexp.empty) t.queue
     in
-    if CCInt.equal (CCFQueue.size new_t.queue) (CCFQueue.size t.queue) then
-      (new_t, diffs)
-    else apply_queued_ops new_t diffs
+    if CCInt.equal (CCFQueue.size queue) (CCFQueue.size t.queue) then
+      (t, diffs)
+    else apply_queued_ops {t with queue} diffs
 
   let push_undo_history t =
     let undo_stack =
@@ -835,11 +846,10 @@ module OpSetBackend = struct
       undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
 
   let add_change t change isUndoable =
-    log "add_change" sexp_of_change change;
     let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then
       let t = {t with undo_local= Some []} in
-      let d, diffs = apply_queued_ops t [] in
+      let t, diffs = apply_queued_ops t [] in
       let t = push_undo_history t in
       (t, diffs)
     else apply_queued_ops t []

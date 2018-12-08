@@ -43,8 +43,6 @@ let make_patch t diffs =
 
 let init () = {op_set= OpSetBackend.init ()}
 
-let addChange {op_set} = freeze (OpSetBackend.add_change op_set)
-
 let int_of_js_number n =
   int_of_float (Js.float_of_number n)
 
@@ -127,7 +125,7 @@ let apply t changes undoable =
         deps = actor_map_of_js_obj js_change##.deps;
         ops = to_op_list js_change##.ops;
       } in
-      let op_set, new_diffs = OpSetBackend.add_change t.op_set change false in
+      let op_set, new_diffs = OpSetBackend.add_change t.op_set change undoable in
       {op_set}, CCList.concat [diffs; new_diffs]
     ) (t, []) changes in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
