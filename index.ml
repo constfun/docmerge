@@ -141,7 +141,7 @@ let conflicts_to_js_conflicts (v : OpSetBackend.conflict list) =
 
 let obj_set_path (edit:OpSetBackend.edit) obj_kv =
   match edit.action with
-  | OpSetBackend.Set -> (
+  | OpSetBackend.Set | OpSetBackend.Remove -> (
     match edit.path with
     | Some v -> CCArray.append obj_kv [|("path", Js.Unsafe.inject (path_to_js_path v))|]
     | None -> CCArray.append obj_kv [|("path", Js.Unsafe.inject Js.null)|]

@@ -6,7 +6,7 @@ const ROOT_ID = '00000000-0000-0000-0000-000000000000'
 
 describe('Backend', () => {
   describe('incremental diffs', () => {
-    xit('should assign to a key in a map', () => {
+    it('should assign to a key in a map', () => {
       const actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}
@@ -19,7 +19,7 @@ describe('Backend', () => {
       })
     })
 
-    xit('should make a conflict on assignment to the same key', () => {
+    it('should make a conflict on assignment to the same key', () => {
       const change1 = {actor: 'actor1', seq: 1, deps: {}, ops: [
         {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}
       ]}
@@ -36,7 +36,7 @@ describe('Backend', () => {
       ]})
     })
 
-    xit('should delete a key from a map', () => {
+    it('should delete a key from a map', () => {
       const actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}
