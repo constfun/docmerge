@@ -19,7 +19,7 @@ describe('Backend', () => {
       })
     })
 
-    it('should make a conflict on assignment to the same key', () => {
+    xit('should make a conflict on assignment to the same key', () => {
       const change1 = {actor: 'actor1', seq: 1, deps: {}, ops: [
         {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}
       ]}
@@ -53,7 +53,7 @@ describe('Backend', () => {
       })
     })
 
-    xit('should create nested maps', () => {
+    it('should create nested maps', () => {
       const birds = uuid(), actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'makeMap', obj: birds},

@@ -53,13 +53,18 @@ let array_to_list arr = CCArray.to_list (Js.to_array arr)
 let action_from_str : Js.js_string Js.t -> OpSetBackend.action =
  fun js_s ->
   let s = Js.to_string js_s in
-  if String.equal s "set" then OpSetBackend.Set else raise Not_supported
+  if String.equal s "set" then OpSetBackend.Set
+  else if String.equal s "del" then OpSetBackend.Del
+  else if String.equal s "makeMap" then OpSetBackend.MakeMap
+  else if String.equal s "link" then OpSetBackend.Link
+  else raise Not_supported
 
 let to_op_list arr =
   array_to_list arr
   |> CCList.map (fun js_op ->
          ( { action= action_from_str js_op##.action
-           ; key= Js.to_string js_op##.key
+           (* ; key= Js.to_string js_op##.key *)
+           ;key= Js.Optdef.(to_option (map js_op##.key Js.to_string))
            ; elem=
                Js.Optdef.(
                  to_option (map js_op##.elem (int_of_float $ Js.to_float)))
@@ -75,10 +80,15 @@ let list_to_js_array lis =
 let obj_set conv name value obj_kv =
   CCArray.append obj_kv [|(name, Js.Unsafe.inject (conv value))|]
 
-let obj_set_opt conv name value obj_kv =
+let obj_set_optdef conv name value obj_kv =
   match value with
   | Some v -> CCArray.append obj_kv [|(name, Js.Unsafe.inject (conv v))|]
   | None -> obj_kv
+
+let obj_set_opt conv name value obj_kv =
+  match value with
+  | Some v -> CCArray.append obj_kv [|(name, Js.Unsafe.inject (conv v))|]
+  | None -> CCArray.append obj_kv [|(name, Js.Unsafe.inject Js.null)|]
 
 let rec value_to_js_value = function
   | OpSetBackend.Value s -> Js.Unsafe.inject (Js.string s)
@@ -125,19 +135,29 @@ let conflicts_to_js_conflicts (v : OpSetBackend.conflict list) =
        (fun (confl : OpSetBackend.conflict) ->
          CCArray.empty
          |> obj_set actor_to_js_actor "actor" confl.actor
-         |> obj_set_opt Js.string "value" confl.value
+         |> obj_set_optdef Js.string "value" confl.value
          |> Js.Unsafe.obj )
        v)
+
+let obj_set_path (edit:OpSetBackend.edit) obj_kv =
+  match edit.action with
+  | OpSetBackend.Set -> (
+    match edit.path with
+    | Some v -> CCArray.append obj_kv [|("path", Js.Unsafe.inject (path_to_js_path v))|]
+    | None -> CCArray.append obj_kv [|("path", Js.Unsafe.inject Js.null)|]
+  )
+  | _ -> obj_kv
 
 let edit_to_js_edit (edit : OpSetBackend.edit) =
   CCArray.empty
   |> obj_set edit_action_to_js_edit_action "action" edit.action
   |> obj_set Js.string "obj" edit.obj
-  |> obj_set_opt Js.string "key" edit.key
-  |> obj_set_opt value_to_js_value "value" edit.value
+  |> obj_set_optdef Js.string "key" edit.key
+  |> obj_set_optdef value_to_js_value "value" edit.value
   |> obj_set type_to_js_type "type" edit._type
-  |> obj_set_opt path_to_js_path "path" edit.path
-  |> obj_set_opt conflicts_to_js_conflicts "conflicts" edit.conflicts
+  |> obj_set_optdef Js.bool "link" (if edit.link then Some edit.link else None)
+  |> obj_set_path edit
+  |> obj_set_optdef conflicts_to_js_conflicts "conflicts" edit.conflicts
   |> Js.Unsafe.obj
 
 let apply t changes undoable =

@@ -15,7 +15,8 @@ type exn +=
   | Accessing_unefined_element_index
 
 let log msg conv sexp =
-  Format.printf "DEBUG: %s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp)
+  ()
+  (* Format.printf "DEBUG: %s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp) *)
 
 module type OrderedType = sig
   type t
@@ -129,7 +130,7 @@ module OpSetBackend = struct
   [@@deriving sexp]
 
   type change_op =
-    { key: key
+    { key: key option
     ; action: action
     ; obj: obj_id
     ; elem: int option
@@ -791,7 +792,8 @@ module OpSetBackend = struct
             { actor= change.actor
             ; seq= change.seq
             ; action= ch_op.action
-            ; key= ch_op.key
+            (* TODO: Op key should be an option. *)
+            ; key=( match ch_op.key with Some k ->k | None -> "")
             ; obj= ch_op.obj
             ; elem= ch_op.elem
             ; value= ch_op.value } )
