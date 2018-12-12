@@ -15,8 +15,7 @@ type exn +=
   | Accessing_unefined_element_index
 
 let log msg conv sexp =
-  ()
-  (* Format.printf "DEBUG: %s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp) *)
+  Format.printf "DEBUG: %s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp)
 
 module type OrderedType = sig
   type t
@@ -77,21 +76,26 @@ module OpMap = CCMapMake (CCInt)
 module OpSetBackend = struct
   let root_id = "00000000-0000-0000-0000-000000000000"
 
-  type actor = string [@@deriving sexp]
+  type actor = string [@@deriving sexp_of]
 
   (* GUID *)
-  type seq = int [@@deriving sexp]
+  type seq = int [@@deriving sexp_of]
 
-  type obj_id = string [@@deriving sexp]
+  type obj_id = string [@@deriving sexp_of]
 
-  type key = string [@@deriving sexp]
+  type key = string [@@deriving sexp_of]
 
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
   [@@deriving sexp]
 
-  type value = Value of string | Link of {obj: value} [@@deriving sexp]
+  type op_val =
+    | BoolValue of bool
+    | StrValue of string
+  [@@deriving sexp_of]
 
-  type elem_id = key * value option [@@deriving sexp]
+  type value = Value of op_val | Link of {obj: value} [@@deriving sexp_of]
+
+  type elem_id = key * value option [@@deriving sexp_of]
 
   (* Ineficient but simple implementation of skip list from original *)
   module SkipList = struct
@@ -126,15 +130,15 @@ module OpSetBackend = struct
     ; seq: seq
     ; obj: obj_id
     ; elem: int option
-    ; value: string option }
-  [@@deriving sexp]
+    ; value: op_val option }
+  [@@deriving sexp_of]
 
   type change_op =
     { key: key option
     ; action: action
     ; obj: obj_id
     ; elem: int option
-    ; value: string option }
+    ; value: op_val option }
   [@@deriving sexp_of]
 
   type lamport_op = {actor: actor; elem: int}
@@ -184,7 +188,7 @@ module OpSetBackend = struct
 
   type edit_type = Map | Text | List
 
-  type conflict = {actor: actor; value: string option; link: bool}
+  type conflict = {actor: actor; value: op_val option; link: bool}
 
   type edit =
     { _type: edit_type
@@ -235,6 +239,10 @@ module OpSetBackend = struct
   let get_obj_aux t obj_id = CCOpt.map snd (ObjectIdMap.get obj_id t.by_object)
 
   let get_obj_aux_exn t obj_id = CCOpt.get_exn (get_obj_aux t obj_id)
+
+  let get_op_value_as_string_exn = function
+    | StrValue s -> s
+    | BoolValue _ -> raise (Invalid_argument "op.value")
 
   (* Returns true if all changes that causally precede the given change *)
   (* have already been applied in `opSet`. *)
@@ -690,7 +698,7 @@ module OpSetBackend = struct
         CCList.fold_left
           (fun t (op : op) ->
             let by_object =
-              ObjectIdMap.update (CCOpt.get_exn op.value)
+              ObjectIdMap.update (get_op_value_as_string_exn (CCOpt.get_exn op.value))
                 (function
                   | Some (obj_map, obj_aux) ->
                       Some
@@ -707,7 +715,7 @@ module OpSetBackend = struct
         match op.action with
         | Link ->
             let by_object =
-              ObjectIdMap.update (CCOpt.get_exn op.value)
+              ObjectIdMap.update (get_op_value_as_string_exn (CCOpt.get_exn op.value))
                 (function
                   | Some (obj_map, obj_aux) ->
                       Some
@@ -938,7 +946,7 @@ module OpSetBackend = struct
       (fun value ->
         match op.action with
         | Set -> Some (Value value)
-        | Link -> Some (context.instantiate_object t value)
+        | Link -> Some (context.instantiate_object t (get_op_value_as_string_exn value))
         | _ -> None )
       op.value
 

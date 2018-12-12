@@ -56,14 +56,15 @@ let action_from_str : Js.js_string Js.t -> OpSetBackend.action =
   if String.equal s "set" then OpSetBackend.Set
   else if String.equal s "del" then OpSetBackend.Del
   else if String.equal s "makeMap" then OpSetBackend.MakeMap
+  else if String.equal s "makeList" then OpSetBackend.MakeList
   else if String.equal s "link" then OpSetBackend.Link
+  else if String.equal s "ins" then OpSetBackend.Ins
   else raise Not_supported
 
 let to_op_list arr =
   array_to_list arr
   |> CCList.map (fun js_op ->
          ( { action= action_from_str js_op##.action
-           (* ; key= Js.to_string js_op##.key *)
            ;key= Js.Optdef.(to_option (map js_op##.key Js.to_string))
            ; elem=
                Js.Optdef.(

@@ -7,7 +7,7 @@ build:
 build-native:
 	dune build @all
 
-test: automerge/node_modules build
+test: automerge/node_modules
 	./automerge/node_modules/mocha/bin/mocha ./automerge/test/backend_test.js
 
 test-js: automerge/node_modules

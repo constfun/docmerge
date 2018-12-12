@@ -27,7 +27,11 @@ module OpSetBackend : sig
 
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
 
-  type value = Value of string | Link of {obj: value}
+  type op_val =
+    | BoolValue of bool
+    | StrValue of string
+
+  type value = Value of op_val | Link of {obj: value}
 
   type op =
     { key: key
@@ -36,10 +40,10 @@ module OpSetBackend : sig
     ; seq: seq
     ; obj: obj_id
     ; elem: int option
-    ; value: string option }
+    ; value: op_val option }
 
   type change_op =
-    {key: key option; action: action; obj: obj_id; elem: int option; value: string option}
+    {key: key option; action: action; obj: obj_id; elem: int option; value: op_val option}
 
   type change = {actor: actor; seq: seq; deps: seq ActorMap.t; ops: change_op list}
 
@@ -49,7 +53,7 @@ module OpSetBackend : sig
 
   type edit_type = Map | Text | List
 
-  type conflict = {actor: actor; value: string option; link: bool}
+  type conflict = {actor: actor; value: op_val option; link: bool}
 
   type edit =
     { _type: edit_type

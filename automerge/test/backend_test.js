@@ -6,7 +6,7 @@ const ROOT_ID = '00000000-0000-0000-0000-000000000000'
 
 describe('Backend', () => {
   describe('incremental diffs', () => {
-    it('should assign to a key in a map', () => {
+    xit('should assign to a key in a map', () => {
       const actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}
@@ -19,7 +19,7 @@ describe('Backend', () => {
       })
     })
 
-    it('should make a conflict on assignment to the same key', () => {
+    xit('should make a conflict on assignment to the same key', () => {
       const change1 = {actor: 'actor1', seq: 1, deps: {}, ops: [
         {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}
       ]}
@@ -36,7 +36,7 @@ describe('Backend', () => {
       ]})
     })
 
-    it('should delete a key from a map', () => {
+    xit('should delete a key from a map', () => {
       const actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}
@@ -53,7 +53,7 @@ describe('Backend', () => {
       })
     })
 
-    it('should create nested maps', () => {
+    xit('should create nested maps', () => {
       const birds = uuid(), actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'makeMap', obj: birds},
@@ -72,7 +72,7 @@ describe('Backend', () => {
       })
     })
 
-    xit('should assign to keys in nested maps', () => {
+    it('should assign to keys in nested maps', () => {
       const birds = uuid(), actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'makeMap', obj: birds},
