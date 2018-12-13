@@ -198,7 +198,14 @@ let apply t changes undoable =
   Js.array_set ret 1 (Js.Unsafe.inject js_patch) ;
   ret
 
-let apply_changes t changes = apply t changes false
+let apply_changes t changes =
+  apply t changes false
+  (* Printexc.record_backtrace true; *)
+  (* try apply t changes false *)
+  (* with Failure s -> *)
+  (*   Printexc.print_backtrace stdout; *)
+  (*   (1* print_endline ("EXCEPTION " ^ Js.string_of_error e); *1) *)
+  (*   raise (Failure "fucked") *)
 
 let _ =
   Js.export "init" init ;

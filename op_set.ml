@@ -470,6 +470,8 @@ module OpSetBackend = struct
           in
           (elem_ids, {edit with elem_id__key= Some elem_id__key; value})
       | Set ->
+          print_endline "GET";
+          log "SET" sexp_of_op (CCOpt.get_exn first_op);
           let elem_ids =
             SkipList.set_value (CCOpt.get_exn first_op).key value elem_ids
           in
@@ -574,7 +576,8 @@ module OpSetBackend = struct
   let get_previous t obj_id key =
     let parent_id = get_parent t obj_id (Some key) in
     let children = insertions_after t obj_id parent_id None in
-    if String.equal (CCList.hd children) key then
+    log "CHILDREN" (sexp_of_list sexp_of_string) children;
+    if CCList.length children > 0 && String.equal (CCList.hd children) key then
       match parent_id with Some "_head" -> None | _ -> parent_id
     else
       (* In the original code, there seems to be a bug here, where prev_id will still be undefined when fist child is equal to key.

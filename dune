@@ -1,6 +1,7 @@
 (executable
     (name index)
-    (flags -w -33)
+    (flags -w -33 -g)
+    (js_of_ocaml (flags --debug-info --no-inline --pretty))
     (libraries str containers containers.data js_of_ocaml sexplib)
     (preprocess (pps ppx_sexp_conv js_of_ocaml-ppx))
     )
