@@ -78,20 +78,24 @@ let rec value_to_js_value (value : OpSetBackend.value) =
 let rec js_value_to_op_val js_value =
   let typ = Js.to_string (Js.typeof js_value) in
   match typ with
-  | "string" -> OpSetBackend.StrValue (Js.to_string (Js.Unsafe.coerce js_value))
-  | "boolean" -> OpSetBackend.BoolValue (Js.to_bool (Js.Unsafe.coerce js_value))
-  | "number" -> OpSetBackend.NumberValue (Js.float_of_number (Js.Unsafe.coerce js_value))
+  | "string" ->
+      OpSetBackend.StrValue (Js.to_string (Js.Unsafe.coerce js_value))
+  | "boolean" ->
+      OpSetBackend.BoolValue (Js.to_bool (Js.Unsafe.coerce js_value))
+  | "number" ->
+      OpSetBackend.NumberValue (Js.float_of_number (Js.Unsafe.coerce js_value))
   | _ -> raise Not_supported
 
 let to_op_list arr =
   array_to_list arr
   |> CCList.map (fun js_op ->
          ( { action= action_from_str js_op##.action
-           ;key= Js.Optdef.(to_option (map js_op##.key Js.to_string))
+           ; key= Js.Optdef.(to_option (map js_op##.key Js.to_string))
            ; elem=
                Js.Optdef.(
                  to_option (map js_op##.elem (int_of_float $ Js.to_float)))
-           ; value= Js.Optdef.(to_option (map js_op##.value js_value_to_op_val))
+           ; value=
+               Js.Optdef.(to_option (map js_op##.value js_value_to_op_val))
            ; obj= Js.to_string js_op##.obj }
            : OpSetBackend.change_op ) )
 
@@ -112,11 +116,6 @@ let obj_set_opt conv name value obj_kv =
   match value with
   | Some v -> CCArray.append obj_kv [|(name, Js.Unsafe.inject (conv v))|]
   | None -> CCArray.append obj_kv [|(name, Js.Unsafe.inject Js.null)|]
-
-(* let rec value_to_js_value = function *)
-(*   | OpSetBackend.Value s -> Js.Unsafe.inject (Js.string s) *)
-(*   | OpSetBackend.Link l -> *)
-(*       Js.Unsafe.inject (Js.Unsafe.obj [|("obj", value_to_js_value l.obj)|]) *)
 
 let edit_action_to_js_edit_action v =
   Js.string
@@ -153,13 +152,15 @@ let conflicts_to_js_conflicts (v : OpSetBackend.conflict list) =
          |> Js.Unsafe.obj )
        v)
 
-let obj_set_path (edit:OpSetBackend.edit) obj_kv =
+let number_of_int i = Js.number_of_float (float_of_int i)
+
+let obj_set_path (edit : OpSetBackend.edit) obj_kv =
   match edit.action with
-  | OpSetBackend.Set | OpSetBackend.Remove -> (
+  | OpSetBackend.Set | OpSetBackend.Remove | OpSetBackend.Insert -> (
     match edit.path with
-    | Some v -> CCArray.append obj_kv [|("path", Js.Unsafe.inject (path_to_js_path v))|]
-    | None -> CCArray.append obj_kv [|("path", Js.Unsafe.inject Js.null)|]
-  )
+    | Some v ->
+        CCArray.append obj_kv [|("path", Js.Unsafe.inject (path_to_js_path v))|]
+    | None -> CCArray.append obj_kv [|("path", Js.Unsafe.inject Js.null)|] )
   | _ -> obj_kv
 
 let edit_to_js_edit (edit : OpSetBackend.edit) =
@@ -172,6 +173,8 @@ let edit_to_js_edit (edit : OpSetBackend.edit) =
   |> obj_set_optdef Js.bool "link" (if edit.link then Some edit.link else None)
   |> obj_set_path edit
   |> obj_set_optdef conflicts_to_js_conflicts "conflicts" edit.conflicts
+  |> obj_set_optdef number_of_int "index" edit.index
+  |> obj_set_optdef Js.string "elemId" edit.elem_id__key
   |> Js.Unsafe.obj
 
 let apply t changes undoable =
@@ -198,14 +201,14 @@ let apply t changes undoable =
   Js.array_set ret 1 (Js.Unsafe.inject js_patch) ;
   ret
 
-let apply_changes t changes =
-  apply t changes false
-  (* Printexc.record_backtrace true; *)
-  (* try apply t changes false *)
-  (* with Failure s -> *)
-  (*   Printexc.print_backtrace stdout; *)
-  (*   (1* print_endline ("EXCEPTION " ^ Js.string_of_error e); *1) *)
-  (*   raise (Failure "fucked") *)
+let apply_changes t changes = apply t changes false
+
+(* Printexc.record_backtrace true; *)
+(* try apply t changes false *)
+(* with Failure s -> *)
+(*   Printexc.print_backtrace stdout; *)
+(*   (1* print_endline ("EXCEPTION " ^ Js.string_of_error e); *1) *)
+(*   raise (Failure "fucked") *)
 
 let _ =
   Js.export "init" init ;

@@ -27,10 +27,7 @@ module OpSetBackend : sig
 
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
 
-  type op_val =
-    | BoolValue of bool
-    | StrValue of string
-    | NumberValue of float
+  type op_val = BoolValue of bool | StrValue of string | NumberValue of float
 
   type value = Value of op_val | Link of {obj: value}
 
@@ -44,9 +41,14 @@ module OpSetBackend : sig
     ; value: op_val option }
 
   type change_op =
-    {key: key option; action: action; obj: obj_id; elem: int option; value: op_val option}
+    { key: key option
+    ; action: action
+    ; obj: obj_id
+    ; elem: int option
+    ; value: op_val option }
 
-  type change = {actor: actor; seq: seq; deps: seq ActorMap.t; ops: change_op list}
+  type change =
+    {actor: actor; seq: seq; deps: seq ActorMap.t; ops: change_op list}
 
   type state = {change: change; allDeps: seq ActorMap.t}
 
@@ -111,8 +113,12 @@ module OpSetBackend : sig
   val root_id : string
 
   (* Auxulary funs required to not break encapsulation between index.js and op_set.js *)
-  val get_clock: t -> seq ActorMap.t
-  val get_deps: t -> seq ActorMap.t
-  val can_undo: t -> bool
-  val can_redo: t -> bool
+
+  val get_clock : t -> seq ActorMap.t
+
+  val get_deps : t -> seq ActorMap.t
+
+  val can_undo : t -> bool
+
+  val can_redo : t -> bool
 end

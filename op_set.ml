@@ -88,10 +88,7 @@ module OpSetBackend = struct
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
   [@@deriving sexp]
 
-  type op_val =
-    | BoolValue of bool
-    | StrValue of string
-    | NumberValue of float
+  type op_val = BoolValue of bool | StrValue of string | NumberValue of float
   [@@deriving sexp_of]
 
   type value = Value of op_val | Link of {obj: value} [@@deriving sexp_of]
@@ -470,8 +467,8 @@ module OpSetBackend = struct
           in
           (elem_ids, {edit with elem_id__key= Some elem_id__key; value})
       | Set ->
-          print_endline "GET";
-          log "SET" sexp_of_op (CCOpt.get_exn first_op);
+          print_endline "GET" ;
+          log "SET" sexp_of_op (CCOpt.get_exn first_op) ;
           let elem_ids =
             SkipList.set_value (CCOpt.get_exn first_op).key value elem_ids
           in
@@ -576,7 +573,7 @@ module OpSetBackend = struct
   let get_previous t obj_id key =
     let parent_id = get_parent t obj_id (Some key) in
     let children = insertions_after t obj_id parent_id None in
-    log "CHILDREN" (sexp_of_list sexp_of_string) children;
+    log "CHILDREN" (sexp_of_list sexp_of_string) children ;
     if CCList.length children > 0 && String.equal (CCList.hd children) key then
       match parent_id with Some "_head" -> None | _ -> parent_id
     else
@@ -702,7 +699,8 @@ module OpSetBackend = struct
         CCList.fold_left
           (fun t (op : op) ->
             let by_object =
-              ObjectIdMap.update (get_op_value_as_string_exn (CCOpt.get_exn op.value))
+              ObjectIdMap.update
+                (get_op_value_as_string_exn (CCOpt.get_exn op.value))
                 (function
                   | Some (obj_map, obj_aux) ->
                       Some
@@ -719,7 +717,8 @@ module OpSetBackend = struct
         match op.action with
         | Link ->
             let by_object =
-              ObjectIdMap.update (get_op_value_as_string_exn (CCOpt.get_exn op.value))
+              ObjectIdMap.update
+                (get_op_value_as_string_exn (CCOpt.get_exn op.value))
                 (function
                   | Some (obj_map, obj_aux) ->
                       Some
@@ -803,9 +802,8 @@ module OpSetBackend = struct
           (fun (ch_op : change_op) ->
             { actor= change.actor
             ; seq= change.seq
-            ; action= ch_op.action
-            (* TODO: Op key should be an option. *)
-            ; key=( match ch_op.key with Some k ->k | None -> "")
+            ; action= ch_op.action (* TODO: Op key should be an option. *)
+            ; key= (match ch_op.key with Some k -> k | None -> "")
             ; obj= ch_op.obj
             ; elem= ch_op.elem
             ; value= ch_op.value } )
@@ -950,7 +948,9 @@ module OpSetBackend = struct
       (fun value ->
         match op.action with
         | Set -> Some (Value value)
-        | Link -> Some (context.instantiate_object t (get_op_value_as_string_exn value))
+        | Link ->
+            Some
+              (context.instantiate_object t (get_op_value_as_string_exn value))
         | _ -> None )
       op.value
 
