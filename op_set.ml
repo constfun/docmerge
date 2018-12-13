@@ -91,6 +91,7 @@ module OpSetBackend = struct
   type op_val =
     | BoolValue of bool
     | StrValue of string
+    | NumberValue of float
   [@@deriving sexp_of]
 
   type value = Value of op_val | Link of {obj: value} [@@deriving sexp_of]
@@ -242,7 +243,7 @@ module OpSetBackend = struct
 
   let get_op_value_as_string_exn = function
     | StrValue s -> s
-    | BoolValue _ -> raise (Invalid_argument "op.value")
+    | BoolValue _ | NumberValue _ -> raise (Invalid_argument "op.value")
 
   (* Returns true if all changes that causally precede the given change *)
   (* have already been applied in `opSet`. *)

@@ -30,6 +30,7 @@ module OpSetBackend : sig
   type op_val =
     | BoolValue of bool
     | StrValue of string
+    | NumberValue of float
 
   type value = Value of op_val | Link of {obj: value}
 

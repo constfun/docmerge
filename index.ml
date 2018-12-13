@@ -61,6 +61,28 @@ let action_from_str : Js.js_string Js.t -> OpSetBackend.action =
   else if String.equal s "ins" then OpSetBackend.Ins
   else raise Not_supported
 
+let op_val_to_js_value = function
+  | OpSetBackend.BoolValue b -> Js.Unsafe.inject (Js.bool b)
+  | OpSetBackend.StrValue s -> Js.Unsafe.inject (Js.string s)
+  | OpSetBackend.NumberValue n -> Js.Unsafe.inject (Js.number_of_float n)
+
+let rec value_to_js_value (value : OpSetBackend.value) =
+  match value with
+  | Value s -> op_val_to_js_value s
+  | Link l ->
+      Js.Unsafe.inject
+        (object%js
+           val obj = value_to_js_value l.obj
+        end)
+
+let rec js_value_to_op_val js_value =
+  let typ = Js.to_string (Js.typeof js_value) in
+  match typ with
+  | "string" -> OpSetBackend.StrValue (Js.to_string (Js.Unsafe.coerce js_value))
+  | "boolean" -> OpSetBackend.BoolValue (Js.to_bool (Js.Unsafe.coerce js_value))
+  | "number" -> OpSetBackend.NumberValue (Js.float_of_number (Js.Unsafe.coerce js_value))
+  | _ -> raise Not_supported
+
 let to_op_list arr =
   array_to_list arr
   |> CCList.map (fun js_op ->
@@ -69,7 +91,7 @@ let to_op_list arr =
            ; elem=
                Js.Optdef.(
                  to_option (map js_op##.elem (int_of_float $ Js.to_float)))
-           ; value= Js.Optdef.(to_option (map js_op##.value Js.to_string))
+           ; value= Js.Optdef.(to_option (map js_op##.value js_value_to_op_val))
            ; obj= Js.to_string js_op##.obj }
            : OpSetBackend.change_op ) )
 
@@ -91,10 +113,10 @@ let obj_set_opt conv name value obj_kv =
   | Some v -> CCArray.append obj_kv [|(name, Js.Unsafe.inject (conv v))|]
   | None -> CCArray.append obj_kv [|(name, Js.Unsafe.inject Js.null)|]
 
-let rec value_to_js_value = function
-  | OpSetBackend.Value s -> Js.Unsafe.inject (Js.string s)
-  | OpSetBackend.Link l ->
-      Js.Unsafe.inject (Js.Unsafe.obj [|("obj", value_to_js_value l.obj)|])
+(* let rec value_to_js_value = function *)
+(*   | OpSetBackend.Value s -> Js.Unsafe.inject (Js.string s) *)
+(*   | OpSetBackend.Link l -> *)
+(*       Js.Unsafe.inject (Js.Unsafe.obj [|("obj", value_to_js_value l.obj)|]) *)
 
 let edit_action_to_js_edit_action v =
   Js.string
@@ -121,22 +143,13 @@ let path_to_js_path v =
 
 let actor_to_js_actor actor = Js.Unsafe.inject (Js.string actor)
 
-let rec value_to_js_value (value : OpSetBackend.value) =
-  match value with
-  | Value s -> Js.Unsafe.inject (Js.string s)
-  | Link l ->
-      Js.Unsafe.inject
-        (object%js
-           val obj = value_to_js_value l.obj
-        end)
-
 let conflicts_to_js_conflicts (v : OpSetBackend.conflict list) =
   list_to_js_array
     (CCList.map
        (fun (confl : OpSetBackend.conflict) ->
          CCArray.empty
          |> obj_set actor_to_js_actor "actor" confl.actor
-         |> obj_set_optdef Js.string "value" confl.value
+         |> obj_set_optdef op_val_to_js_value "value" confl.value
          |> Js.Unsafe.obj )
        v)
 
