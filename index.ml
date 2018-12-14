@@ -210,7 +210,13 @@ module MaterializationContext = struct
 
   type mat_obj = { obj_id : string }
 
-  type diff
+  type diff_type = Map | List | Text
+  type diff_action = Create
+  type diff = {
+    obj : string;
+    type_: diff_type;
+    action: diff_action
+  }
   type child
   type t = {
     diffs: diff list StrMap.t;
@@ -221,10 +227,17 @@ module MaterializationContext = struct
   let create () = { diffs=StrMap.empty; children=StrMap.empty}
 
   let instantiate_map t op_set obj_id =
-    t
+    let diffs = StrMap.find  obj_id t.diffs in
+    let diffs =
+      if not (CCString.equal obj_id OpSetBackend.root_id) then
+        CCList.append diffs [{obj=obj_id; type_=Map; action=Create}]
+      else diffs
+    in
+    (*TODO*)
 
   let instantiate_list t op_set obj_id typ =
     t
+    (*TODO*)
 
   let instantiate_object t op_set obj_id =
     match StrMap.find_opt obj_id t.diffs with
@@ -251,6 +264,7 @@ end
 
 let get_patch t =
   ()
+  (*TODO*)
 
 
 let _ =
