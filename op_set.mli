@@ -121,4 +121,6 @@ module OpSetBackend : sig
   val can_undo : t -> bool
 
   val can_redo : t -> bool
+
+  val get_obj_action : t -> obj_id -> action
 end

@@ -91,7 +91,7 @@ describe('Backend', () => {
       })
     })
 
-    it('should create lists', () => {
+    xit('should create lists', () => {
       const birds = uuid(), actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'makeList', obj: birds},
@@ -153,7 +153,7 @@ describe('Backend', () => {
   })
 
   describe('getPatch()', () => {
-    xit('should include the most recent value for a key', () => {
+    it('should include the most recent value for a key', () => {
       const actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}

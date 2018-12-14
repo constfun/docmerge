@@ -1,8 +1,9 @@
 open Op_set
+open Datastructures
 
 let ( $ ) f g x = f (g x)
 
-type exn += Not_supported
+type exn += Not_supported | Unknown_object_type
 
 let freeze (o : 'a) : 'a =
   Js.Unsafe.fun_call (Js.Unsafe.js_expr "Object.freeze") [|Js.Unsafe.inject o|]
@@ -203,16 +204,59 @@ let apply t changes undoable =
 
 let apply_changes t changes = apply t changes false
 
-(* Printexc.record_backtrace true; *)
-(* try apply t changes false *)
-(* with Failure s -> *)
-(*   Printexc.print_backtrace stdout; *)
-(*   (1* print_endline ("EXCEPTION " ^ Js.string_of_error e); *1) *)
-(*   raise (Failure "fucked") *)
+
+module MaterializationContext = struct
+  module StrMap = CCMapMake (CCString)
+
+  type mat_obj = { obj_id : string }
+
+  type diff
+  type child
+  type t = {
+    diffs: diff list StrMap.t;
+    children : child list StrMap.t
+  }
+
+
+  let create () = { diffs=StrMap.empty; children=StrMap.empty}
+
+  let instantiate_map t op_set obj_id =
+    t
+
+  let instantiate_list t op_set obj_id typ =
+    t
+
+  let instantiate_object t op_set obj_id =
+    match StrMap.find_opt obj_id t.diffs with
+    | Some _ -> (t, {obj_id})
+    | None ->
+        let is_root = String.equal obj_id OpSetBackend.root_id in
+        let obj_typ = OpSetBackend.get_obj_action op_set obj_id in
+        let t = {
+          diffs=(StrMap.add obj_id [] t.diffs);
+          children=(StrMap.add obj_id [] t.children)
+        } in
+        let t = match obj_typ with
+        | OpSetBackend.MakeMap when is_root == true ->
+            instantiate_map t op_set obj_id
+        | OpSetBackend.MakeList ->
+            instantiate_list t op_set obj_id "list"
+        | OpSetBackend.MakeText ->
+            instantiate_list t op_set obj_id "text"
+        | _ -> raise Unknown_object_type
+        in
+        (t, {obj_id})
+end
+
+
+let get_patch t =
+  ()
+
 
 let _ =
   Js.export "init" init ;
-  Js.export "applyChanges" apply_changes
+  Js.export "applyChanges" apply_changes;
+  Js.export "getPatch" get_patch
 
 (* Js.export "getMissingChanges" OpSetBackend.get_missing_changes ; *)
 (* Js.export "getChangesForActor" OpSetBackend.get_changes_for_actor ; *)

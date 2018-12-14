@@ -1,4 +1,5 @@
 open Sexplib.Conv
+open Datastructures
 
 (* TODO: Can we cross-compile this file and use it instead of the op_set.js file in automerge to run tests? *)
 (* TODO: How does automerge persist data? *)
@@ -16,53 +17,6 @@ type exn +=
 
 let log msg conv sexp =
   Format.printf "DEBUG: %s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp)
-
-module type OrderedType = sig
-  type t
-
-  val compare : t -> t -> int
-
-  val sexp_of_t : t -> Sexplib.Sexp.t
-end
-
-module CCString = struct
-  include CCString
-
-  let sexp_of_t t = Sexplib.Sexp.Atom t
-end
-
-module CCInt = struct
-  include CCInt
-
-  let sexp_of_t t = Sexplib.Sexp.Atom (string_of_int t)
-end
-
-module CCMapMake (Key : OrderedType) = struct
-  include CCMap.Make (Key)
-
-  let sexp_of_t (sexp_of_value : 'a -> Sexplib.Sexp.t) (t : 'a t) =
-    let open Sexplib.Sexp in
-    List
-      (fold
-         (fun key value atm_lis ->
-           List [Key.sexp_of_t key; sexp_of_value value] :: atm_lis )
-         t [])
-end
-
-module CCSetMake (Key : OrderedType) = struct
-  include CCSet.Make (Key)
-
-  let sexp_of_t (t : t) =
-    let open Sexplib.Sexp in
-    List (fold (fun value atm_lis -> Key.sexp_of_t value :: atm_lis) t [])
-end
-
-module CCFQueueWithSexp = struct
-  include CCFQueue
-
-  let sexp_of_t (sexp_of_value : 'a -> Sexplib.Sexp.t) (t : 'a t) =
-    Sexplib.Sexp.List (CCList.map sexp_of_value (CCFQueue.to_list t))
-end
 
 module ActorMap = CCMapMake (CCString)
 module SeqMap = CCMapMake (CCInt)
@@ -241,6 +195,9 @@ module OpSetBackend = struct
   let get_op_value_as_string_exn = function
     | StrValue s -> s
     | BoolValue _ | NumberValue _ -> raise (Invalid_argument "op.value")
+
+  let get_obj_action t obj_id =
+    (get_obj_aux_exn t obj_id)._init.action
 
   (* Returns true if all changes that causally precede the given change *)
   (* have already been applied in `opSet`. *)
