@@ -233,7 +233,10 @@ module MaterializationContext = struct
         CCList.append diffs [{obj=obj_id; type_=Map; action=Create}]
       else diffs
     in
-    (*TODO*)
+    let (t, conflicts) = OpSetBackend.get_object_conflicts (module MaterializationContext) op_set t obj_id  in
+    ()
+
+  type context = {instantiate_object: t -> obj_id -> value}
 
   let instantiate_list t op_set obj_id typ =
     t
