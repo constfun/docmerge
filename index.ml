@@ -3,7 +3,7 @@ open Datastructures
 
 let ( $ ) f g x = f (g x)
 
-type exn += Not_supported | Unknown_object_type
+type exn += Not_supported
 
 let freeze (o : 'a) : 'a =
   Js.Unsafe.fun_call (Js.Unsafe.js_expr "Object.freeze") [|Js.Unsafe.inject o|]
@@ -204,75 +204,15 @@ let apply t changes undoable =
 
 let apply_changes t changes = apply t changes false
 
-
-module MaterializationContext = struct
-  module StrMap = CCMapMake (CCString)
-
-  type mat_obj = { obj_id : string }
-
-  type diff_type = Map | List | Text
-  type diff_action = Create
-  type diff = {
-    obj : string;
-    type_: diff_type;
-    action: diff_action
-  }
-  type child
-  type t = {
-    diffs: diff list StrMap.t;
-    children : child list StrMap.t
-  }
-
-
-  let create () = { diffs=StrMap.empty; children=StrMap.empty}
-
-  let instantiate_map t op_set obj_id =
-    let diffs = StrMap.find  obj_id t.diffs in
-    let diffs =
-      if not (CCString.equal obj_id OpSetBackend.root_id) then
-        CCList.append diffs [{obj=obj_id; type_=Map; action=Create}]
-      else diffs
-    in
-    let (t, conflicts) = OpSetBackend.get_object_conflicts (module MaterializationContext) op_set t obj_id  in
-    ()
-
-  type context = {instantiate_object: t -> obj_id -> value}
-
-  let instantiate_list t op_set obj_id typ =
-    t
-    (*TODO*)
-
-  let instantiate_object t op_set obj_id =
-    match StrMap.find_opt obj_id t.diffs with
-    | Some _ -> (t, {obj_id})
-    | None ->
-        let is_root = String.equal obj_id OpSetBackend.root_id in
-        let obj_typ = OpSetBackend.get_obj_action op_set obj_id in
-        let t = {
-          diffs=(StrMap.add obj_id [] t.diffs);
-          children=(StrMap.add obj_id [] t.children)
-        } in
-        let t = match obj_typ with
-        | OpSetBackend.MakeMap when is_root == true ->
-            instantiate_map t op_set obj_id
-        | OpSetBackend.MakeList ->
-            instantiate_list t op_set obj_id "list"
-        | OpSetBackend.MakeText ->
-            instantiate_list t op_set obj_id "text"
-        | _ -> raise Unknown_object_type
-        in
-        (t, {obj_id})
-end
-
-
 let get_patch t =
   ()
-  (*TODO*)
 
+
+(*TODO*)
 
 let _ =
   Js.export "init" init ;
-  Js.export "applyChanges" apply_changes;
+  Js.export "applyChanges" apply_changes ;
   Js.export "getPatch" get_patch
 
 (* Js.export "getMissingChanges" OpSetBackend.get_missing_changes ; *)

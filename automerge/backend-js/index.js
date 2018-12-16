@@ -195,6 +195,7 @@ function getPatch(state) {
   let context = new MaterializationContext(opSet)
   context.instantiateObject(opSet, OpSet.ROOT_ID)
   context.makePatch(OpSet.ROOT_ID, diffs)
+  // let diffs = OpSet.makePatch(state.get('opSet'), OpSet.ROOT_ID)
   return makePatch(state, diffs)
 }
 

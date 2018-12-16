@@ -70,21 +70,6 @@ module OpSetBackend : sig
     ; conflicts: conflict list option
     ; path: [`IntPath of int | `StrPath of key] list option }
 
-  type context = {instantiate_object: t -> obj_id -> value}
-
-  type iterator_mode = Keys | Values | Entries | Elems | Conflicts
-
-  type iterator_val =
-    | KeyValue of int
-    | ValueValue of value option
-    | EntryValue of int * value option
-    | ElemValue of int * string
-    | ConflictValue of op OpMap.t
-
-  type iterator_res = {done_: bool; value: iterator_val option}
-
-  type iterator = {next: unit -> iterator_res option}
-
   val init : unit -> t
 
   val add_change : t -> change -> bool -> t * edit list
@@ -95,20 +80,9 @@ module OpSetBackend : sig
 
   val get_missing_deps : t -> seq ActorMap.t
 
-  val get_object_fields : t -> obj_id -> KeySet.t option
-
-  val get_object_field : t -> obj_id -> key -> context -> value option
-
-  val get_object_conflicts :
-    t -> obj_id -> context -> (actor * value option) OpMap.t KeyMap.t option
-
   val get_field_ops : t -> obj_id -> key -> op list
 
-  val list_elem_by_index : t -> obj_id -> int -> context -> value option
-
   val list_length : t -> obj_id -> int option
-
-  val list_iterator : t -> obj_id -> iterator_mode -> context -> iterator
 
   val root_id : string
 
@@ -121,6 +95,4 @@ module OpSetBackend : sig
   val can_undo : t -> bool
 
   val can_redo : t -> bool
-
-  val get_obj_action : t -> obj_id -> action
 end
