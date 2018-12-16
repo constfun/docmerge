@@ -765,30 +765,49 @@ module OpSetBackend = struct
 
   module type Map = sig
     type t
-    type key
 
-    val pp : 'a CCFormat.printer -> 'a ObjectIdMap.t CCFormat.printer
+    val pp : ('a, t) app -> 'a CCFormat.printer
+  end
+
+  module type Printer = sig
+    type t
+
+    val printer : ('a, t) app -> 'a CCFormat.printer
   end
 
   (* let show (type a) (type b) (module M : Map with type t = a and type key = b) kpp vpp m = M.pp kpp vpp m *)
 
-  module Obj = Newtype1 (ObjectIdMap)
+  module M = Newtype1 (struct type 'a t = 'a end)
+  module P = Newtype1 (struct type 'a t = 'a CCFormat.printer end)
 
-  module ObjMap : Map with type t = Obj.t = struct
-    type t = Obj.t
-    type key = string
+  module MapPrinter : Printer with type t = P.t = struct
+    type t = P.t
 
-    let pp vpp =
-      ObjectIdMap.pp CCFormat.string vpp
+    let printer p =
+      P.prj p
+    (* let pp (module M : CCMap.S with type 'a  vpp = *)
+    (*   ObjectIdMap.pp CCFormat.string vpp *)
 
     (* let pp (vpp : 'a CCFormat.printer) (t : ('a, t) app) = *)
     (*   let t' = Obj.prj t in *)
     (*   ObjectIdMap.pp CCFormat.string vpp *)
   end
 
+  module MapMap : Map with type t = M.t = struct
+    type t = M.t
 
-  let show (type a) (module M : Map with type t = a) vpp m : unit =
-    CCFormat.printf "map = @[<hov>%a@]@]@." (M.pp vpp) m
+    let pp p =
+      M.prj p
+    (* let pp (module M : CCMap.S with type 'a  vpp = *)
+    (*   ObjectIdMap.pp CCFormat.string vpp *)
+
+    (* let pp (vpp : 'a CCFormat.printer) (t : ('a, t) app) = *)
+    (*   let t' = Obj.prj t in *)
+    (*   ObjectIdMap.pp CCFormat.string vpp *)
+  end
+
+  let show_map (type a) (type b) (module M : Map with type t = a) (module P : Printer with type t = b) kpp vpp m =
+    CCFormat.printf "map = @[<hov>%a@]@]@." (M.pp kpp vpp) m
 
   let pp_obj_show fmt (obj : obj) =
     let _, obj_aux = obj in
@@ -798,9 +817,9 @@ module OpSetBackend = struct
   let pp_int_show fmt (i : int) =
     CCFormat.pp_print_string fmt (string_of_int i)
 
-  let tt (a : obj ObjectIdMap.t) = show (module ObjMap) pp_obj_show a
+  let tt (a : obj ObjectIdMap.t) = show_map (module ObjMap) pp_obj_show a
 
-  let tt2 (a : int ObjectIdMap.t) = show (module ObjMap) pp_int_show a
+  let tt2 (a : int ObjectIdMap.t) = show_map (module ObjMap) pp_int_show a
 
 
 
