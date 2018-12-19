@@ -99,7 +99,13 @@ module OpSetBackend : sig
     ; link: bool
     ; conflicts: conflict list option }
 
-  type patch = {can_undo: bool; diffs: diff list}
+  type patch = {
+    can_undo: bool;
+    can_redo: bool;
+    clock: seq ActorMap.t ;
+    deps: seq ActorMap.t;
+    diffs: diff list;
+               }
 
   val get_patch : t -> patch
 

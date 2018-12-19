@@ -1110,7 +1110,14 @@ module OpSetBackend = struct
       | [] -> (diffs, children, None)
       | hd :: _ -> get_op_value t hd (diffs, children)
 
-  type patch = {can_undo: bool; diffs: diff list} [@@deriving sexp_of]
+  type patch = {
+    can_undo: bool;
+    can_redo: bool;
+    clock: seq ActorMap.t;
+
+    deps: seq ActorMap.t;
+    diffs: diff list;
+  } [@@deriving sexp_of]
 
   let rec make_patch t (obj_id : string) patch_diffs (diffs, children) =
     let patch_diffs =
@@ -1127,7 +1134,13 @@ module OpSetBackend = struct
       instantiate_object t root_id (DiffMap.empty, ChildMap.empty)
     in
     let patch_diffs = make_patch t root_id [] (diffs, children) in
-    {can_undo= t.undo_pos > 0; diffs= patch_diffs}
+    {
+      can_undo= t.undo_pos > 0;
+      can_redo= not (CCList.is_empty t.redo_stack);
+      clock= t.clock;
+      deps= t.deps;
+      diffs= patch_diffs;
+    }
 
   let list_length t obj_id =
     let open CCOpt.Infix in
@@ -1200,9 +1213,9 @@ module OpSetBackend = struct
   (*   (1* TODO: Symbol.iterator *1) *)
   (*   {next} *)
 
-  let get_clock {clock} = clock
+  let get_clock ({clock}:t) = clock
 
-  let get_deps {deps} = deps
+  let get_deps ({deps}:t) = deps
 
   let can_undo {undo_pos} = undo_pos > 0
 

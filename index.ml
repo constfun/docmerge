@@ -230,6 +230,9 @@ let get_patch t =
   let diffs = list_to_js_array (CCList.map diff_to_js_diff patch.diffs) in
   object%js
     val canUndo = Js.bool patch.can_undo
+    val canRedo = Js.bool patch.can_redo
+    val clock = js_obj_of_actor_map js_number_of_int patch.clock
+    val deps = js_obj_of_actor_map js_number_of_int patch.deps
     val diffs = diffs
   end
 
