@@ -26,7 +26,7 @@ module ObjectIdSet = CCSet.Make (CCString)
 module ElemIdMap = CCMapMake (CCString)
 module KeyMap = CCMapMake (CCString)
 module KeySet = CCSet.Make (CCString)
-module OpMap = CCMapMake (CCInt)
+module OpMap = CCMapMake (CCString)
 module DiffMap = CCMapMake (CCString)
 module ChildMap = CCMapMake (CCString)
 
@@ -146,6 +146,7 @@ module OpSetBackend = struct
   type edit_type = Map | Text | List
 
   type conflict = {actor: actor; value: op_val option; link: bool}
+  [@@deriving sexp_of]
 
   type edit =
     { _type: edit_type
@@ -174,12 +175,19 @@ module OpSetBackend = struct
 
   type diff_type = DiffMap | DiffList | DiffText [@@deriving sexp_of]
 
-  type diff_action = Create [@@deriving sexp_of]
+  type diff_action = DiffCreate | DiffSet [@@deriving sexp_of]
 
-  type diff = {obj: string; type_: diff_type; action: diff_action}
+  type diff =
+    { obj: string
+    ; type_: diff_type
+    ; action: diff_action
+    ; key: key option
+    ; value: op_val option
+    ; link: bool
+    ; conflicts: conflict list option }
   [@@deriving sexp_of]
 
-  type child = unit [@@deriving sexp_of]
+  type child = string [@@deriving sexp_of]
 
   type context = diff list DiffMap.t * child list ChildMap.t
   [@@deriving sexp_of]
@@ -907,6 +915,58 @@ module OpSetBackend = struct
   let is_field_present t obj_id key =
     valid_field_name key && not (CCList.is_empty (get_field_ops t obj_id key))
 
+  let unpack_value parent_id patch_diff children value =
+    match value with
+    | LinkValue l ->
+        let patch_diff =
+          {patch_diff with link= true; value= Some (StrValue l.obj_id)}
+        in
+        let children =
+          ChildMap.update parent_id
+            (function
+              | Some childs -> Some (CCList.append childs [l.obj_id])
+              | None -> raise (Invalid_argument "child id"))
+            children
+        in
+        (patch_diff, children)
+    | TypedValue v -> ({patch_diff with value= Some v}, children)
+
+  let unpack_conflict_value parent_id (conflict : conflict) children value =
+    match value with
+    | LinkValue l ->
+        let patch_diff =
+          {conflict with link= true; value= Some (StrValue l.obj_id)}
+        in
+        let children =
+          ChildMap.update parent_id
+            (function
+              | Some childs -> Some (CCList.append childs [l.obj_id])
+              | None -> raise (Invalid_argument "child id"))
+            children
+        in
+        (patch_diff, children)
+    | TypedValue v -> ({conflict with value= Some v}, children)
+
+  let unpack_conflicts_for_key key parent_id (patch_diff : diff) children
+      conflicts =
+    match conflicts with
+    | Some all_conf -> (
+      match KeyMap.get key all_conf with
+      | Some cs ->
+          let conflicts, children =
+            OpMap.fold
+              (fun actor value (conflicts, children) ->
+                let conflict = {actor; link= false; value= None} in
+                let conflict, children =
+                  unpack_conflict_value parent_id conflict children value
+                in
+                (CCList.append conflicts [conflict], children) )
+              cs ([], children)
+          in
+          ({patch_diff with conflicts= Some conflicts}, children)
+      | None -> (patch_diff, children) )
+    | None -> (patch_diff, children)
+
   let get_object_fields t obj_id =
     let open CCOpt.Infix in
     ObjectIdMap.get obj_id t.by_object
@@ -924,11 +984,13 @@ module OpSetBackend = struct
           (DiffMap.add obj_id [] diffs, ChildMap.add obj_id [] children)
         in
         let diffs, children =
-          match obj_typ with
-          | MakeMap when is_root == true -> instantiate_map t obj_id context
-          | MakeList -> instantiate_list t obj_id "list" context
-          | MakeText -> instantiate_list t obj_id "text" context
-          | _ -> raise Unknown_object_type
+          if is_root then instantiate_map t obj_id context
+          else
+            match obj_typ with
+            | MakeMap -> instantiate_map t obj_id context
+            | MakeList -> instantiate_list t obj_id "list" context
+            | MakeText -> instantiate_list t obj_id "text" context
+            | _ -> raise Unknown_object_type
         in
         (diffs, children, LinkValue {obj_id})
 
@@ -936,54 +998,136 @@ module OpSetBackend = struct
     (diffs, children)
 
   and instantiate_map t obj_id ((diffs, children) : context) =
-    (* let diffs = DiffMap.find obj_id diffs in *)
-    (* let diffs = *)
-    (*   if not (CCString.equal obj_id root_id) then *)
-    (*     CCList.append diffs [{obj= obj_id; type_= DiffMap; action= Create}] *)
-    (*   else diffs *)
-    (* in *)
-    (diffs, children)
+    let patch_diffs = DiffMap.find obj_id diffs in
+    let patch_diffs =
+      if not (CCString.equal obj_id root_id) then
+        CCList.append patch_diffs
+          [ { conflicts= None
+            ; value= None
+            ; link= false
+            ; obj= obj_id
+            ; type_= DiffMap
+            ; action= DiffCreate
+            ; key= None } ]
+      else patch_diffs
+    in
+    let diffs, children, conflicts =
+      get_object_conflicts t obj_id (diffs, children)
+    in
+    let diffs, children, patch_diffs =
+      match get_object_fields t obj_id with
+      | Some fields ->
+          KeySet.fold
+            (fun key (diffs, children, patch_diffs) ->
+              let patch_diff =
+                { conflicts= None
+                ; value= None
+                ; link= false
+                ; obj= obj_id
+                ; type_= DiffMap
+                ; action= DiffSet
+                ; key= Some key }
+              in
+              (* unpack value *)
+              let patch_diff, children =
+                match get_object_field t obj_id key (diffs, children) with
+                | _, children, Some mat_value ->
+                    let patch_diff, children =
+                      unpack_value obj_id patch_diff children mat_value
+                    in
+                    (patch_diff, children)
+                | _ -> raise (Invalid_argument "obj key")
+              in
+              let patch_diff, children =
+                unpack_conflicts_for_key key obj_id patch_diff children
+                  conflicts
+              in
+              (diffs, children, CCList.append patch_diffs [patch_diff]) )
+            fields
+            (diffs, children, patch_diffs)
+      | None -> (diffs, children, patch_diffs)
+    in
+    (DiffMap.add obj_id patch_diffs diffs, children)
 
-  and get_object_conflicts t obj_id =
+  and get_object_conflicts t obj_id (diffs, children) =
     let open CCOpt.Infix in
-    ObjectIdMap.get obj_id t.by_object
-    >|= fst
-    >|= KeyMap.filter (fun key field ->
-            valid_field_name key
-            && CCList.length (get_field_ops t obj_id key) > 1 )
-    >|= KeyMap.map (fun field ->
-            CCList.drop 1 field
-            |> CCList.foldi
-                 (fun op_map idx op -> OpMap.add idx op op_map)
-                 OpMap.empty
-            |> OpMap.map (fun (op : op) -> (op.actor, get_op_value t op)) )
+    let filtered =
+      ObjectIdMap.get obj_id t.by_object
+      >|= fst
+      >|= KeyMap.filter (fun key field ->
+              valid_field_name key
+              && CCList.length (get_field_ops t obj_id key) > 1 )
+    in
+    match filtered with
+    | Some fil ->
+        let diffs, children, conflicts =
+          KeyMap.fold
+            (fun key field (diffs, children, res) ->
+              let diffs, children, conflicts =
+                CCList.fold_left
+                  (fun (diffs, children, conflicts) (op : op) ->
+                    let diffs, children, (materialized : materialized option) =
+                      get_op_value t op (diffs, children)
+                    in
+                    let conflicts =
+                      match materialized with
+                      | Some mat -> OpMap.add op.actor mat conflicts
+                      | None -> conflicts
+                    in
+                    (diffs, children, conflicts) )
+                  (diffs, children, OpMap.empty)
+                  (CCList.drop 1 field)
+              in
+              (diffs, children, KeyMap.add key conflicts res) )
+            fil
+            (diffs, children, KeyMap.empty)
+        in
+        (diffs, children, Some conflicts)
+    | None -> (diffs, children, None)
 
   and get_op_value t (op : op) ((diffs, children) : context) =
-    CCOpt.flat_map
-      (fun value ->
-        match op.action with
-        | Set -> Some (diffs, children, TypedValue value)
-        | Link ->
-            Some
-              (instantiate_object t
-                 (get_op_value_as_string_exn value)
-                 (diffs, children))
-        | _ -> None )
-      op.value
+    let value =
+      CCOpt.flat_map
+        (fun value ->
+          match op.action with
+          | Set -> Some (diffs, children, TypedValue value)
+          | Link ->
+              Some
+                (instantiate_object t
+                   (get_op_value_as_string_exn value)
+                   (diffs, children))
+          | _ -> None )
+        op.value
+    in
+    match value with
+    | Some (diffs, children, value) -> (diffs, children, Some value)
+    | None -> (diffs, children, None)
 
-  (* let get_object_field t obj_id key = *)
-  (*   if not (valid_field_name key) then None *)
-  (*   else *)
-  (*     match get_field_ops t obj_id key with *)
-  (*     | [] -> None *)
-  (*     | hd :: _ -> get_op_value t hd *)
+  and get_object_field t obj_id key ((diffs, children) : context) =
+    if not (valid_field_name key) then (diffs, children, None)
+    else
+      match get_field_ops t obj_id key with
+      | [] -> (diffs, children, None)
+      | hd :: _ -> get_op_value t hd (diffs, children)
 
-  let make_patch t obj_id =
-    let _diffs, _children, _ =
+  type patch = {can_undo: bool; diffs: diff list} [@@deriving sexp_of]
+
+  let rec make_patch t (obj_id : string) patch_diffs (diffs, children) =
+    let patch_diffs =
+      CCList.fold_left
+        (fun patch_diffs child_id ->
+          make_patch t child_id patch_diffs (diffs, children) )
+        patch_diffs
+        (ChildMap.find obj_id children)
+    in
+    CCList.append patch_diffs (DiffMap.find obj_id diffs)
+
+  let get_patch t =
+    let diffs, children, _ =
       instantiate_object t root_id (DiffMap.empty, ChildMap.empty)
     in
-    let diffs = [] in
-    diffs
+    let patch_diffs = make_patch t root_id [] (diffs, children) in
+    {can_undo= t.undo_pos > 0; diffs= patch_diffs}
 
   let list_length t obj_id =
     let open CCOpt.Infix in

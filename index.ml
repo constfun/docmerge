@@ -205,8 +205,10 @@ let apply t changes undoable =
 let apply_changes t changes = apply t changes false
 
 let get_patch t =
-  ()
-
+  let patch = OpSetBackend.get_patch t.op_set in
+  object%js
+    val canUndo = Js.bool patch.can_undo
+  end
 
 (*TODO*)
 

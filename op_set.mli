@@ -86,6 +86,23 @@ module OpSetBackend : sig
 
   val root_id : string
 
+  type diff_type = DiffMap | DiffList | DiffText
+
+  type diff_action = DiffCreate | DiffSet
+
+  type diff =
+    { obj: string
+    ; type_: diff_type
+    ; action: diff_action
+    ; key: key option
+    ; value: op_val option
+    ; link: bool
+    ; conflicts: conflict list option }
+
+  type patch = {can_undo: bool; diffs: diff list}
+
+  val get_patch : t -> patch
+
   (* Auxulary funs required to not break encapsulation between index.js and op_set.js *)
 
   val get_clock : t -> seq ActorMap.t
