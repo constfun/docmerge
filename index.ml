@@ -204,10 +204,33 @@ let apply t changes undoable =
 
 let apply_changes t changes = apply t changes false
 
+
+let diff_to_js_diff (diff:OpSetBackend.diff) =
+  let action = Js.string (match diff.action with
+    | DiffSet -> "set"
+    | DiffCreate -> "create"
+    )
+  in
+  let type_ = Js.string (match diff.type_ with
+    | DiffMap -> "map"
+    | DiffText -> "text"
+    | DiffList -> "list"
+    )
+  in
+  object%js
+    val action = action
+    val key = (Js.Optdef.option (CCOpt.map Js.string diff.key))
+    val obj = Js.string diff.obj
+    val type_ = type_
+    val value = (Js.Optdef.option (CCOpt.map op_val_to_js_value diff.value))
+  end
+
 let get_patch t =
   let patch = OpSetBackend.get_patch t.op_set in
+  let diffs = list_to_js_array (CCList.map diff_to_js_diff patch.diffs) in
   object%js
     val canUndo = Js.bool patch.can_undo
+    val diffs = diffs
   end
 
 (*TODO*)
