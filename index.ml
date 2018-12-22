@@ -3,7 +3,7 @@ open Datastructures
 
 let ( $ ) f g x = f (g x)
 
-type exn += Not_supported
+type exn += Not_supported | Unknown_request_type
 
 let freeze (o : 'a) : 'a =
   Js.Unsafe.fun_call (Js.Unsafe.js_expr "Object.freeze") [|Js.Unsafe.inject o|]
@@ -51,7 +51,7 @@ let int_of_js_number n = int_of_float (Js.float_of_number n)
 
 let array_to_list arr = CCArray.to_list (Js.to_array arr)
 
-let action_from_str : Js.js_string Js.t -> OpSetBackend.action =
+let js_action_to_action : Js.js_string Js.t -> OpSetBackend.action =
  fun js_s ->
   let s = Js.to_string js_s in
   if String.equal s "set" then OpSetBackend.Set
@@ -61,6 +61,16 @@ let action_from_str : Js.js_string Js.t -> OpSetBackend.action =
   else if String.equal s "link" then OpSetBackend.Link
   else if String.equal s "ins" then OpSetBackend.Ins
   else raise Not_supported
+
+let action_to_js_action = OpSetBackend.(function
+  | MakeMap -> "makeMap"
+  | MakeText -> "makeText"
+  | MakeList -> "makeList"
+  | Link -> "link"
+  | Ins -> "ins"
+  | Del -> "del"
+  | Set -> "set"
+)
 
 let op_val_to_js_value = function
   | OpSetBackend.BoolValue b -> Js.Unsafe.inject (Js.bool b)
@@ -90,7 +100,7 @@ let rec js_value_to_op_val js_value =
 let to_op_list arr =
   array_to_list arr
   |> CCList.map (fun js_op ->
-         ( { action= action_from_str js_op##.action
+         ( { action= js_action_to_action js_op##.action
            ; key= Js.Optdef.(to_option (map js_op##.key Js.to_string))
            ; elem=
                Js.Optdef.(
@@ -180,23 +190,51 @@ let edit_to_js_edit (edit : OpSetBackend.edit) =
   |> obj_set_optdef Js.string "elemId" edit.elem_id__key
   |> Js.Unsafe.obj
 
+let change_op_to_js_change_op (op:OpSetBackend.change_op) =
+  CCArray.empty
+  |> obj_set "action" (action_to_js_action op.action)
+  |> obj_set_optdef Js.string "key" op.key
+  |> obj_set_optdef (Js.number_of_float $ float_of_int) "elem" op.elem
+  |> obj_set_optdef op_val_to_js_value "value" op.value
+  |> obj_set "obj" (Js.string op.obj)
+  |> Js.Unsafe.obj
+
+let js_change_to_change js_change =
+  ({ actor= Js.to_string js_change##.actor
+  ; seq= int_of_js_number js_change##.seq
+  ; deps= actor_map_of_js_obj js_change##.deps
+  ; ops= to_op_list js_change##.ops } : OpSetBackend.change)
+
+let change_to_js_change (change:OpSetBackend.change) =
+  CCArray.empty
+  |> obj_set ~conv:Js.string "actor" change.actor
+  |> obj_set ~conv:(Js.number_of_float $ float_of_int) "seq" change.seq
+  |> obj_set ~conv:(js_obj_of_actor_map js_number_of_int) "deps" change.deps
+  |> obj_set ~conv:(Js.array $ CCArray.of_list $ CCList.map change_op_to_js_change_op) "ops" change.ops
+  |> Js.Unsafe.obj
+
+
 let apply t changes undoable =
-  let changes = Js.to_array changes in
   let t, diffs =
-    CCArray.fold_left
-      (fun (t, diffs) js_change ->
-        let change : OpSetBackend.change =
-          { actor= Js.to_string js_change##.actor
-          ; seq= int_of_js_number js_change##.seq
-          ; deps= actor_map_of_js_obj js_change##.deps
-          ; ops= to_op_list js_change##.ops }
-        in
+    CCList.fold_left
+      (fun (t, diffs) change ->
         let op_set, new_diffs =
           OpSetBackend.add_change t.op_set change undoable
         in
         ({op_set}, CCList.concat [diffs; new_diffs]) )
       (t, []) changes
   in
+  (t, diffs)
+
+let apply_changes t changes =
+  apply t changes false
+
+let _apply_changes t js_changes =
+  let changes =
+    CCArray.to_list (Js.to_array js_changes)
+    |> CCList.map js_change_to_change
+  in
+  let t, diffs = apply_changes t changes in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
   let js_patch = make_patch t js_diffs in
   let ret = new%js Js.array_length 2 in
@@ -204,8 +242,21 @@ let apply t changes undoable =
   Js.array_set ret 1 (Js.Unsafe.inject js_patch) ;
   ret
 
-let apply_changes t changes = apply t changes false
-
+let apply_local_change t js_change =
+  let change = js_change_to_change js_change in
+  let request_type = Js.to_string js_change##.requestType in
+  let t, diffs =
+    if CCString.equal request_type "change" then apply t [change] true
+    else raise Unknown_request_type
+  in
+  let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
+  let js_patch = make_patch t js_diffs in
+  (Js.Unsafe.coerce js_patch)##.actor := js_change##.actor;
+  (Js.Unsafe.coerce js_patch)##.seq := js_change##.seq;
+  let ret = new%js Js.array_length 2 in
+  Js.array_set ret 0 (Js.Unsafe.inject t) ;
+  Js.array_set ret 1 (Js.Unsafe.inject js_patch) ;
+  ret
 
 let diff_to_js_diff (diff:OpSetBackend.diff) =
   let action = Js.string (match diff.action with
@@ -243,21 +294,27 @@ let get_patch t =
     val diffs = diffs
   end
 
-(*TODO*)
+let merge local remote =
+  let changes = OpSetBackend.get_missing_changes remote.op_set (OpSetBackend.get_clock local.op_set) in
+  let t, diffs = apply_changes local changes in
+  let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
+  let js_patch = make_patch t js_diffs in
+  let ret = new%js Js.array_length 2 in
+  Js.array_set ret 0 (Js.Unsafe.inject t) ;
+  Js.array_set ret 1 (Js.Unsafe.inject js_patch) ;
+  ret
+
+let get_changes_for_actor t js_actor_id =
+  OpSetBackend.get_changes_for_actor t.op_set (Js.to_string js_actor_id)
+  |> CCList.map change_to_js_change
+  |> CCArray.of_list
+  |> Js.array
 
 let _ =
   Js.export "init" init ;
-  Js.export "applyChanges" apply_changes ;
-  Js.export "getPatch" get_patch
+  Js.export "applyChanges" _apply_changes ;
+  Js.export "applyLocalChange" apply_local_change ;
+  Js.export "getPatch" get_patch;
+  Js.export "merge" merge;
+  Js.export "getChangesForActor" get_changes_for_actor
 
-(* Js.export "getMissingChanges" OpSetBackend.get_missing_changes ; *)
-(* Js.export "getChangesForActor" OpSetBackend.get_changes_for_actor ; *)
-(* Js.export "getMissingDeps" OpSetBackend.get_missing_deps ; *)
-(* Js.export "getObjectFields" OpSetBackend.get_object_fields ; *)
-(* Js.export "getObjectField" OpSetBackend.get_object_field ; *)
-(* Js.export "getObjectConflicts" OpSetBackend.get_object_conflicts ; *)
-(* Js.export "getFieldOps" OpSetBackend.get_field_ops ; *)
-(* Js.export "listElemByIndex" OpSetBackend.list_elem_by_index ; *)
-(* Js.export "listLength" OpSetBackend.list_length ; *)
-(* Js.export "listIterator" OpSetBackend.list_iterator ; *)
-(* Js.export "root_id" OpSetBackend.root_id *)
