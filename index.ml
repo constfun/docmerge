@@ -211,6 +211,7 @@ let diff_to_js_diff (diff:OpSetBackend.diff) =
   let action = Js.string (match diff.action with
     | DiffSet -> "set"
     | DiffCreate -> "create"
+    | DiffInsert -> "insert"
     )
   in
   let type_ = Js.string (match diff.type_ with
@@ -226,6 +227,8 @@ let diff_to_js_diff (diff:OpSetBackend.diff) =
   |> obj_set "type" type_
   |> obj_set_optdef Js.bool "link" diff.link
   |> obj_set_optdef op_val_to_js_value "value" diff.value
+  |> obj_set_optdef (Js.number_of_float $ float_of_int) "index" diff.index
+  |> obj_set_optdef Js.string "elemId" diff.elem_id
   |> obj_set_optdef conflicts_to_js_conflicts "conflicts" diff.conflicts
   |> Js.Unsafe.obj
 

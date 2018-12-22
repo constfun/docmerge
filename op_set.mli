@@ -88,7 +88,7 @@ module OpSetBackend : sig
 
   type diff_type = DiffMap | DiffList | DiffText
 
-  type diff_action = DiffCreate | DiffSet
+  type diff_action = DiffCreate | DiffSet | DiffInsert
 
   type diff =
     { obj: string
@@ -97,6 +97,8 @@ module OpSetBackend : sig
     ; key: key option
     ; value: op_val option
     ; link: bool option
+    ; index: int option
+    ; elem_id: string option
     ; conflicts: conflict list option }
 
   type patch = {
