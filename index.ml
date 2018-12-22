@@ -62,15 +62,16 @@ let js_action_to_action : Js.js_string Js.t -> OpSetBackend.action =
   else if String.equal s "ins" then OpSetBackend.Ins
   else raise Not_supported
 
-let action_to_js_action = OpSetBackend.(function
-  | MakeMap -> "makeMap"
-  | MakeText -> "makeText"
-  | MakeList -> "makeList"
-  | Link -> "link"
-  | Ins -> "ins"
-  | Del -> "del"
-  | Set -> "set"
-)
+let action_to_js_action =
+  OpSetBackend.(
+    function
+    | MakeMap -> "makeMap"
+    | MakeText -> "makeText"
+    | MakeList -> "makeList"
+    | Link -> "link"
+    | Ins -> "ins"
+    | Del -> "del"
+    | Set -> "set")
 
 let op_val_to_js_value = function
   | OpSetBackend.BoolValue b -> Js.Unsafe.inject (Js.bool b)
@@ -190,7 +191,7 @@ let edit_to_js_edit (edit : OpSetBackend.edit) =
   |> obj_set_optdef Js.string "elemId" edit.elem_id__key
   |> Js.Unsafe.obj
 
-let change_op_to_js_change_op (op:OpSetBackend.change_op) =
+let change_op_to_js_change_op (op : OpSetBackend.change_op) =
   CCArray.empty
   |> obj_set "action" (action_to_js_action op.action)
   |> obj_set_optdef Js.string "key" op.key
@@ -199,20 +200,21 @@ let change_op_to_js_change_op (op:OpSetBackend.change_op) =
   |> obj_set "obj" (Js.string op.obj)
   |> Js.Unsafe.obj
 
-let js_change_to_change js_change =
-  ({ actor= Js.to_string js_change##.actor
+let js_change_to_change js_change : OpSetBackend.change =
+  { actor= Js.to_string js_change##.actor
   ; seq= int_of_js_number js_change##.seq
   ; deps= actor_map_of_js_obj js_change##.deps
-  ; ops= to_op_list js_change##.ops } : OpSetBackend.change)
+  ; ops= to_op_list js_change##.ops }
 
-let change_to_js_change (change:OpSetBackend.change) =
+let change_to_js_change (change : OpSetBackend.change) =
   CCArray.empty
   |> obj_set ~conv:Js.string "actor" change.actor
   |> obj_set ~conv:(Js.number_of_float $ float_of_int) "seq" change.seq
   |> obj_set ~conv:(js_obj_of_actor_map js_number_of_int) "deps" change.deps
-  |> obj_set ~conv:(Js.array $ CCArray.of_list $ CCList.map change_op_to_js_change_op) "ops" change.ops
+  |> obj_set
+       ~conv:(Js.array $ CCArray.of_list $ CCList.map change_op_to_js_change_op)
+       "ops" change.ops
   |> Js.Unsafe.obj
-
 
 let apply t changes undoable =
   let t, diffs =
@@ -226,13 +228,11 @@ let apply t changes undoable =
   in
   (t, diffs)
 
-let apply_changes t changes =
-  apply t changes false
+let apply_changes t changes = apply t changes false
 
 let _apply_changes t js_changes =
   let changes =
-    CCArray.to_list (Js.to_array js_changes)
-    |> CCList.map js_change_to_change
+    CCArray.to_list (Js.to_array js_changes) |> CCList.map js_change_to_change
   in
   let t, diffs = apply_changes t changes in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
@@ -251,28 +251,29 @@ let apply_local_change t js_change =
   in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
   let js_patch = make_patch t js_diffs in
-  (Js.Unsafe.coerce js_patch)##.actor := js_change##.actor;
-  (Js.Unsafe.coerce js_patch)##.seq := js_change##.seq;
+  (Js.Unsafe.coerce js_patch)##.actor := js_change##.actor ;
+  (Js.Unsafe.coerce js_patch)##.seq := js_change##.seq ;
   let ret = new%js Js.array_length 2 in
   Js.array_set ret 0 (Js.Unsafe.inject t) ;
   Js.array_set ret 1 (Js.Unsafe.inject js_patch) ;
   ret
 
-let diff_to_js_diff (diff:OpSetBackend.diff) =
-  let action = Js.string (match diff.action with
-    | DiffSet -> "set"
-    | DiffCreate -> "create"
-    | DiffInsert -> "insert"
-    )
+let diff_to_js_diff (diff : OpSetBackend.diff) =
+  let action =
+    Js.string
+      ( match diff.action with
+      | DiffSet -> "set"
+      | DiffCreate -> "create"
+      | DiffInsert -> "insert" )
   in
-  let type_ = Js.string (match diff.type_ with
-    | DiffMap -> "map"
-    | DiffText -> "text"
-    | DiffList -> "list"
-    )
+  let type_ =
+    Js.string
+      ( match diff.type_ with
+      | DiffMap -> "map"
+      | DiffText -> "text"
+      | DiffList -> "list" )
   in
-  CCArray.empty
-  |> obj_set "action" action
+  CCArray.empty |> obj_set "action" action
   |> obj_set_optdef Js.string "key" diff.key
   |> obj_set ~conv:Js.string "obj" diff.obj
   |> obj_set "type" type_
@@ -288,14 +289,21 @@ let get_patch t =
   let diffs = list_to_js_array (CCList.map diff_to_js_diff patch.diffs) in
   object%js
     val canUndo = Js.bool patch.can_undo
+
     val canRedo = Js.bool patch.can_redo
+
     val clock = js_obj_of_actor_map js_number_of_int patch.clock
+
     val deps = js_obj_of_actor_map js_number_of_int patch.deps
+
     val diffs = diffs
   end
 
 let merge local remote =
-  let changes = OpSetBackend.get_missing_changes remote.op_set (OpSetBackend.get_clock local.op_set) in
+  let changes =
+    OpSetBackend.get_missing_changes remote.op_set
+      (OpSetBackend.get_clock local.op_set)
+  in
   let t, diffs = apply_changes local changes in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
   let js_patch = make_patch t js_diffs in
@@ -307,14 +315,12 @@ let merge local remote =
 let get_changes_for_actor t js_actor_id =
   OpSetBackend.get_changes_for_actor t.op_set (Js.to_string js_actor_id)
   |> CCList.map change_to_js_change
-  |> CCArray.of_list
-  |> Js.array
+  |> CCArray.of_list |> Js.array
 
 let _ =
   Js.export "init" init ;
   Js.export "applyChanges" _apply_changes ;
   Js.export "applyLocalChange" apply_local_change ;
-  Js.export "getPatch" get_patch;
-  Js.export "merge" merge;
+  Js.export "getPatch" get_patch ;
+  Js.export "merge" merge ;
   Js.export "getChangesForActor" get_changes_for_actor
-

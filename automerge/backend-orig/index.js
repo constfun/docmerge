@@ -71,7 +71,6 @@ class MaterializationContext {
     let values    = OpSet.listIterator(opSet, objectId, 'values',    this)
 
     for (let [index, elemId] of OpSet.listIterator(opSet, objectId, 'elems', this)) {
-      console.log('ITER', index, elemId)
       let diff = {obj: objectId, type, action: 'insert', index, elemId}
       this.unpackValue(objectId, diff, values.next().value)
       this.unpackConflicts(objectId, diff, conflicts.next().value)
@@ -110,7 +109,6 @@ class MaterializationContext {
    * whose root is the object with ID `objectId`.
    */
   makePatch(objectId, diffs) {
-    // console.log('DIFFS', objectId, diffs)
     for (let childId of this.children[objectId]) {
       this.makePatch(childId, diffs)
     }
@@ -196,9 +194,7 @@ function getPatch(state) {
   let diffs = [], opSet = state.get('opSet')
   let context = new MaterializationContext(opSet)
   context.instantiateObject(opSet, OpSet.ROOT_ID)
-  console.log('GET_PATCH', context.diffs)
   context.makePatch(OpSet.ROOT_ID, diffs)
-  // let diffs = OpSet.makePatch(state.get('opSet'), OpSet.ROOT_ID)
   return makePatch(state, diffs)
 }
 

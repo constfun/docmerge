@@ -1,3 +1,4 @@
 _build
 .merlin
 automerge/backend.js
+.DS_Store

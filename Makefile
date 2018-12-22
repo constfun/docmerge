@@ -8,10 +8,10 @@ build-native:
 	dune build @all
 
 test: automerge/node_modules build
-	./automerge/node_modules/mocha/bin/mocha ./automerge/test/backend_test.js
+	time ./automerge/node_modules/mocha/bin/mocha ./automerge/test/backend_test.js
 
 test-js: automerge/node_modules
-	./automerge/node_modules/mocha/bin/mocha ./automerge/test/backend_test_js.js
+	time ./automerge/node_modules/mocha/bin/mocha ./automerge/test/backend_test_orig.js
 
 automerge/node_modules:
 	cd automerge && yarn install && cd -

@@ -49,7 +49,7 @@ module OpSetBackend = struct
   [@@deriving sexp_of]
 
   type materialized = TypedValue of op_val | LinkValue of {obj_id: string}
-    [@@deriving sexp_of]
+  [@@deriving sexp_of]
 
   type value = Value of op_val | Link of {obj: value} [@@deriving sexp_of]
 
@@ -99,8 +99,7 @@ module OpSetBackend = struct
     ; value: op_val option }
   [@@deriving sexp_of]
 
-  type lamport_op = {actor: actor; elem: int}
-  [@@deriving sexp_of]
+  type lamport_op = {actor: actor; elem: int} [@@deriving sexp_of]
 
   let lamport_compare op1 op2 =
     if op1.elem < op2.elem then -1
@@ -186,7 +185,7 @@ module OpSetBackend = struct
     ; key: key option
     ; value: op_val option
     ; link: bool option
-    ; index : int option
+    ; index: int option
     ; elem_id: string option
     ; conflicts: conflict list option }
   [@@deriving sexp_of]
@@ -378,7 +377,9 @@ module OpSetBackend = struct
         CCList.fold_left
           (fun conflicts (op : op) ->
             let link = match op.action with Link -> true | _ -> false in
-            let conf : conflict = {actor= op.actor; value= op.value; link =Some link} in
+            let conf : conflict =
+              {actor= op.actor; value= op.value; link= Some link}
+            in
             CCOpt.map (fun cs -> cs @ [conf]) conflicts )
           (Some []) ops_rest
     | [] -> None
@@ -816,11 +817,10 @@ module OpSetBackend = struct
     let t, diffs, queue =
       CCFQueue.fold
         (fun (t, diffs, queue) change ->
-          if causaly_ready t change then (
+          if causaly_ready t change then
             let t, diff = apply_change t change in
-            (t, CCList.concat [diffs; diff], queue) )
-          else (
-            (t, diffs, CCFQueue.snoc t.queue change) ) )
+            (t, CCList.concat [diffs; diff], queue)
+          else (t, diffs, CCFQueue.snoc t.queue change) )
         (t, diffs, CCFQueueWithSexp.empty)
         t.queue
     in
@@ -943,8 +943,7 @@ module OpSetBackend = struct
         (patch_diff, children)
     | TypedValue v -> ({conflict with value= Some v}, children)
 
-  let unpack_conflicts parent_id (patch_diff : diff) children
-      conflicts =
+  let unpack_conflicts parent_id (patch_diff : diff) children conflicts =
     let conflicts, children =
       OpMap.fold
         (fun actor value (conflicts, children) ->
@@ -965,7 +964,7 @@ module OpSetBackend = struct
     >|= KeySet.of_list
 
   type iterator_mode = Keys | Values | Entries | Elems | Conflicts
-    [@@deriving sexp_of]
+  [@@deriving sexp_of]
 
   type iterator_val =
     | KeyValue of int
@@ -973,11 +972,16 @@ module OpSetBackend = struct
     | EntryValue of int * materialized option
     | ElemValue of int * string
     | ConflictValue of materialized OpMap.t
-    [@@deriving sexp_of]
+  [@@deriving sexp_of]
 
-  type iterator_res = {done_: bool; value: iterator_val option} [@@deriving sexp_of]
+  type iterator_res = {done_: bool; value: iterator_val option}
+  [@@deriving sexp_of]
 
-  type iterator = {next: context -> diff list DiffMap.t * child list ChildMap.t * iterator_res option} [@@deriving sexp_of]
+  type iterator =
+    { next:
+           context
+        -> diff list DiffMap.t * child list ChildMap.t * iterator_res option }
+  [@@deriving sexp_of]
 
   let rec instantiate_object t obj_id (diffs, children) =
     match DiffMap.find_opt obj_id diffs with
@@ -1001,17 +1005,17 @@ module OpSetBackend = struct
 
   and instantiate_list t obj_id typ ((diffs, children) : context) =
     let patch_diffs = DiffMap.find obj_id diffs in
-    let patch_diffs = CCList.append patch_diffs
-          [ { conflicts= None
-            ; value= None
-            ; link= None
-            ; obj= obj_id
-            ; type_= typ
-            ; action= DiffCreate
-            ; key= None
-            ; elem_id= None
-            ; index = None
-        } ]
+    let patch_diffs =
+      CCList.append patch_diffs
+        [ { conflicts= None
+          ; value= None
+          ; link= None
+          ; obj= obj_id
+          ; type_= typ
+          ; action= DiffCreate
+          ; key= None
+          ; elem_id= None
+          ; index= None } ]
     in
     let conflicts = list_iterator t obj_id Conflicts (diffs, children) in
     let values = list_iterator t obj_id Values (diffs, children) in
@@ -1019,44 +1023,46 @@ module OpSetBackend = struct
     let rec _loop patch_diffs (diffs, children) =
       let diffs, children, el = elems.next (diffs, children) in
       match el with
-      | Some {done_=false; value= Some (ElemValue (index, elem_id))} ->
-        let patch_diff = {
-          obj= obj_id;
-          type_= typ;
-          action= DiffInsert;
-          key= None;
-          value = None;
-          link= None;
-          conflicts= None;
-          index=Some index;
-          elem_id=Some elem_id;
-        } in
-        (* unpack value *)
-        let diffs, children, next_value = values.next (diffs, children) in
-        let children, patch_diff = match next_value with
-        | Some {done_=false; value=Some (ValueValue (Some mat_value))} ->
-            let patch_diff, children =
-              unpack_value obj_id patch_diff children mat_value
-            in
-            (children, patch_diff)
-        | Some {done_=true;_} -> (children, patch_diff)
-        | _ -> raise (Invalid_argument "next value")
-        in
-        (* unpack conflict *)
-        let diffs, children, next_conflict = conflicts.next (diffs, children) in
-        log "CONFLI" (sexp_of_option sexp_of_iterator_res) next_conflict;
-        let children, patch_diff = match next_conflict with
-        | Some {done_=false; value=Some (ConflictValue conflicts)} ->
-            let patch_diff, children =
-              unpack_conflicts obj_id patch_diff children
-                conflicts
-            in
-            (children, patch_diff)
-        | Some {done_=false; value=None}
-        | Some {done_=true;_} -> (children, patch_diff)
-        | _ -> raise (Invalid_argument "next conflict")
-        in
-        _loop (CCList.append patch_diffs [patch_diff]) (diffs, children)
+      | Some {done_= false; value= Some (ElemValue (index, elem_id))} ->
+          let patch_diff =
+            { obj= obj_id
+            ; type_= typ
+            ; action= DiffInsert
+            ; key= None
+            ; value= None
+            ; link= None
+            ; conflicts= None
+            ; index= Some index
+            ; elem_id= Some elem_id }
+          in
+          (* unpack value *)
+          let diffs, children, next_value = values.next (diffs, children) in
+          let children, patch_diff =
+            match next_value with
+            | Some {done_= false; value= Some (ValueValue (Some mat_value))} ->
+                let patch_diff, children =
+                  unpack_value obj_id patch_diff children mat_value
+                in
+                (children, patch_diff)
+            | Some {done_= true; _} -> (children, patch_diff)
+            | _ -> raise (Invalid_argument "next value")
+          in
+          (* unpack conflict *)
+          let diffs, children, next_conflict =
+            conflicts.next (diffs, children)
+          in
+          let children, patch_diff =
+            match next_conflict with
+            | Some {done_= false; value= Some (ConflictValue conflicts)} ->
+                let patch_diff, children =
+                  unpack_conflicts obj_id patch_diff children conflicts
+                in
+                (children, patch_diff)
+            | Some {done_= false; value= None} | Some {done_= true; _} ->
+                (children, patch_diff)
+            | _ -> raise (Invalid_argument "next conflict")
+          in
+          _loop (CCList.append patch_diffs [patch_diff]) (diffs, children)
       | _ -> (diffs, children, patch_diffs)
     in
     let diffs, children, patch_diffs = _loop patch_diffs (diffs, children) in
@@ -1074,7 +1080,7 @@ module OpSetBackend = struct
             ; type_= DiffMap
             ; action= DiffCreate
             ; elem_id= None
-            ; index = None
+            ; index= None
             ; key= None } ]
       else patch_diffs
     in
@@ -1092,8 +1098,8 @@ module OpSetBackend = struct
                 ; link= None
                 ; obj= obj_id
                 ; type_= DiffMap
-            ; elem_id= None
-            ; index = None
+                ; elem_id= None
+                ; index= None
                 ; action= DiffSet
                 ; key= Some key }
               in
@@ -1110,11 +1116,9 @@ module OpSetBackend = struct
               let patch_diff, children =
                 match conflicts with
                 | Some all_conf -> (
-                    match KeyMap.get key all_conf with
-                    | Some cs ->
-                        unpack_conflicts obj_id patch_diff children cs
-                    | None -> patch_diff, children
-                  )
+                  match KeyMap.get key all_conf with
+                  | Some cs -> unpack_conflicts obj_id patch_diff children cs
+                  | None -> (patch_diff, children) )
                 | None -> (patch_diff, children)
               in
               (diffs, children, CCList.append patch_diffs [patch_diff]) )
@@ -1193,41 +1197,62 @@ module OpSetBackend = struct
         match !elem with
         | None -> (diffs, children, None)
         | Some _ -> (
-        elem := get_next t list_id !elem ;
-        match !elem with
-        | None -> (diffs, children, Some {done_= true; value= None})
-        | Some elem' -> (
-          match get_field_ops t list_id elem' with
-          | [] -> _next (diffs, children)
-          | hd :: tl as ops -> (
-              let diffs, children, value = get_op_value t hd (diffs, children) in
-              index := !index + 1 ;
-              match mode with
-              | Keys -> (diffs, children, Some {done_= false; value= Some (KeyValue !index)})
-              | Values -> (diffs, children, Some {done_= false; value= Some (ValueValue value)})
-              | Entries ->
-                  (diffs, children, Some {done_= false; value= Some (EntryValue (!index, value))})
-              | Elems ->
-                  (diffs, children, Some {done_= false; value= Some (ElemValue (!index, elem'))})
-              | Conflicts ->
-                  let diffs, children, conflict =
-                    if CCList.length ops > 1 then
-                      let diffs, children, conflict =
-                        (CCList.fold_left
-                           (fun (diffs, children, op_map) (op:op) ->
-                             let diffs, children, op_value = get_op_value t op (diffs, children) in
-                             (diffs, children, OpMap.add op.actor (CCOpt.get_exn op_value) op_map)
-                           )
-                           (diffs, children, OpMap.empty) tl)
-                      in
-                      (diffs, children, Some (ConflictValue conflict))
-                    else (diffs, children, None)
+            elem := get_next t list_id !elem ;
+            match !elem with
+            | None -> (diffs, children, Some {done_= true; value= None})
+            | Some elem' -> (
+              match get_field_ops t list_id elem' with
+              | [] -> _next (diffs, children)
+              | hd :: tl as ops -> (
+                  let diffs, children, value =
+                    get_op_value t hd (diffs, children)
                   in
-                  (* let conflict = *)
-                  (*   CCOpt.map (fun c -> ConflictValue c) conflict *)
-                  (* in *)
-                  (diffs, children, Some {done_= false; value= conflict} ) ))
-        )
+                  index := !index + 1 ;
+                  match mode with
+                  | Keys ->
+                      ( diffs
+                      , children
+                      , Some {done_= false; value= Some (KeyValue !index)} )
+                  | Values ->
+                      ( diffs
+                      , children
+                      , Some {done_= false; value= Some (ValueValue value)} )
+                  | Entries ->
+                      ( diffs
+                      , children
+                      , Some
+                          { done_= false
+                          ; value= Some (EntryValue (!index, value)) } )
+                  | Elems ->
+                      ( diffs
+                      , children
+                      , Some
+                          { done_= false
+                          ; value= Some (ElemValue (!index, elem')) } )
+                  | Conflicts ->
+                      let diffs, children, conflict =
+                        if CCList.length ops > 1 then
+                          let diffs, children, conflict =
+                            CCList.fold_left
+                              (fun (diffs, children, op_map) (op : op) ->
+                                let diffs, children, op_value =
+                                  get_op_value t op (diffs, children)
+                                in
+                                ( diffs
+                                , children
+                                , OpMap.add op.actor (CCOpt.get_exn op_value)
+                                    op_map ) )
+                              (diffs, children, OpMap.empty)
+                              tl
+                          in
+                          (diffs, children, Some (ConflictValue conflict))
+                        else (diffs, children, None)
+                      in
+                      (* let conflict = *)
+                      (*   CCOpt.map (fun c -> ConflictValue c) conflict *)
+                      (* in *)
+                      (diffs, children, Some {done_= false; value= conflict}) )
+              ) )
       in
       _next (diffs, children)
     in
@@ -1235,10 +1260,8 @@ module OpSetBackend = struct
 
   and get_next t obj_id key =
     match insertions_after t obj_id key None with
-    | hd :: _ ->
-        Some hd
+    | hd :: _ -> Some hd
     | [] ->
-        print_endline "NO HD";
         let rec find_ancestor (key : key option) =
           match get_parent t obj_id key with
           | None -> None
@@ -1249,14 +1272,13 @@ module OpSetBackend = struct
         in
         find_ancestor key
 
-  type patch = {
-    can_undo: bool;
-    can_redo: bool;
-    clock: seq ActorMap.t;
-
-    deps: seq ActorMap.t;
-    diffs: diff list;
-  } [@@deriving sexp_of]
+  type patch =
+    { can_undo: bool
+    ; can_redo: bool
+    ; clock: seq ActorMap.t
+    ; deps: seq ActorMap.t
+    ; diffs: diff list }
+  [@@deriving sexp_of]
 
   let rec make_patch t (obj_id : string) patch_diffs (diffs, children) =
     let diffs, patch_diffs =
@@ -1272,23 +1294,20 @@ module OpSetBackend = struct
     let diffs, children, _ =
       instantiate_object t root_id (DiffMap.empty, ChildMap.empty)
     in
-    log "GET_PATCH" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs;
     let diffs, patch_diffs = make_patch t root_id [] (diffs, children) in
-    {
-      can_undo= t.undo_pos > 0;
-      can_redo= not (CCList.is_empty t.redo_stack);
-      clock= t.clock;
-      deps= t.deps;
-      diffs= patch_diffs;
-    }
+    { can_undo= t.undo_pos > 0
+    ; can_redo= not (CCList.is_empty t.redo_stack)
+    ; clock= t.clock
+    ; deps= t.deps
+    ; diffs= patch_diffs }
 
   let list_length t obj_id =
     let open CCOpt.Infix in
     get_obj_aux t obj_id >>= fun obj_aux -> obj_aux._elem_ids >|= CCList.length
 
-  let get_clock ({clock}:t) = clock
+  let get_clock ({clock} : t) = clock
 
-  let get_deps ({deps}:t) = deps
+  let get_deps ({deps} : t) = deps
 
   let can_undo {undo_pos} = undo_pos > 0
 
