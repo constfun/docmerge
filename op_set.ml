@@ -973,6 +973,21 @@ module OpSetBackend = struct
     >|= CCList.filter (fun key -> is_field_present t obj_id key)
     >|= KeySet.of_list
 
+  type iterator_mode = Keys | Values | Entries | Elems | Conflicts
+
+  type iterator_val =
+    | KeyValue of int
+    | ValueValue of materialized option
+    | EntryValue of int * materialized option
+    | ElemValue of int * string
+    | ConflictValue of op OpMap.t
+
+  type iterator_res = {done_: bool; value: iterator_val option}
+
+  type iterator = {next: unit -> iterator_res option}
+
+
+
   let rec instantiate_object t obj_id (diffs, children) =
     match DiffMap.find_opt obj_id diffs with
     | Some _ -> (diffs, children, LinkValue {obj_id})
@@ -987,13 +1002,25 @@ module OpSetBackend = struct
           else
             match obj_typ with
             | MakeMap -> instantiate_map t obj_id context
-            | MakeList -> instantiate_list t obj_id "list" context
-            | MakeText -> instantiate_list t obj_id "text" context
+            | MakeList -> instantiate_list t obj_id DiffList context
+            | MakeText -> instantiate_list t obj_id DiffText context
             | _ -> raise Unknown_object_type
         in
         (diffs, children, LinkValue {obj_id})
 
   and instantiate_list t obj_id typ ((diffs, children) : context) =
+    let patch_diffs = DiffMap.find obj_id diffs in
+    let patch_diffs = CCList.append patch_diffs
+          [ { conflicts= None
+            ; value= None
+            ; link= None
+            ; obj= obj_id
+            ; type_= typ
+            ; action= DiffCreate
+            ; key= None } ]
+    in
+    (* let conflicts = list_iterator *)
+
     (diffs, children)
 
   and instantiate_map t obj_id ((diffs, children) : context) =
@@ -1113,6 +1140,60 @@ module OpSetBackend = struct
       | [] -> (diffs, children, None)
       | hd :: _ -> get_op_value t hd (diffs, children)
 
+  and list_iterator t list_id mode context =
+    let elem = ref (Some "_head") in
+    let index = ref (-1) in
+    let next () =
+      let rec _next _ =
+        elem := get_next t list_id !elem ;
+        match !elem with
+        | None -> Some {done_= true; value= None}
+        | Some elem' -> (
+          match get_field_ops t list_id elem' with
+          | [] -> None
+          | hd :: tl as ops -> (
+              let diffs, children, value = get_op_value t hd context in
+              index := !index + 1 ;
+              match mode with
+              | Keys -> Some {done_= false; value= Some (KeyValue !index)}
+              | Values -> Some {done_= false; value= Some (ValueValue value)}
+              | Entries ->
+                  Some {done_= false; value= Some (EntryValue (!index, value))}
+              | Elems ->
+                  Some {done_= false; value= Some (ElemValue (!index, elem'))}
+              | Conflicts ->
+                  let conflict =
+                    if CCList.length ops > 1 then
+                      Some
+                        (CCList.fold_left
+                           (fun op_map (op:op) -> OpMap.add op.actor op op_map)
+                           OpMap.empty tl)
+                    else None
+                  in
+                  let conflict =
+                    CCOpt.map (fun c -> ConflictValue c) conflict
+                  in
+                  Some {done_= false; value= conflict} ) )
+      in
+      _next !elem
+    in
+    (* TODO: Symbol.iterator *)
+    {next}
+
+  and get_next t obj_id key =
+    match insertions_after t obj_id key None with
+    | hd :: _ -> Some hd
+    | [] ->
+        let rec find_ancestor (key : key option) =
+          match get_parent t obj_id key with
+          | None -> None
+          | Some ancestor -> (
+            match insertions_after t obj_id (Some ancestor) key with
+            | hd :: _ -> Some hd
+            | [] -> find_ancestor (Some ancestor) )
+        in
+        find_ancestor key
+
   type patch = {
     can_undo: bool;
     can_redo: bool;
@@ -1151,73 +1232,6 @@ module OpSetBackend = struct
   let list_length t obj_id =
     let open CCOpt.Infix in
     get_obj_aux t obj_id >>= fun obj_aux -> obj_aux._elem_ids >|= CCList.length
-
-  let get_next t obj_id key =
-    match insertions_after t obj_id key None with
-    | hd :: _ -> Some hd
-    | [] ->
-        let rec find_ancestor (key : key option) =
-          match get_parent t obj_id key with
-          | None -> None
-          | Some ancestor -> (
-            match insertions_after t obj_id (Some ancestor) key with
-            | hd :: _ -> Some hd
-            | [] -> find_ancestor (Some ancestor) )
-        in
-        find_ancestor key
-
-  type iterator_mode = Keys | Values | Entries | Elems | Conflicts
-
-  type iterator_val =
-    | KeyValue of int
-    | ValueValue of value option
-    | EntryValue of int * value option
-    | ElemValue of int * string
-    | ConflictValue of op OpMap.t
-
-  type iterator_res = {done_: bool; value: iterator_val option}
-
-  type iterator = {next: unit -> iterator_res option}
-
-  (* let list_iterator t list_id mode context = *)
-  (*   let elem = ref (Some "_head") in *)
-  (*   let index = ref (-1) in *)
-  (*   let next () = *)
-  (*     let rec _next _ = *)
-  (*       elem := get_next t list_id !elem ; *)
-  (*       match !elem with *)
-  (*       | None -> Some {done_= true; value= None} *)
-  (*       | Some elem' -> ( *)
-  (*         match get_field_ops t list_id elem' with *)
-  (*         | [] -> None *)
-  (*         | hd :: tl as ops -> ( *)
-  (*             let value = get_op_value t hd context in *)
-  (*             index := !index + 1 ; *)
-  (*             match mode with *)
-  (*             | Keys -> Some {done_= false; value= Some (KeyValue !index)} *)
-  (*             | Values -> Some {done_= false; value= Some (ValueValue value)} *)
-  (*             | Entries -> *)
-  (*                 Some {done_= false; value= Some (EntryValue (!index, value))} *)
-  (*             | Elems -> *)
-  (*                 Some {done_= false; value= Some (ElemValue (!index, elem'))} *)
-  (*             | Conflicts -> *)
-  (*                 let conflict = *)
-  (*                   if CCList.length ops > 1 then *)
-  (*                     Some *)
-  (*                       (CCList.foldi *)
-  (*                          (fun op_map idx op -> OpMap.add idx op op_map) *)
-  (*                          OpMap.empty tl) *)
-  (*                   else None *)
-  (*                 in *)
-  (*                 let conflict = *)
-  (*                   CCOpt.map (fun c -> ConflictValue c) conflict *)
-  (*                 in *)
-  (*                 Some {done_= false; value= conflict} ) ) *)
-  (*     in *)
-  (*     _next !elem *)
-  (*   in *)
-  (*   (1* TODO: Symbol.iterator *1) *)
-  (*   {next} *)
 
   let get_clock ({clock}:t) = clock
 
