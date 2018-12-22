@@ -56,7 +56,7 @@ module OpSetBackend : sig
 
   type edit_type = Map | Text | List
 
-  type conflict = {actor: actor; value: op_val option; link: bool}
+  type conflict = {actor: actor; value: op_val option; link: bool option}
 
   type edit =
     { _type: edit_type

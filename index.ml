@@ -105,8 +105,10 @@ let list_to_js_array lis =
   CCList.iteri (fun i el -> Js.array_set arr i (Js.Unsafe.inject el)) lis ;
   arr
 
-let obj_set conv name value obj_kv =
-  CCArray.append obj_kv [|(name, Js.Unsafe.inject (conv value))|]
+let obj_set ?conv name value obj_kv =
+  match conv with
+  | Some conv -> CCArray.append obj_kv [|(name, Js.Unsafe.inject (conv value))|]
+  | None -> CCArray.append obj_kv [|(name, Js.Unsafe.inject value)|]
 
 let obj_set_optdef conv name value obj_kv =
   match value with
@@ -148,7 +150,7 @@ let conflicts_to_js_conflicts (v : OpSetBackend.conflict list) =
     (CCList.map
        (fun (confl : OpSetBackend.conflict) ->
          CCArray.empty
-         |> obj_set actor_to_js_actor "actor" confl.actor
+         |> obj_set ~conv:actor_to_js_actor "actor" confl.actor
          |> obj_set_optdef op_val_to_js_value "value" confl.value
          |> Js.Unsafe.obj )
        v)
@@ -166,11 +168,11 @@ let obj_set_path (edit : OpSetBackend.edit) obj_kv =
 
 let edit_to_js_edit (edit : OpSetBackend.edit) =
   CCArray.empty
-  |> obj_set edit_action_to_js_edit_action "action" edit.action
-  |> obj_set Js.string "obj" edit.obj
+  |> obj_set ~conv:edit_action_to_js_edit_action "action" edit.action
+  |> obj_set ~conv:Js.string "obj" edit.obj
   |> obj_set_optdef Js.string "key" edit.key
   |> obj_set_optdef value_to_js_value "value" edit.value
-  |> obj_set type_to_js_type "type" edit._type
+  |> obj_set ~conv:type_to_js_type "type" edit._type
   |> obj_set_optdef Js.bool "link" (if edit.link then Some edit.link else None)
   |> obj_set_path edit
   |> obj_set_optdef conflicts_to_js_conflicts "conflicts" edit.conflicts
@@ -217,13 +219,14 @@ let diff_to_js_diff (diff:OpSetBackend.diff) =
     | DiffList -> "list"
     )
   in
-  object%js
-    val action = action
-    val key = (Js.Optdef.option (CCOpt.map Js.string diff.key))
-    val obj = Js.string diff.obj
-    val type_ = type_
-    val value = (Js.Optdef.option (CCOpt.map op_val_to_js_value diff.value))
-  end
+  CCArray.empty
+  |> obj_set "action" action
+  |> obj_set_optdef Js.string "key" diff.key
+  |> obj_set ~conv:Js.string "obj" diff.obj
+  |> obj_set "type" type_
+  |> obj_set_optdef op_val_to_js_value "value" diff.value
+  |> obj_set_optdef conflicts_to_js_conflicts "conflicts" diff.conflicts
+  |> Js.Unsafe.obj
 
 let get_patch t =
   let patch = OpSetBackend.get_patch t.op_set in

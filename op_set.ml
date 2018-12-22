@@ -145,7 +145,7 @@ module OpSetBackend = struct
 
   type edit_type = Map | Text | List
 
-  type conflict = {actor: actor; value: op_val option; link: bool}
+  type conflict = {actor: actor; value: op_val option; link: bool option}
   [@@deriving sexp_of]
 
   type edit =
@@ -374,7 +374,7 @@ module OpSetBackend = struct
         CCList.fold_left
           (fun conflicts (op : op) ->
             let link = match op.action with Link -> true | _ -> false in
-            let conf : conflict = {actor= op.actor; value= op.value; link} in
+            let conf : conflict = {actor= op.actor; value= op.value; link =Some link} in
             CCOpt.map (fun cs -> cs @ [conf]) conflicts )
           (Some []) ops_rest
     | [] -> None
@@ -935,7 +935,7 @@ module OpSetBackend = struct
     match value with
     | LinkValue l ->
         let patch_diff =
-          {conflict with link= true; value= Some (StrValue l.obj_id)}
+          {conflict with link= Some true; value= Some (StrValue l.obj_id)}
         in
         let children =
           ChildMap.update parent_id
@@ -956,7 +956,7 @@ module OpSetBackend = struct
           let conflicts, children =
             OpMap.fold
               (fun actor value (conflicts, children) ->
-                let conflict = {actor; link= false; value= None} in
+                let conflict = {actor; link= None; value= None} in
                 let conflict, children =
                   unpack_conflict_value parent_id conflict children value
                 in
@@ -1120,6 +1120,8 @@ module OpSetBackend = struct
   } [@@deriving sexp_of]
 
   let rec make_patch t (obj_id : string) patch_diffs (diffs, children) =
+    print_endline ("OBJ_ID " ^ obj_id);
+    log "CHILDREN" (ChildMap.sexp_of_t (sexp_of_list sexp_of_string)) children;
     let patch_diffs =
       CCList.fold_left
         (fun patch_diffs child_id ->
@@ -1127,6 +1129,7 @@ module OpSetBackend = struct
         patch_diffs
         (ChildMap.find obj_id children)
     in
+    log "DIFFS" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs;
     CCList.append patch_diffs (DiffMap.find obj_id diffs)
 
   let get_patch t =
