@@ -317,10 +317,26 @@ let get_changes_for_actor t js_actor_id =
   |> CCList.map change_to_js_change
   |> CCArray.of_list |> Js.array
 
+module BE = OpSetBackend
+
+let clock t = OpSetBackend.get_clock t.op_set
+
+let get_changes old_state new_state =
+  let old_clock = clock old_state in
+  (* function lessOrEqual(clock1, clock2) { *)
+  (*   return clock1.keySeq().concat(clock2.keySeq()).reduce( *)
+  (*     (result, key) => (result && clock1.get(key, 0) <= clock2.get(key, 0)), *)
+  (*     true) *)
+  (* } *)
+  BE.get_missing_changes new_state.op_set old_clock
+  |> CCList.map change_to_js_change
+  |> list_to_js_array
+
 let _ =
   Js.export "init" init ;
   Js.export "applyChanges" _apply_changes ;
   Js.export "applyLocalChange" apply_local_change ;
   Js.export "getPatch" get_patch ;
   Js.export "merge" merge ;
-  Js.export "getChangesForActor" get_changes_for_actor
+  Js.export "getChangesForActor" get_changes_for_actor ;
+  Js.export "getChanges" get_changes
