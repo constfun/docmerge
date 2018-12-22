@@ -64845,14 +64845,10 @@
               :runtime.caml_call_gen(f,[a0,a1,a2,a3])}
     var
      global_data=runtime.caml_get_global_data(),
-     cst_causally_ready=caml_new_string("causally ready"),
-     cst_not_causally_ready=caml_new_string("not causally ready"),
-     cst_list=caml_new_string("list"),
-     cst_text=caml_new_string("text"),
-     cst_INSTANTIATE_MAP_ADIFFS=caml_new_string("INSTANTIATE_MAP ADIFFS"),
-     cst_INSTANTIATE_MAP_BDIFFS=caml_new_string("INSTANTIATE_MAP BDIFFS"),
-     cst_INSTANTIATE_MAP_CDIFFS=caml_new_string("INSTANTIATE_MAP CDIFFS"),
+     cst_ITERATE=caml_new_string("ITERATE"),
+     cst_ITERATE$0=caml_new_string("ITERATE"),
      cst_obj_key=caml_new_string("obj key"),
+     cst_NO_HD=caml_new_string("NO HD"),
      cst_GET_PATCH=caml_new_string("GET_PATCH"),
      cst_child_id$0=caml_new_string("child id"),
      cst_child_id=caml_new_string("child id"),
@@ -64863,10 +64859,7 @@
      cst$1=caml_new_string(""),
      cst_head$0=caml_new_string("_head"),
      cst$0=caml_new_string(":"),
-     cst_d=caml_new_string("^\\(.*\\):\\(\\d+\\)$"),
      cst_head=caml_new_string("_head"),
-     cst_GET=caml_new_string("GET"),
-     cst_SET=caml_new_string("SET"),
      cst=caml_new_string(":"),
      cst_op_value=caml_new_string("op.value"),
      cst_Op_set_Inconsistent_reuse_of_sequence=
@@ -64887,59 +64880,61 @@
      root_id=caml_new_string("00000000-0000-0000-0000-000000000000"),
      String=global_data.String,
      CCOpt=global_data.CCOpt,
-     Datastructures=global_data.Datastructures,
      CCList=global_data.CCList,
      CCFQueue=global_data.CCFQueue,
+     Datastructures=global_data.Datastructures,
      Sexplib_Conv=global_data.Sexplib__Conv,
      Invalid_argument=global_data.Invalid_argument,
-     Str=global_data.Str,
      Pervasives=global_data.Pervasives,
+     Str=global_data.Str,
      List=global_data.List,
      Not_found=global_data.Not_found,
      Sexplib_Sexp=global_data.Sexplib__Sexp,
      Format=global_data.Format,
      CCSet=global_data.CCSet,
-     _af_=[0,1],
-     _ae_=[0,1],
-     _ad_=[0,0],
-     _ac_=[0,0,0],
-     _ab_=[0,0],
-     _aa_=[0,0],
-     _$_=[0,0],
-     ___=[0,0],
+     _ah_=[0,[0,1,0]],
+     _ag_=[0,caml_new_string("_head")],
+     _ae_=[0,caml_new_string("value")],
+     _af_=[0,caml_new_string("done_")],
+     _$_=[0,caml_new_string("KeyValue")],
+     _aa_=[0,caml_new_string("ValueValue")],
+     _ab_=[0,caml_new_string("EntryValue")],
+     _ac_=[0,caml_new_string("ElemValue")],
+     _ad_=[0,caml_new_string("ConflictValue")],
+     ___=[0,1],
+     _Z_=[0,1],
      _Y_=[0,0],
-     _Z_=[0,0],
-     _R_=[0,caml_new_string("conflicts")],
-     _S_=[0,caml_new_string("link")],
-     _T_=[0,caml_new_string("value")],
-     _U_=[0,caml_new_string("key")],
-     _V_=[0,caml_new_string("action")],
-     _W_=[0,caml_new_string("type_")],
-     _X_=[0,caml_new_string("obj")],
-     _Q_=[0,caml_new_string("DiffSet")],
-     _P_=[0,caml_new_string("DiffCreate")],
-     _M_=[0,caml_new_string("DiffMap")],
-     _N_=[0,caml_new_string("DiffList")],
-     _O_=[0,caml_new_string("DiffText")],
-     _J_=[0,caml_new_string("link")],
-     _K_=[0,caml_new_string("value")],
-     _L_=[0,caml_new_string("actor")],
-     _F_=[0,caml_new_string("ops")],
-     _G_=[0,caml_new_string("deps")],
-     _H_=[0,caml_new_string("seq")],
-     _I_=[0,caml_new_string("actor")],
-     _A_=[0,caml_new_string("value")],
-     _B_=[0,caml_new_string("elem")],
-     _C_=[0,caml_new_string("obj")],
-     _D_=[0,caml_new_string("action")],
-     _E_=[0,caml_new_string("key")],
-     _t_=[0,caml_new_string("value")],
-     _u_=[0,caml_new_string("elem")],
-     _v_=[0,caml_new_string("obj")],
-     _w_=[0,caml_new_string("seq")],
-     _x_=[0,caml_new_string("actor")],
-     _y_=[0,caml_new_string("action")],
-     _z_=[0,caml_new_string("key")],
+     _X_=[0,0,0],
+     _W_=[0,0],
+     _V_=[0,0],
+     _U_=[0,0],
+     _S_=[0,0],
+     _T_=[0,0],
+     _L_=[0,caml_new_string("conflicts")],
+     _M_=[0,caml_new_string("link")],
+     _N_=[0,caml_new_string("value")],
+     _O_=[0,caml_new_string("key")],
+     _P_=[0,caml_new_string("action")],
+     _Q_=[0,caml_new_string("type_")],
+     _R_=[0,caml_new_string("obj")],
+     _K_=[0,caml_new_string("DiffSet")],
+     _J_=[0,caml_new_string("DiffCreate")],
+     _G_=[0,caml_new_string("DiffMap")],
+     _H_=[0,caml_new_string("DiffList")],
+     _I_=[0,caml_new_string("DiffText")],
+     _D_=[0,caml_new_string("link")],
+     _E_=[0,caml_new_string("value")],
+     _F_=[0,caml_new_string("actor")],
+     _w_=[0,caml_new_string("value")],
+     _x_=[0,caml_new_string("elem")],
+     _y_=[0,caml_new_string("obj")],
+     _z_=[0,caml_new_string("seq")],
+     _A_=[0,caml_new_string("actor")],
+     _B_=[0,caml_new_string("action")],
+     _C_=[0,caml_new_string("key")],
+     _t_=[0,caml_new_string("TypedValue")],
+     _u_=[0,caml_new_string("obj_id")],
+     _v_=[0,caml_new_string("LinkValue")],
      _q_=[0,caml_new_string("BoolValue")],
      _r_=[0,caml_new_string("StrValue")],
      _s_=[0,caml_new_string("NumberValue")],
@@ -64971,10 +64966,10 @@
       [248,cst_Op_set_Accessing_unefined_element_index,caml_fresh_oo_id(0)];
     function log(msg,conv,sexp)
      { /*<<op_set.ml 20 59>>*/  /*<<op_set.ml 20 59>>*/ var
-       _jk_=
+       _jB_=
          /*<<op_set.ml 20 59>>*/ caml_call1(conv,sexp);
        /*<<op_set.ml 20 59>>*/ return  /*<<op_set.ml 20 59>>*/ caml_call4
-              (Format[113],_a_,msg,Sexplib_Sexp[37],_jk_) /*<<op_set.ml 20 70>>*/ }
+              (Format[113],_a_,msg,Sexplib_Sexp[37],_jB_) /*<<op_set.ml 20 70>>*/ }
     var
      _b_=Datastructures[1],
      ActorMap=caml_call1(Datastructures[3],[0,_b_[24],_b_[99]]),
@@ -65012,442 +65007,407 @@
        {case 0:
           /*<<op_set.ml 48 16>>*/ var
            /*<<op_set.ml 48 16>>*/ v0=param[1],
-           /*<<op_set.ml 48 16>>*/ _jh_=Sexplib_Conv[6],
+           /*<<op_set.ml 48 16>>*/ _jy_=Sexplib_Conv[6],
            /*<<op_set.ml 48 16>>*/ v0$0=
-            /*<<op_set.ml 48 16>>*/ caml_call1(_jh_,v0);
+            /*<<op_set.ml 48 16>>*/ caml_call1(_jy_,v0);
           /*<<op_set.ml 48 16>>*/ return [1,[0,_q_,[0,v0$0,0]]];
         case 1:
           /*<<op_set.ml 48 34>>*/ var
            /*<<op_set.ml 48 34>>*/ v0$1=param[1],
-           /*<<op_set.ml 48 34>>*/ _ji_=Sexplib_Conv[7],
+           /*<<op_set.ml 48 34>>*/ _jz_=Sexplib_Conv[7],
            /*<<op_set.ml 48 34>>*/ v0$2=
-            /*<<op_set.ml 48 34>>*/ caml_call1(_ji_,v0$1);
+            /*<<op_set.ml 48 34>>*/ caml_call1(_jz_,v0$1);
           /*<<op_set.ml 48 34>>*/ return [1,[0,_r_,[0,v0$2,0]]];
         default:
           /*<<op_set.ml 48 55>>*/ var
            /*<<op_set.ml 48 55>>*/ v0$3=param[1],
-           /*<<op_set.ml 48 55>>*/ _jj_=Sexplib_Conv[11],
+           /*<<op_set.ml 48 55>>*/ _jA_=Sexplib_Conv[11],
            /*<<op_set.ml 48 55>>*/ v0$4=
-            /*<<op_set.ml 48 55>>*/ caml_call1(_jj_,v0$3);
+            /*<<op_set.ml 48 55>>*/ caml_call1(_jA_,v0$3);
           /*<<op_set.ml 48 55>>*/ return [1,[0,_s_,[0,v0$4,0]]]} /*<<op_set.ml 49 22>>*/ }
+    function sexp_of_materialized(param)
+     { /*<<op_set.ml 51 2>>*/ if(0 === param[0])
+       { /*<<op_set.ml 51 22>>*/ var
+          /*<<op_set.ml 51 22>>*/ v0=param[1],
+          /*<<op_set.ml 51 22>>*/ v0$0=
+           /*<<op_set.ml 51 22>>*/ sexp_of_op_val(v0);
+         /*<<op_set.ml 51 22>>*/ return [1,[0,_t_,[0,v0$0,0]]]}
+       /*<<op_set.ml 51 43>>*/ var
+        /*<<op_set.ml 51 43>>*/ v_obj_id=param[1],
+        /*<<op_set.ml 51 43>>*/ bnds=0,
+        /*<<op_set.ml 51 43>>*/ _jx_=Sexplib_Conv[7],
+        /*<<op_set.ml 51 59>>*/ arg=
+         /*<<op_set.ml 51 59>>*/ caml_call1(_jx_,v_obj_id),
+        /*<<op_set.ml 51 59>>*/ bnds$0=[0,[1,[0,_u_,[0,arg,0]]],bnds];
+       /*<<op_set.ml 51 59>>*/ return [1,[0,_v_,bnds$0]] /*<<op_set.ml 52 24>>*/ }
     function insert_index(index,k,v,t)
-     { /*<<op_set.ml 63 41>>*/ return  /*<<op_set.ml 63 41>>*/ caml_call3
-              (CCList[116],index,[0,k,v],t) /*<<op_set.ml 63 76>>*/ }
+     { /*<<op_set.ml 64 41>>*/ return  /*<<op_set.ml 64 41>>*/ caml_call3
+              (CCList[116],index,[0,k,v],t) /*<<op_set.ml 64 76>>*/ }
     function index_of(k,t)
-     { /*<<op_set.ml 66 6>>*/ function _jf_(param)
-       { /*<<op_set.ml 66 28>>*/  /*<<op_set.ml 66 28>>*/ var itmk=param[1];
-         /*<<op_set.ml 66 28>>*/ return  /*<<op_set.ml 66 28>>*/ caml_call2
-                (String[34],itmk,k) /*<<op_set.ml 66 66>>*/ }
-       /*<<op_set.ml 66 6>>*/ var
-        /*<<op_set.ml 66 6>>*/ _jg_=CCList[93],
-        /*<<op_set.ml 66 12>>*/ match=
-         /*<<op_set.ml 66 12>>*/ caml_call2(_jg_,_jf_,t);
-       /*<<op_set.ml 66 12>>*/ if(match)
+     { /*<<op_set.ml 67 6>>*/ function _jv_(param)
+       { /*<<op_set.ml 67 28>>*/  /*<<op_set.ml 67 28>>*/ var itmk=param[1];
+         /*<<op_set.ml 67 28>>*/ return  /*<<op_set.ml 67 28>>*/ caml_call2
+                (String[34],itmk,k) /*<<op_set.ml 67 66>>*/ }
+       /*<<op_set.ml 67 6>>*/ var
+        /*<<op_set.ml 67 6>>*/ _jw_=CCList[93],
+        /*<<op_set.ml 67 12>>*/ match=
+         /*<<op_set.ml 67 12>>*/ caml_call2(_jw_,_jv_,t);
+       /*<<op_set.ml 67 12>>*/ if(match)
        {var match$0=match[1],idx=match$0[1];return [0,idx]}
-       /*<<op_set.ml 68 16>>*/ return 0 /*<<op_set.ml 68 20>>*/ }
+       /*<<op_set.ml 69 16>>*/ return 0 /*<<op_set.ml 69 20>>*/ }
     function set_value(k,v,t)
-     { /*<<op_set.ml 76 12>>*/  /*<<op_set.ml 76 12>>*/ var
+     { /*<<op_set.ml 77 12>>*/  /*<<op_set.ml 77 12>>*/ var
        match=
-         /*<<op_set.ml 76 12>>*/ index_of(k,t);
-       /*<<op_set.ml 76 12>>*/ if(match)
-       { /*<<op_set.ml 77 20>>*/  /*<<op_set.ml 77 20>>*/ var idx=match[1];
-         /*<<op_set.ml 77 20>>*/ return  /*<<op_set.ml 77 20>>*/ caml_call3
+         /*<<op_set.ml 77 12>>*/ index_of(k,t);
+       /*<<op_set.ml 77 12>>*/ if(match)
+       { /*<<op_set.ml 78 20>>*/  /*<<op_set.ml 78 20>>*/ var idx=match[1];
+         /*<<op_set.ml 78 20>>*/ return  /*<<op_set.ml 78 20>>*/ caml_call3
                 (CCList[115],idx,[0,k,v],t)}
-       /*<<op_set.ml 78 16>>*/ throw Not_found /*<<op_set.ml 78 31>>*/ }
+       /*<<op_set.ml 79 16>>*/ throw Not_found /*<<op_set.ml 79 31>>*/ }
     function remove_index(index,t)
-     { /*<<op_set.ml 80 37>>*/ return  /*<<op_set.ml 80 37>>*/ caml_call2
-              (CCList[117],index,t) /*<<op_set.ml 80 65>>*/ }
+     { /*<<op_set.ml 81 37>>*/ return  /*<<op_set.ml 81 37>>*/ caml_call2
+              (CCList[117],index,t) /*<<op_set.ml 81 65>>*/ }
     function sexp_of_op(param)
-     { /*<<op_set.ml 83 2>>*/ var
-        /*<<op_set.ml 83 2>>*/ v_value=param[7],
-        /*<<op_set.ml 83 2>>*/ v_elem=param[6],
-        /*<<op_set.ml 83 2>>*/ v_obj=param[5],
-        /*<<op_set.ml 83 2>>*/ v_seq=param[4],
-        /*<<op_set.ml 83 2>>*/ v_actor=param[3],
-        /*<<op_set.ml 83 2>>*/ v_action=param[2],
-        /*<<op_set.ml 83 2>>*/ v_key=param[1],
-        /*<<op_set.ml 83 2>>*/ bnds=0,
-        /*<<op_set.ml 83 2>>*/ _jc_=Sexplib_Conv[17],
-        /*<<op_set.ml 90 20>>*/ arg=
-         /*<<op_set.ml 90 20>>*/ caml_call2(_jc_,sexp_of_op_val,v_value),
-        /*<<op_set.ml 90 20>>*/ bnds$0=[0,[1,[0,_t_,[0,arg,0]]],bnds],
-        /*<<op_set.ml 90 20>>*/ _jd_=Sexplib_Conv[10],
-        /*<<op_set.ml 90 20>>*/ _je_=Sexplib_Conv[17],
-        /*<<op_set.ml 89 16>>*/ arg$0=
-         /*<<op_set.ml 89 16>>*/ caml_call2(_je_,_jd_,v_elem),
-        /*<<op_set.ml 89 16>>*/ bnds$1=[0,[1,[0,_u_,[0,arg$0,0]]],bnds$0],
-        /*<<op_set.ml 88 6>>*/ arg$1=
-         /*<<op_set.ml 88 6>>*/ caml_call1(sexp_of_obj_id,v_obj),
-        /*<<op_set.ml 88 6>>*/ bnds$2=[0,[1,[0,_v_,[0,arg$1,0]]],bnds$1],
-        /*<<op_set.ml 87 6>>*/ arg$2=
-         /*<<op_set.ml 87 6>>*/ caml_call1(sexp_of_seq,v_seq),
-        /*<<op_set.ml 87 6>>*/ bnds$3=[0,[1,[0,_w_,[0,arg$2,0]]],bnds$2],
-        /*<<op_set.ml 86 6>>*/ arg$3=
-         /*<<op_set.ml 86 6>>*/ caml_call1(sexp_of_actor,v_actor),
-        /*<<op_set.ml 86 6>>*/ bnds$4=[0,[1,[0,_x_,[0,arg$3,0]]],bnds$3],
-        /*<<op_set.ml 85 6>>*/ arg$4=
-         /*<<op_set.ml 85 6>>*/ sexp_of_action(v_action),
-        /*<<op_set.ml 85 6>>*/ bnds$5=[0,[1,[0,_y_,[0,arg$4,0]]],bnds$4],
-        /*<<op_set.ml 84 6>>*/ arg$5=
-         /*<<op_set.ml 84 6>>*/ caml_call1(sexp_of_key,v_key),
-        /*<<op_set.ml 84 6>>*/ bnds$6=[0,[1,[0,_z_,[0,arg$5,0]]],bnds$5];
-       /*<<op_set.ml 84 6>>*/ return [1,bnds$6] /*<<op_set.ml 91 22>>*/ }
-    function sexp_of_change_op(param)
-     { /*<<op_set.ml 93 2>>*/ var
-        /*<<op_set.ml 93 2>>*/ v_value=param[5],
-        /*<<op_set.ml 93 2>>*/ v_elem=param[4],
-        /*<<op_set.ml 93 2>>*/ v_obj=param[3],
-        /*<<op_set.ml 93 2>>*/ v_action=param[2],
-        /*<<op_set.ml 93 2>>*/ v_key=param[1],
-        /*<<op_set.ml 93 2>>*/ bnds=0,
-        /*<<op_set.ml 93 2>>*/ _i__=Sexplib_Conv[17],
-        /*<<op_set.ml 98 20>>*/ arg=
-         /*<<op_set.ml 98 20>>*/ caml_call2(_i__,sexp_of_op_val,v_value),
-        /*<<op_set.ml 98 20>>*/ bnds$0=[0,[1,[0,_A_,[0,arg,0]]],bnds],
-        /*<<op_set.ml 98 20>>*/ _i$_=Sexplib_Conv[10],
-        /*<<op_set.ml 98 20>>*/ _ja_=Sexplib_Conv[17],
-        /*<<op_set.ml 97 16>>*/ arg$0=
-         /*<<op_set.ml 97 16>>*/ caml_call2(_ja_,_i$_,v_elem),
-        /*<<op_set.ml 97 16>>*/ bnds$1=[0,[1,[0,_B_,[0,arg$0,0]]],bnds$0],
-        /*<<op_set.ml 96 6>>*/ arg$1=
-         /*<<op_set.ml 96 6>>*/ caml_call1(sexp_of_obj_id,v_obj),
-        /*<<op_set.ml 96 6>>*/ bnds$2=[0,[1,[0,_C_,[0,arg$1,0]]],bnds$1],
-        /*<<op_set.ml 95 6>>*/ arg$2=
-         /*<<op_set.ml 95 6>>*/ sexp_of_action(v_action),
-        /*<<op_set.ml 95 6>>*/ bnds$3=[0,[1,[0,_D_,[0,arg$2,0]]],bnds$2],
-        /*<<op_set.ml 95 6>>*/ _jb_=Sexplib_Conv[17],
-        /*<<op_set.ml 94 15>>*/ arg$3=
-         /*<<op_set.ml 94 15>>*/ caml_call2(_jb_,sexp_of_key,v_key),
-        /*<<op_set.ml 94 15>>*/ bnds$4=[0,[1,[0,_E_,[0,arg$3,0]]],bnds$3];
-       /*<<op_set.ml 94 15>>*/ return [1,bnds$4] /*<<op_set.ml 99 22>>*/ }
+     { /*<<op_set.ml 84 2>>*/ var
+        /*<<op_set.ml 84 2>>*/ v_value=param[7],
+        /*<<op_set.ml 84 2>>*/ v_elem=param[6],
+        /*<<op_set.ml 84 2>>*/ v_obj=param[5],
+        /*<<op_set.ml 84 2>>*/ v_seq=param[4],
+        /*<<op_set.ml 84 2>>*/ v_actor=param[3],
+        /*<<op_set.ml 84 2>>*/ v_action=param[2],
+        /*<<op_set.ml 84 2>>*/ v_key=param[1],
+        /*<<op_set.ml 84 2>>*/ bnds=0,
+        /*<<op_set.ml 84 2>>*/ _js_=Sexplib_Conv[17],
+        /*<<op_set.ml 91 20>>*/ arg=
+         /*<<op_set.ml 91 20>>*/ caml_call2(_js_,sexp_of_op_val,v_value),
+        /*<<op_set.ml 91 20>>*/ bnds$0=[0,[1,[0,_w_,[0,arg,0]]],bnds],
+        /*<<op_set.ml 91 20>>*/ _jt_=Sexplib_Conv[10],
+        /*<<op_set.ml 91 20>>*/ _ju_=Sexplib_Conv[17],
+        /*<<op_set.ml 90 16>>*/ arg$0=
+         /*<<op_set.ml 90 16>>*/ caml_call2(_ju_,_jt_,v_elem),
+        /*<<op_set.ml 90 16>>*/ bnds$1=[0,[1,[0,_x_,[0,arg$0,0]]],bnds$0],
+        /*<<op_set.ml 89 6>>*/ arg$1=
+         /*<<op_set.ml 89 6>>*/ caml_call1(sexp_of_obj_id,v_obj),
+        /*<<op_set.ml 89 6>>*/ bnds$2=[0,[1,[0,_y_,[0,arg$1,0]]],bnds$1],
+        /*<<op_set.ml 88 6>>*/ arg$2=
+         /*<<op_set.ml 88 6>>*/ caml_call1(sexp_of_seq,v_seq),
+        /*<<op_set.ml 88 6>>*/ bnds$3=[0,[1,[0,_z_,[0,arg$2,0]]],bnds$2],
+        /*<<op_set.ml 87 6>>*/ arg$3=
+         /*<<op_set.ml 87 6>>*/ caml_call1(sexp_of_actor,v_actor),
+        /*<<op_set.ml 87 6>>*/ bnds$4=[0,[1,[0,_A_,[0,arg$3,0]]],bnds$3],
+        /*<<op_set.ml 86 6>>*/ arg$4=
+         /*<<op_set.ml 86 6>>*/ sexp_of_action(v_action),
+        /*<<op_set.ml 86 6>>*/ bnds$5=[0,[1,[0,_B_,[0,arg$4,0]]],bnds$4],
+        /*<<op_set.ml 85 6>>*/ arg$5=
+         /*<<op_set.ml 85 6>>*/ caml_call1(sexp_of_key,v_key),
+        /*<<op_set.ml 85 6>>*/ bnds$6=[0,[1,[0,_C_,[0,arg$5,0]]],bnds$5];
+       /*<<op_set.ml 85 6>>*/ return [1,bnds$6] /*<<op_set.ml 92 22>>*/ }
     function lamport_compare(op1,op2)
-     { /*<<op_set.ml 104 4>>*/ if(op1[2] < op2[2])return -1;
-       /*<<op_set.ml 105 9>>*/ if(op2[2] < op1[2])return 1;
-       /*<<op_set.ml 106 9>>*/ var
-        /*<<op_set.ml 106 9>>*/ _i6_=op2[1],
-        /*<<op_set.ml 106 9>>*/ _i7_=op1[1];
-       /*<<op_set.ml 106 12>>*/ if
-       ( /*<<op_set.ml 106 12>>*/ runtime.caml_string_lessthan(_i7_,_i6_))
+     { /*<<op_set.ml 106 4>>*/ if(op1[2] < op2[2])return -1;
+       /*<<op_set.ml 107 9>>*/ if(op2[2] < op1[2])return 1;
+       /*<<op_set.ml 108 9>>*/ var
+        /*<<op_set.ml 108 9>>*/ _jo_=op2[1],
+        /*<<op_set.ml 108 9>>*/ _jp_=op1[1];
+       /*<<op_set.ml 108 12>>*/ if
+       ( /*<<op_set.ml 108 12>>*/ runtime.caml_string_lessthan(_jp_,_jo_))
        return -1;
-       /*<<op_set.ml 106 9>>*/ var
-        /*<<op_set.ml 107 9>>*/ _i8_=op2[1],
-        /*<<op_set.ml 107 9>>*/ _i9_=op1[1];
-       /*<<op_set.ml 107 12>>*/ return  /*<<op_set.ml 107 12>>*/ runtime.caml_string_greaterthan
-               (_i9_,_i8_)
+       /*<<op_set.ml 108 9>>*/ var
+        /*<<op_set.ml 109 9>>*/ _jq_=op2[1],
+        /*<<op_set.ml 109 9>>*/ _jr_=op1[1];
+       /*<<op_set.ml 109 12>>*/ return  /*<<op_set.ml 109 12>>*/ runtime.caml_string_greaterthan
+               (_jr_,_jq_)
               ?1
-              :0 /*<<op_set.ml 108 10>>*/ }
+              :0 /*<<op_set.ml 110 10>>*/ }
     function get_op_elem(op)
-     { /*<<op_set.ml 116 4>>*/  /*<<op_set.ml 116 4>>*/ var _i5_=op[6];
-       /*<<op_set.ml 116 4>>*/ if(_i5_)
-       { /*<<op_set.ml 117 18>>*/  /*<<op_set.ml 117 18>>*/ var idx=_i5_[1];
-         /*<<op_set.ml 117 18>>*/ return idx}
-       /*<<op_set.ml 118 14>>*/ throw Accessing_unefined_element_index /*<<op_set.ml 118 52>>*/ }
+     { /*<<op_set.ml 118 4>>*/  /*<<op_set.ml 118 4>>*/ var _jn_=op[6];
+       /*<<op_set.ml 118 4>>*/ if(_jn_)
+       { /*<<op_set.ml 119 18>>*/  /*<<op_set.ml 119 18>>*/ var idx=_jn_[1];
+         /*<<op_set.ml 119 18>>*/ return idx}
+       /*<<op_set.ml 120 14>>*/ throw Accessing_unefined_element_index /*<<op_set.ml 120 52>>*/ }
     function compare(op1,op2)
-     { /*<<op_set.ml 126 44>>*/ var
-        /*<<op_set.ml 126 44>>*/ _i3_=
-         /*<<op_set.ml 126 44>>*/ get_op_elem(op1),
-        /*<<op_set.ml 126 44>>*/ lop1=[0,op1[3],_i3_],
-        /*<<op_set.ml 127 44>>*/ _i4_=
-         /*<<op_set.ml 127 44>>*/ get_op_elem(op2),
-        /*<<op_set.ml 127 44>>*/ lop2=[0,op1[3],_i4_];
-       /*<<op_set.ml 127 44>>*/ return  /*<<op_set.ml 127 44>>*/ lamport_compare
-              (lop1,lop2) /*<<op_set.ml 128 33>>*/ }
+     { /*<<op_set.ml 128 44>>*/ var
+        /*<<op_set.ml 128 44>>*/ _jl_=
+         /*<<op_set.ml 128 44>>*/ get_op_elem(op1),
+        /*<<op_set.ml 128 44>>*/ lop1=[0,op1[3],_jl_],
+        /*<<op_set.ml 129 44>>*/ _jm_=
+         /*<<op_set.ml 129 44>>*/ get_op_elem(op2),
+        /*<<op_set.ml 129 44>>*/ lop2=[0,op1[3],_jm_];
+       /*<<op_set.ml 129 44>>*/ return  /*<<op_set.ml 129 44>>*/ lamport_compare
+              (lop1,lop2) /*<<op_set.ml 130 33>>*/ }
     var
      include=caml_call1(Datastructures[4],[0,compare,sexp_of_op]),
      empty=include[1],
      add=include[4],
      remove=include[6],
      choose_opt=include[29];
-    function sexp_of_change(param)
-     { /*<<op_set.ml 134 2>>*/ var
-        /*<<op_set.ml 134 2>>*/ v_ops=param[4],
-        /*<<op_set.ml 134 2>>*/ v_deps=param[3],
-        /*<<op_set.ml 134 2>>*/ v_seq=param[2],
-        /*<<op_set.ml 134 2>>*/ v_actor=param[1],
-        /*<<op_set.ml 134 2>>*/ bnds=0,
-        /*<<op_set.ml 134 2>>*/ _i1_=Sexplib_Conv[20],
-        /*<<op_set.ml 139 21>>*/ arg=
-         /*<<op_set.ml 139 21>>*/ caml_call2(_i1_,sexp_of_change_op,v_ops),
-        /*<<op_set.ml 139 21>>*/ bnds$0=[0,[1,[0,_F_,[0,arg,0]]],bnds],
-        /*<<op_set.ml 139 21>>*/ _i2_=ActorMap[47],
-        /*<<op_set.ml 138 16>>*/ arg$0=
-         /*<<op_set.ml 138 16>>*/ caml_call2(_i2_,sexp_of_seq,v_deps),
-        /*<<op_set.ml 138 16>>*/ bnds$1=[0,[1,[0,_G_,[0,arg$0,0]]],bnds$0],
-        /*<<op_set.ml 136 6>>*/ arg$1=
-         /*<<op_set.ml 136 6>>*/ caml_call1(sexp_of_seq,v_seq),
-        /*<<op_set.ml 136 6>>*/ bnds$2=[0,[1,[0,_H_,[0,arg$1,0]]],bnds$1],
-        /*<<op_set.ml 135 6>>*/ arg$2=
-         /*<<op_set.ml 135 6>>*/ caml_call1(sexp_of_actor,v_actor),
-        /*<<op_set.ml 135 6>>*/ bnds$3=[0,[1,[0,_I_,[0,arg$2,0]]],bnds$2];
-       /*<<op_set.ml 135 6>>*/ return [1,bnds$3] /*<<op_set.ml 140 22>>*/ }
     function sexp_of_conflict(param)
-     { /*<<op_set.ml 148 2>>*/ var
-        /*<<op_set.ml 148 2>>*/ v_link=param[3],
-        /*<<op_set.ml 148 2>>*/ v_value=param[2],
-        /*<<op_set.ml 148 2>>*/ v_actor=param[1],
-        /*<<op_set.ml 148 2>>*/ bnds=0,
-        /*<<op_set.ml 148 2>>*/ _iY_=Sexplib_Conv[6],
-        /*<<op_set.ml 148 2>>*/ _iZ_=Sexplib_Conv[17],
-        /*<<op_set.ml 148 66>>*/ arg=
-         /*<<op_set.ml 148 66>>*/ caml_call2(_iZ_,_iY_,v_link),
-        /*<<op_set.ml 148 66>>*/ bnds$0=[0,[1,[0,_J_,[0,arg,0]]],bnds],
-        /*<<op_set.ml 148 66>>*/ _i0_=Sexplib_Conv[17],
-        /*<<op_set.ml 148 47>>*/ arg$0=
-         /*<<op_set.ml 148 47>>*/ caml_call2(_i0_,sexp_of_op_val,v_value),
-        /*<<op_set.ml 148 47>>*/ bnds$1=[0,[1,[0,_K_,[0,arg$0,0]]],bnds$0],
-        /*<<op_set.ml 148 19>>*/ arg$1=
-         /*<<op_set.ml 148 19>>*/ caml_call1(sexp_of_actor,v_actor),
-        /*<<op_set.ml 148 19>>*/ bnds$2=[0,[1,[0,_L_,[0,arg$1,0]]],bnds$1];
-       /*<<op_set.ml 148 19>>*/ return [1,bnds$2] /*<<op_set.ml 149 22>>*/ }
+     { /*<<op_set.ml 150 2>>*/ var
+        /*<<op_set.ml 150 2>>*/ v_link=param[3],
+        /*<<op_set.ml 150 2>>*/ v_value=param[2],
+        /*<<op_set.ml 150 2>>*/ v_actor=param[1],
+        /*<<op_set.ml 150 2>>*/ bnds=0,
+        /*<<op_set.ml 150 2>>*/ _ji_=Sexplib_Conv[6],
+        /*<<op_set.ml 150 2>>*/ _jj_=Sexplib_Conv[17],
+        /*<<op_set.ml 150 66>>*/ arg=
+         /*<<op_set.ml 150 66>>*/ caml_call2(_jj_,_ji_,v_link),
+        /*<<op_set.ml 150 66>>*/ bnds$0=[0,[1,[0,_D_,[0,arg,0]]],bnds],
+        /*<<op_set.ml 150 66>>*/ _jk_=Sexplib_Conv[17],
+        /*<<op_set.ml 150 47>>*/ arg$0=
+         /*<<op_set.ml 150 47>>*/ caml_call2(_jk_,sexp_of_op_val,v_value),
+        /*<<op_set.ml 150 47>>*/ bnds$1=[0,[1,[0,_E_,[0,arg$0,0]]],bnds$0],
+        /*<<op_set.ml 150 19>>*/ arg$1=
+         /*<<op_set.ml 150 19>>*/ caml_call1(sexp_of_actor,v_actor),
+        /*<<op_set.ml 150 19>>*/ bnds$2=[0,[1,[0,_F_,[0,arg$1,0]]],bnds$1];
+       /*<<op_set.ml 150 19>>*/ return [1,bnds$2] /*<<op_set.ml 151 22>>*/ }
     function sexp_of_diff_type(param)
-     { /*<<op_set.ml 176 2>>*/ switch(param)
-       {case 0: /*<<op_set.ml 176 19>>*/ return _M_;
-        case 1: /*<<op_set.ml 176 27>>*/ return _N_;
-        default: /*<<op_set.ml 176 38>>*/ return _O_} /*<<op_set.ml 176 69>>*/ }
+     { /*<<op_set.ml 178 2>>*/ switch(param)
+       {case 0: /*<<op_set.ml 178 19>>*/ return _G_;
+        case 1: /*<<op_set.ml 178 27>>*/ return _H_;
+        default: /*<<op_set.ml 178 38>>*/ return _I_} /*<<op_set.ml 178 69>>*/ }
     function sexp_of_diff_action(param)
-     { /*<<op_set.ml 178 2>>*/ return 0 === param?_P_:_Q_ /*<<op_set.ml 178 62>>*/ }
+     { /*<<op_set.ml 180 2>>*/ return 0 === param?_J_:_K_ /*<<op_set.ml 180 62>>*/ }
     function sexp_of_diff(param)
-     { /*<<op_set.ml 180 2>>*/ var
-        /*<<op_set.ml 180 2>>*/ v_conflicts=param[7],
-        /*<<op_set.ml 180 2>>*/ v_link=param[6],
-        /*<<op_set.ml 180 2>>*/ v_value=param[5],
-        /*<<op_set.ml 180 2>>*/ v_key=param[4],
-        /*<<op_set.ml 180 2>>*/ v_action=param[3],
-        /*<<op_set.ml 180 2>>*/ v_type=param[2],
-        /*<<op_set.ml 180 2>>*/ v_obj=param[1],
-        /*<<op_set.ml 180 2>>*/ bnds=0,
-        /*<<op_set.ml 180 2>>*/ _iQ_=Sexplib_Conv[20],
-        /*<<op_set.ml 187 17>>*/ _iR_=
-         /*<<op_set.ml 187 17>>*/ caml_call1(_iQ_,sexp_of_conflict),
-        /*<<op_set.ml 187 17>>*/ _iS_=Sexplib_Conv[17],
-        /*<<op_set.ml 187 31>>*/ arg=
-         /*<<op_set.ml 187 31>>*/ caml_call2(_iS_,_iR_,v_conflicts),
-        /*<<op_set.ml 187 31>>*/ bnds$0=[0,[1,[0,_R_,[0,arg,0]]],bnds],
-        /*<<op_set.ml 187 31>>*/ _iT_=Sexplib_Conv[6],
-        /*<<op_set.ml 187 31>>*/ _iU_=Sexplib_Conv[17],
-        /*<<op_set.ml 186 17>>*/ arg$0=
-         /*<<op_set.ml 186 17>>*/ caml_call2(_iU_,_iT_,v_link),
-        /*<<op_set.ml 186 17>>*/ bnds$1=[0,[1,[0,_S_,[0,arg$0,0]]],bnds$0],
-        /*<<op_set.ml 186 17>>*/ _iV_=Sexplib_Conv[17],
-        /*<<op_set.ml 185 20>>*/ arg$1=
-         /*<<op_set.ml 185 20>>*/ caml_call2(_iV_,sexp_of_op_val,v_value),
-        /*<<op_set.ml 185 20>>*/ bnds$2=[0,[1,[0,_T_,[0,arg$1,0]]],bnds$1],
-        /*<<op_set.ml 185 20>>*/ _iW_=Sexplib_Conv[17],
-        /*<<op_set.ml 184 15>>*/ arg$2=
-         /*<<op_set.ml 184 15>>*/ caml_call2(_iW_,sexp_of_key,v_key),
-        /*<<op_set.ml 184 15>>*/ bnds$3=[0,[1,[0,_U_,[0,arg$2,0]]],bnds$2],
-        /*<<op_set.ml 183 6>>*/ arg$3=
-         /*<<op_set.ml 183 6>>*/ sexp_of_diff_action(v_action),
-        /*<<op_set.ml 183 6>>*/ bnds$4=[0,[1,[0,_V_,[0,arg$3,0]]],bnds$3],
-        /*<<op_set.ml 182 6>>*/ arg$4=
-         /*<<op_set.ml 182 6>>*/ sexp_of_diff_type(v_type),
-        /*<<op_set.ml 182 6>>*/ bnds$5=[0,[1,[0,_W_,[0,arg$4,0]]],bnds$4],
-        /*<<op_set.ml 182 6>>*/ _iX_=Sexplib_Conv[7],
-        /*<<op_set.ml 181 6>>*/ arg$5=
-         /*<<op_set.ml 181 6>>*/ caml_call1(_iX_,v_obj),
-        /*<<op_set.ml 181 6>>*/ bnds$6=[0,[1,[0,_X_,[0,arg$5,0]]],bnds$5];
-       /*<<op_set.ml 181 6>>*/ return [1,bnds$6] /*<<op_set.ml 188 22>>*/ }
+     { /*<<op_set.ml 182 2>>*/ var
+        /*<<op_set.ml 182 2>>*/ v_conflicts=param[7],
+        /*<<op_set.ml 182 2>>*/ v_link=param[6],
+        /*<<op_set.ml 182 2>>*/ v_value=param[5],
+        /*<<op_set.ml 182 2>>*/ v_key=param[4],
+        /*<<op_set.ml 182 2>>*/ v_action=param[3],
+        /*<<op_set.ml 182 2>>*/ v_type=param[2],
+        /*<<op_set.ml 182 2>>*/ v_obj=param[1],
+        /*<<op_set.ml 182 2>>*/ bnds=0,
+        /*<<op_set.ml 182 2>>*/ _ja_=Sexplib_Conv[20],
+        /*<<op_set.ml 189 17>>*/ _jb_=
+         /*<<op_set.ml 189 17>>*/ caml_call1(_ja_,sexp_of_conflict),
+        /*<<op_set.ml 189 17>>*/ _jc_=Sexplib_Conv[17],
+        /*<<op_set.ml 189 31>>*/ arg=
+         /*<<op_set.ml 189 31>>*/ caml_call2(_jc_,_jb_,v_conflicts),
+        /*<<op_set.ml 189 31>>*/ bnds$0=[0,[1,[0,_L_,[0,arg,0]]],bnds],
+        /*<<op_set.ml 189 31>>*/ _jd_=Sexplib_Conv[6],
+        /*<<op_set.ml 189 31>>*/ _je_=Sexplib_Conv[17],
+        /*<<op_set.ml 188 17>>*/ arg$0=
+         /*<<op_set.ml 188 17>>*/ caml_call2(_je_,_jd_,v_link),
+        /*<<op_set.ml 188 17>>*/ bnds$1=[0,[1,[0,_M_,[0,arg$0,0]]],bnds$0],
+        /*<<op_set.ml 188 17>>*/ _jf_=Sexplib_Conv[17],
+        /*<<op_set.ml 187 20>>*/ arg$1=
+         /*<<op_set.ml 187 20>>*/ caml_call2(_jf_,sexp_of_op_val,v_value),
+        /*<<op_set.ml 187 20>>*/ bnds$2=[0,[1,[0,_N_,[0,arg$1,0]]],bnds$1],
+        /*<<op_set.ml 187 20>>*/ _jg_=Sexplib_Conv[17],
+        /*<<op_set.ml 186 15>>*/ arg$2=
+         /*<<op_set.ml 186 15>>*/ caml_call2(_jg_,sexp_of_key,v_key),
+        /*<<op_set.ml 186 15>>*/ bnds$3=[0,[1,[0,_O_,[0,arg$2,0]]],bnds$2],
+        /*<<op_set.ml 185 6>>*/ arg$3=
+         /*<<op_set.ml 185 6>>*/ sexp_of_diff_action(v_action),
+        /*<<op_set.ml 185 6>>*/ bnds$4=[0,[1,[0,_P_,[0,arg$3,0]]],bnds$3],
+        /*<<op_set.ml 184 6>>*/ arg$4=
+         /*<<op_set.ml 184 6>>*/ sexp_of_diff_type(v_type),
+        /*<<op_set.ml 184 6>>*/ bnds$5=[0,[1,[0,_Q_,[0,arg$4,0]]],bnds$4],
+        /*<<op_set.ml 184 6>>*/ _jh_=Sexplib_Conv[7],
+        /*<<op_set.ml 183 6>>*/ arg$5=
+         /*<<op_set.ml 183 6>>*/ caml_call1(_jh_,v_obj),
+        /*<<op_set.ml 183 6>>*/ bnds$6=[0,[1,[0,_R_,[0,arg$5,0]]],bnds$5];
+       /*<<op_set.ml 183 6>>*/ return [1,bnds$6] /*<<op_set.ml 190 22>>*/ }
     function get_obj_aux(t,obj_id)
-     { /*<<op_set.ml 214 29>>*/ var
-        /*<<op_set.ml 214 29>>*/ _iL_=t[3],
-        /*<<op_set.ml 214 29>>*/ _iM_=ObjectIdMap[27],
-        /*<<op_set.ml 214 43>>*/ _iN_=
-         /*<<op_set.ml 214 43>>*/ caml_call2(_iM_,obj_id,_iL_);
-       /*<<op_set.ml 214 43>>*/ function _iO_(_iP_){ /*<<?>>*/ return _iP_[2]}
-       /*<<op_set.ml 214 43>>*/ return  /*<<op_set.ml 214 43>>*/ caml_call2
-              (CCOpt[1],_iO_,_iN_) /*<<op_set.ml 214 79>>*/ }
+     { /*<<op_set.ml 216 29>>*/ var
+        /*<<op_set.ml 216 29>>*/ _i7_=t[3],
+        /*<<op_set.ml 216 29>>*/ _i8_=ObjectIdMap[27],
+        /*<<op_set.ml 216 43>>*/ _i9_=
+         /*<<op_set.ml 216 43>>*/ caml_call2(_i8_,obj_id,_i7_);
+       /*<<op_set.ml 216 43>>*/ function _i__(_i$_){ /*<<?>>*/ return _i$_[2]}
+       /*<<op_set.ml 216 43>>*/ return  /*<<op_set.ml 216 43>>*/ caml_call2
+              (CCOpt[1],_i__,_i9_) /*<<op_set.ml 216 79>>*/ }
     function get_obj_aux_exn(t,obj_id)
-     { /*<<op_set.ml 216 47>>*/  /*<<op_set.ml 216 47>>*/ var
-       _iK_=
-         /*<<op_set.ml 216 47>>*/ get_obj_aux(t,obj_id);
-       /*<<op_set.ml 216 47>>*/ return  /*<<op_set.ml 216 47>>*/ caml_call1
-              (CCOpt[20],_iK_) /*<<op_set.ml 216 69>>*/ }
+     { /*<<op_set.ml 218 47>>*/  /*<<op_set.ml 218 47>>*/ var
+       _i6_=
+         /*<<op_set.ml 218 47>>*/ get_obj_aux(t,obj_id);
+       /*<<op_set.ml 218 47>>*/ return  /*<<op_set.ml 218 47>>*/ caml_call1
+              (CCOpt[20],_i6_) /*<<op_set.ml 218 69>>*/ }
     function get_op_value_as_string_exn(param)
-     { /*<<op_set.ml 218 35>>*/ if(1 === param[0])
-       { /*<<op_set.ml 219 20>>*/  /*<<op_set.ml 219 20>>*/ var s=param[1];
-         /*<<op_set.ml 219 20>>*/ return s}
-       /*<<op_set.ml 220 37>>*/ throw [0,Invalid_argument,cst_op_value] /*<<op_set.ml 220 72>>*/ }
+     { /*<<op_set.ml 220 35>>*/ if(1 === param[0])
+       { /*<<op_set.ml 221 20>>*/  /*<<op_set.ml 221 20>>*/ var s=param[1];
+         /*<<op_set.ml 221 20>>*/ return s}
+       /*<<op_set.ml 222 37>>*/ throw [0,Invalid_argument,cst_op_value] /*<<op_set.ml 222 72>>*/ }
     function get_obj_action(t,obj_id)
-     { /*<<op_set.ml 222 32>>*/ return  /*<<op_set.ml 222 32>>*/ get_obj_aux_exn
+     { /*<<op_set.ml 224 32>>*/ return  /*<<op_set.ml 224 32>>*/ get_obj_aux_exn
                 (t,obj_id)
                [3]
-              [2] /*<<op_set.ml 222 71>>*/ }
+              [2] /*<<op_set.ml 224 71>>*/ }
     function causaly_ready(t,change)
-     { /*<<op_set.ml 231 4>>*/  /*<<op_set.ml 231 4>>*/ var _iC_=change[3];
-       /*<<op_set.ml 231 4>>*/ function _iD_(param)
-       { /*<<op_set.ml 232 36>>*/ if(param)
-         { /*<<op_set.ml 233 23>>*/  /*<<op_set.ml 233 23>>*/ var
+     { /*<<op_set.ml 233 4>>*/  /*<<op_set.ml 233 4>>*/ var _iY_=change[3];
+       /*<<op_set.ml 233 4>>*/ function _iZ_(param)
+       { /*<<op_set.ml 234 36>>*/ if(param)
+         { /*<<op_set.ml 235 23>>*/  /*<<op_set.ml 235 23>>*/ var
            seq=
             param[1];
-           /*<<op_set.ml 233 23>>*/ return [0,seq - 1 | 0]}
-         /*<<op_set.ml 234 19>>*/ return 0 /*<<op_set.ml 234 25>>*/ }
-       /*<<op_set.ml 231 4>>*/ var
-        /*<<op_set.ml 231 4>>*/ _iE_=change[1],
-        /*<<op_set.ml 231 4>>*/ _iF_=ActorMap[29],
-        /*<<op_set.ml 231 4>>*/ _iG_=
-         /*<<op_set.ml 231 4>>*/ caml_call3(_iF_,_iE_,_iD_,_iC_);
-       /*<<op_set.ml 231 4>>*/ function _iH_(depActor,depSeq)
-       { /*<<op_set.ml 236 11>>*/ var
-          /*<<op_set.ml 236 11>>*/ _iI_=t[4],
-          /*<<op_set.ml 236 11>>*/ _iJ_=ActorMap[33],
-          /*<<op_set.ml 236 17>>*/ match=
-           /*<<op_set.ml 236 17>>*/ caml_call2(_iJ_,depActor,_iI_);
-         /*<<op_set.ml 236 17>>*/ if(match)
-         { /*<<op_set.ml 237 30>>*/  /*<<op_set.ml 237 30>>*/ var
+           /*<<op_set.ml 235 23>>*/ return [0,seq - 1 | 0]}
+         /*<<op_set.ml 236 19>>*/ return 0 /*<<op_set.ml 236 25>>*/ }
+       /*<<op_set.ml 233 4>>*/ var
+        /*<<op_set.ml 233 4>>*/ _i0_=change[1],
+        /*<<op_set.ml 233 4>>*/ _i1_=ActorMap[29],
+        /*<<op_set.ml 233 4>>*/ _i2_=
+         /*<<op_set.ml 233 4>>*/ caml_call3(_i1_,_i0_,_iZ_,_iY_);
+       /*<<op_set.ml 233 4>>*/ function _i3_(depActor,depSeq)
+       { /*<<op_set.ml 238 11>>*/ var
+          /*<<op_set.ml 238 11>>*/ _i4_=t[4],
+          /*<<op_set.ml 238 11>>*/ _i5_=ActorMap[33],
+          /*<<op_set.ml 238 17>>*/ match=
+           /*<<op_set.ml 238 17>>*/ caml_call2(_i5_,depActor,_i4_);
+         /*<<op_set.ml 238 17>>*/ if(match)
+         { /*<<op_set.ml 239 30>>*/  /*<<op_set.ml 239 30>>*/ var
            depClock=
             match[1];
-           /*<<op_set.ml 237 30>>*/ return depSeq <= depClock?1:0}
-         /*<<op_set.ml 238 21>>*/ return 0 <= depSeq?1:0 /*<<op_set.ml 238 32>>*/ }
-       /*<<op_set.ml 231 4>>*/ return  /*<<op_set.ml 231 4>>*/ caml_call2
-              (ActorMap[12],_iH_,_iG_) /*<<op_set.ml 238 34>>*/ }
+           /*<<op_set.ml 239 30>>*/ return depSeq <= depClock?1:0}
+         /*<<op_set.ml 240 21>>*/ return 0 <= depSeq?1:0 /*<<op_set.ml 240 32>>*/ }
+       /*<<op_set.ml 233 4>>*/ return  /*<<op_set.ml 233 4>>*/ caml_call2
+              (ActorMap[12],_i3_,_i2_) /*<<op_set.ml 240 34>>*/ }
     function transitive_deps(t,baseDeps)
-     { /*<<op_set.ml 247 4>>*/  /*<<op_set.ml 247 4>>*/ var _ip_=ActorMap[1];
-       /*<<op_set.ml 247 4>>*/ function _iq_(depActor,depSeq,deps)
-       { /*<<op_set.ml 249 8>>*/ if(0 < depSeq)
-         { /*<<op_set.ml 251 10>>*/ var
-            /*<<op_set.ml 251 10>>*/ _ir_=t[1],
-            /*<<op_set.ml 251 10>>*/ _is_=ActorMap[33],
-            /*<<op_set.ml 251 16>>*/ match=
-             /*<<op_set.ml 251 16>>*/ caml_call2(_is_,depActor,_ir_);
-           /*<<op_set.ml 251 16>>*/ if(match)
-           { /*<<op_set.ml 252 27>>*/ var
-              /*<<op_set.ml 252 27>>*/ states=match[1],
-              /*<<op_set.ml 252 27>>*/ _it_=depSeq - 1 | 0,
-              /*<<op_set.ml 252 27>>*/ _iu_=List[8],
-              /*<<op_set.ml 253 18>>*/ match$0=
-               /*<<op_set.ml 253 18>>*/ caml_call2(_iu_,states,_it_);
-             /*<<op_set.ml 253 18>>*/ if(match$0)
-             { /*<<op_set.ml 255 16>>*/ var
-                /*<<op_set.ml 255 16>>*/ state=match$0[1],
-                /*<<op_set.ml 255 16>>*/ _iv_=state[2],
-                /*<<op_set.ml 255 16>>*/ _iw_=
+     { /*<<op_set.ml 249 4>>*/  /*<<op_set.ml 249 4>>*/ var _iL_=ActorMap[1];
+       /*<<op_set.ml 249 4>>*/ function _iM_(depActor,depSeq,deps)
+       { /*<<op_set.ml 251 8>>*/ if(0 < depSeq)
+         { /*<<op_set.ml 253 10>>*/ var
+            /*<<op_set.ml 253 10>>*/ _iN_=t[1],
+            /*<<op_set.ml 253 10>>*/ _iO_=ActorMap[33],
+            /*<<op_set.ml 253 16>>*/ match=
+             /*<<op_set.ml 253 16>>*/ caml_call2(_iO_,depActor,_iN_);
+           /*<<op_set.ml 253 16>>*/ if(match)
+           { /*<<op_set.ml 254 27>>*/ var
+              /*<<op_set.ml 254 27>>*/ states=match[1],
+              /*<<op_set.ml 254 27>>*/ _iP_=depSeq - 1 | 0,
+              /*<<op_set.ml 254 27>>*/ _iQ_=List[8],
+              /*<<op_set.ml 255 18>>*/ match$0=
+               /*<<op_set.ml 255 18>>*/ caml_call2(_iQ_,states,_iP_);
+             /*<<op_set.ml 255 18>>*/ if(match$0)
+             { /*<<op_set.ml 257 16>>*/ var
+                /*<<op_set.ml 257 16>>*/ state=match$0[1],
+                /*<<op_set.ml 257 16>>*/ _iR_=state[2],
+                /*<<op_set.ml 257 16>>*/ _iS_=
                 function(param,l,match)
-                 { /*<<op_set.ml 257 20>>*/ if(l)
-                   {var _iA_=l[1];
+                 { /*<<op_set.ml 259 20>>*/ if(l)
+                   {var _iW_=l[1];
                     if(match)
-                     { /*<<op_set.ml 258 40>>*/ var
-                        /*<<op_set.ml 258 40>>*/ r=match[1],
-                        /*<<op_set.ml 258 40>>*/ _iB_=Pervasives[5];
-                       /*<<op_set.ml 258 45>>*/ return [0,
-                               /*<<op_set.ml 258 45>>*/ caml_call2(_iB_,_iA_,r)]}
-                     /*<<op_set.ml 259 38>>*/ return [0,_iA_]}
+                     { /*<<op_set.ml 260 40>>*/ var
+                        /*<<op_set.ml 260 40>>*/ r=match[1],
+                        /*<<op_set.ml 260 40>>*/ _iX_=Pervasives[5];
+                       /*<<op_set.ml 260 45>>*/ return [0,
+                               /*<<op_set.ml 260 45>>*/ caml_call2(_iX_,_iW_,r)]}
+                     /*<<op_set.ml 261 38>>*/ return [0,_iW_]}
                   if(match)
-                   { /*<<op_set.ml 260 38>>*/  /*<<op_set.ml 260 38>>*/ var
+                   { /*<<op_set.ml 262 38>>*/  /*<<op_set.ml 262 38>>*/ var
                      r$0=
                       match[1];
-                     /*<<op_set.ml 260 38>>*/ return [0,r$0]}
-                   /*<<op_set.ml 261 36>>*/ return 0 /*<<op_set.ml 261 40>>*/ },
-                /*<<op_set.ml 255 16>>*/ _ix_=ActorMap[7],
-                /*<<op_set.ml 255 16>>*/ _iy_=
-                 /*<<op_set.ml 255 16>>*/ caml_call3(_ix_,_iw_,deps,_iv_),
-                /*<<op_set.ml 255 16>>*/ _iz_=
+                     /*<<op_set.ml 262 38>>*/ return [0,r$0]}
+                   /*<<op_set.ml 263 36>>*/ return 0 /*<<op_set.ml 263 40>>*/ },
+                /*<<op_set.ml 257 16>>*/ _iT_=ActorMap[7],
+                /*<<op_set.ml 257 16>>*/ _iU_=
+                 /*<<op_set.ml 257 16>>*/ caml_call3(_iT_,_iS_,deps,_iR_),
+                /*<<op_set.ml 257 16>>*/ _iV_=
                 function(param)
-                 { /*<<op_set.ml 263 54>>*/ return [0,depSeq] /*<<op_set.ml 263 65>>*/ };
-               /*<<op_set.ml 255 16>>*/ return  /*<<op_set.ml 255 16>>*/ caml_call3
-                      (ActorMap[29],depActor,_iz_,_iy_)}
-             /*<<op_set.ml 264 22>>*/ return deps}
-           /*<<op_set.ml 265 20>>*/ return deps}
-         /*<<op_set.ml 249 28>>*/ return deps /*<<op_set.ml 265 24>>*/ }
-       /*<<op_set.ml 247 4>>*/ return  /*<<op_set.ml 247 4>>*/ caml_call3
-              (ActorMap[11],_iq_,baseDeps,_ip_) /*<<op_set.ml 266 29>>*/ }
+                 { /*<<op_set.ml 265 54>>*/ return [0,depSeq] /*<<op_set.ml 265 65>>*/ };
+               /*<<op_set.ml 257 16>>*/ return  /*<<op_set.ml 257 16>>*/ caml_call3
+                      (ActorMap[29],depActor,_iV_,_iU_)}
+             /*<<op_set.ml 266 22>>*/ return deps}
+           /*<<op_set.ml 267 20>>*/ return deps}
+         /*<<op_set.ml 251 28>>*/ return deps /*<<op_set.ml 267 24>>*/ }
+       /*<<op_set.ml 249 4>>*/ return  /*<<op_set.ml 249 4>>*/ caml_call3
+              (ActorMap[11],_iM_,baseDeps,_iL_) /*<<op_set.ml 268 29>>*/ }
     function apply_make(t,op)
-     { /*<<op_set.ml 269 4>>*/ switch(op[2])
+     { /*<<op_set.ml 271 4>>*/ switch(op[2])
        {case 0:
-          /*<<op_set.ml 272 10>>*/ var
-           /*<<op_set.ml 272 10>>*/ e=[0,0,0,0,0,0,op[5],0,0,0,0],
-           /*<<op_set.ml 272 10>>*/ o=[0,0,KeyMap[1],op,empty,0,ElemIdMap[1]],
+          /*<<op_set.ml 274 10>>*/ var
+           /*<<op_set.ml 274 10>>*/ e=[0,0,0,0,0,0,op[5],0,0,0,0],
+           /*<<op_set.ml 274 10>>*/ o=[0,0,KeyMap[1],op,empty,0,ElemIdMap[1]],
           match=[0,e,o];
          break;
         case 1:
-          /*<<op_set.ml 316 10>>*/ var
-           /*<<op_set.ml 316 10>>*/ e$0=[0,2,0,0,0,0,op[5],0,0,0,0],
-           /*<<op_set.ml 316 10>>*/ o$0=
-           [0,0,KeyMap[1],op,empty,_Y_,ElemIdMap[1]],
+          /*<<op_set.ml 318 10>>*/ var
+           /*<<op_set.ml 318 10>>*/ e$0=[0,2,0,0,0,0,op[5],0,0,0,0],
+           /*<<op_set.ml 318 10>>*/ o$0=
+           [0,0,KeyMap[1],op,empty,_S_,ElemIdMap[1]],
           match=[0,e$0,o$0];
          break;
         case 2:
-          /*<<op_set.ml 294 10>>*/ var
-           /*<<op_set.ml 294 10>>*/ e$1=[0,1,0,0,0,0,op[5],0,0,0,0],
-           /*<<op_set.ml 294 10>>*/ o$1=
-           [0,0,KeyMap[1],op,empty,_Z_,ElemIdMap[1]],
+          /*<<op_set.ml 296 10>>*/ var
+           /*<<op_set.ml 296 10>>*/ e$1=[0,1,0,0,0,0,op[5],0,0,0,0],
+           /*<<op_set.ml 296 10>>*/ o$1=
+           [0,0,KeyMap[1],op,empty,_T_,ElemIdMap[1]],
           match=[0,e$1,o$1];
          break;
-        default: /*<<op_set.ml 337 13>>*/ throw Not_supported}
-       /*<<op_set.ml 340 6>>*/ var
+        default: /*<<op_set.ml 339 13>>*/ throw Not_supported}
+       /*<<op_set.ml 342 6>>*/ var
        obj_aux=match[2],
        edit=match[1],
-       _il_=t[3],
-       _im_=[0,KeyMap[1],obj_aux],
-       _in_=op[5],
-       _io_=ObjectIdMap[4],
-        /*<<op_set.ml 340 6>>*/ by_object=
-         /*<<op_set.ml 340 6>>*/ caml_call3(_io_,_in_,_im_,_il_);
-       /*<<op_set.ml 340 6>>*/ return [0,
+       _iH_=t[3],
+       _iI_=[0,KeyMap[1],obj_aux],
+       _iJ_=op[5],
+       _iK_=ObjectIdMap[4],
+        /*<<op_set.ml 342 6>>*/ by_object=
+         /*<<op_set.ml 342 6>>*/ caml_call3(_iK_,_iJ_,_iI_,_iH_);
+       /*<<op_set.ml 342 6>>*/ return [0,
               [0,t[1],t[2],by_object,t[4],t[5],t[6],t[7],t[8],t[9],t[10]],
-              [0,edit,0]] /*<<op_set.ml 342 32>>*/ }
+              [0,edit,0]] /*<<op_set.ml 344 32>>*/ }
     function apply_insert(t,op)
-     { /*<<op_set.ml 345 51>>*/ var
-        /*<<op_set.ml 345 51>>*/ _hW_=
-         /*<<op_set.ml 345 51>>*/ get_op_elem(op),
-        /*<<op_set.ml 345 51>>*/ _hX_=Datastructures[2][13],
-        /*<<op_set.ml 345 35>>*/ _hY_=
-         /*<<op_set.ml 345 35>>*/ caml_call1(_hX_,_hW_),
-        /*<<op_set.ml 345 35>>*/ _hZ_=Pervasives[16],
-        /*<<op_set.ml 345 29>>*/ _h0_=
-         /*<<op_set.ml 345 29>>*/ caml_call2(_hZ_,cst,_hY_),
-        /*<<op_set.ml 345 29>>*/ _h1_=op[3],
-        /*<<op_set.ml 345 29>>*/ _h2_=Pervasives[16],
-        /*<<op_set.ml 345 18>>*/ elem_id=
-         /*<<op_set.ml 345 18>>*/ caml_call2(_h2_,_h1_,_h0_),
-        /*<<op_set.ml 345 18>>*/ _h3_=t[3],
-        /*<<op_set.ml 345 18>>*/ _h4_=op[5],
-        /*<<op_set.ml 345 18>>*/ _h5_=ObjectIdMap[33],
-        /*<<op_set.ml 346 12>>*/ match=
-         /*<<op_set.ml 346 12>>*/ caml_call2(_h5_,_h4_,_h3_);
-       /*<<op_set.ml 346 12>>*/ if(match)
+     { /*<<op_set.ml 347 51>>*/ var
+        /*<<op_set.ml 347 51>>*/ _ig_=
+         /*<<op_set.ml 347 51>>*/ get_op_elem(op),
+        /*<<op_set.ml 347 51>>*/ _ih_=Datastructures[2][13],
+        /*<<op_set.ml 347 35>>*/ _ii_=
+         /*<<op_set.ml 347 35>>*/ caml_call1(_ih_,_ig_),
+        /*<<op_set.ml 347 35>>*/ _ij_=Pervasives[16],
+        /*<<op_set.ml 347 29>>*/ _ik_=
+         /*<<op_set.ml 347 29>>*/ caml_call2(_ij_,cst,_ii_),
+        /*<<op_set.ml 347 29>>*/ _il_=op[3],
+        /*<<op_set.ml 347 29>>*/ _im_=Pervasives[16],
+        /*<<op_set.ml 347 18>>*/ elem_id=
+         /*<<op_set.ml 347 18>>*/ caml_call2(_im_,_il_,_ik_),
+        /*<<op_set.ml 347 18>>*/ _in_=t[3],
+        /*<<op_set.ml 347 18>>*/ _io_=op[5],
+        /*<<op_set.ml 347 18>>*/ _ip_=ObjectIdMap[33],
+        /*<<op_set.ml 348 12>>*/ match=
+         /*<<op_set.ml 348 12>>*/ caml_call2(_ip_,_io_,_in_);
+       /*<<op_set.ml 348 12>>*/ if(match)
        {var
          match$0=match[1],
          obj_aux=match$0[2],
-         _h6_=obj_aux[6],
-         _h7_=ElemIdMap[3];
-         /*<<op_set.ml 348 11>>*/ if
-         ( /*<<op_set.ml 348 11>>*/ caml_call2(_h7_,elem_id,_h6_))
+         _iq_=obj_aux[6],
+         _ir_=ElemIdMap[3];
+         /*<<op_set.ml 350 11>>*/ if
+         ( /*<<op_set.ml 350 11>>*/ caml_call2(_ir_,elem_id,_iq_))
          throw Duplicate_list_element_id;
-         /*<<op_set.ml 352 4>>*/ var
-          /*<<op_set.ml 352 4>>*/ _h8_=t[3],
-          /*<<op_set.ml 352 4>>*/ _h9_=
+         /*<<op_set.ml 354 4>>*/ var
+          /*<<op_set.ml 354 4>>*/ _is_=t[3],
+          /*<<op_set.ml 354 4>>*/ _it_=
           function(param)
-           { /*<<op_set.ml 354 8>>*/ if(param)
-             { /*<<op_set.ml 357 16>>*/ var
+           { /*<<op_set.ml 356 8>>*/ if(param)
+             { /*<<op_set.ml 359 16>>*/ var
                match=param[1],
                obj_aux=match[2],
                obj=match[1],
-               _ia_=obj_aux[2],
-               _ib_=
+               _iw_=obj_aux[2],
+               _ix_=
                 function(param)
-                 { /*<<op_set.ml 358 18>>*/ if(param)
-                   { /*<<op_set.ml 359 32>>*/ var
-                      /*<<op_set.ml 359 32>>*/ l=param[1],
-                      /*<<op_set.ml 359 32>>*/ _ij_=[0,op,0],
-                      /*<<op_set.ml 359 32>>*/ _ik_=List[11];
-                     /*<<op_set.ml 359 37>>*/ return [0,
-                             /*<<op_set.ml 359 37>>*/ caml_call2(_ik_,l,_ij_)]}
-                   /*<<op_set.ml 359 68>>*/ return ___ /*<<op_set.ml 359 76>>*/ },
-               _ic_=op[1],
-               _id_=KeyMap[29],
-                /*<<op_set.ml 357 16>>*/ following=
-                 /*<<op_set.ml 357 16>>*/ caml_call3(_id_,_ic_,_ib_,_ia_),
-                /*<<op_set.ml 357 16>>*/ _ie_=obj_aux[1],
-                /*<<op_set.ml 362 34>>*/ _if_=
-                 /*<<op_set.ml 362 34>>*/ get_op_elem(op),
-                /*<<op_set.ml 362 34>>*/ _ig_=Pervasives[5],
-                /*<<op_set.ml 362 30>>*/ max_elem=
-                 /*<<op_set.ml 362 30>>*/ caml_call2(_ig_,_if_,_ie_),
-                /*<<op_set.ml 362 30>>*/ _ih_=obj_aux[6],
-                /*<<op_set.ml 362 30>>*/ _ii_=ElemIdMap[4],
-                /*<<op_set.ml 363 31>>*/ insertion=
-                 /*<<op_set.ml 363 31>>*/ caml_call3(_ii_,elem_id,op,_ih_);
-               /*<<op_set.ml 363 31>>*/ return [0,
+                 { /*<<op_set.ml 360 18>>*/ if(param)
+                   { /*<<op_set.ml 361 32>>*/ var
+                      /*<<op_set.ml 361 32>>*/ l=param[1],
+                      /*<<op_set.ml 361 32>>*/ _iF_=[0,op,0],
+                      /*<<op_set.ml 361 32>>*/ _iG_=List[11];
+                     /*<<op_set.ml 361 37>>*/ return [0,
+                             /*<<op_set.ml 361 37>>*/ caml_call2(_iG_,l,_iF_)]}
+                   /*<<op_set.ml 361 68>>*/ return [0,[0,op,0]] /*<<op_set.ml 361 78>>*/ },
+               _iy_=op[1],
+               _iz_=KeyMap[29],
+                /*<<op_set.ml 359 16>>*/ following=
+                 /*<<op_set.ml 359 16>>*/ caml_call3(_iz_,_iy_,_ix_,_iw_),
+                /*<<op_set.ml 359 16>>*/ _iA_=obj_aux[1],
+                /*<<op_set.ml 364 34>>*/ _iB_=
+                 /*<<op_set.ml 364 34>>*/ get_op_elem(op),
+                /*<<op_set.ml 364 34>>*/ _iC_=Pervasives[5],
+                /*<<op_set.ml 364 30>>*/ max_elem=
+                 /*<<op_set.ml 364 30>>*/ caml_call2(_iC_,_iB_,_iA_),
+                /*<<op_set.ml 364 30>>*/ _iD_=obj_aux[6],
+                /*<<op_set.ml 364 30>>*/ _iE_=ElemIdMap[4],
+                /*<<op_set.ml 365 31>>*/ insertion=
+                 /*<<op_set.ml 365 31>>*/ caml_call3(_iE_,elem_id,op,_iD_);
+               /*<<op_set.ml 365 31>>*/ return [0,
                       [0,
                        obj,
                        [0,
@@ -65457,155 +65417,155 @@
                         obj_aux[4],
                         obj_aux[5],
                         insertion]]]}
-             /*<<op_set.ml 365 20>>*/ return 0 /*<<op_set.ml 365 25>>*/ },
-          /*<<op_set.ml 352 4>>*/ _h__=op[5],
-          /*<<op_set.ml 352 4>>*/ _h$_=ObjectIdMap[29],
-          /*<<op_set.ml 353 6>>*/ by_object=
-           /*<<op_set.ml 353 6>>*/ caml_call3(_h$_,_h__,_h9_,_h8_),
-          /*<<op_set.ml 353 6>>*/ t$0=
+             /*<<op_set.ml 367 20>>*/ return 0 /*<<op_set.ml 367 25>>*/ },
+          /*<<op_set.ml 354 4>>*/ _iu_=op[5],
+          /*<<op_set.ml 354 4>>*/ _iv_=ObjectIdMap[29],
+          /*<<op_set.ml 355 6>>*/ by_object=
+           /*<<op_set.ml 355 6>>*/ caml_call3(_iv_,_iu_,_it_,_is_),
+          /*<<op_set.ml 355 6>>*/ t$0=
           [0,t[1],t[2],by_object,t[4],t[5],t[6],t[7],t[8],t[9],t[10]];
-         /*<<op_set.ml 353 6>>*/ return [0,t$0,0]}
-       /*<<op_set.ml 351 14>>*/ throw Modification_of_unknown_object /*<<op_set.ml 369 11>>*/ }
+         /*<<op_set.ml 355 6>>*/ return [0,t$0,0]}
+       /*<<op_set.ml 353 14>>*/ throw Modification_of_unknown_object /*<<op_set.ml 371 11>>*/ }
     function get_conflicts(ops)
-     { /*<<op_set.ml 372 4>>*/ if(ops)
-       { /*<<op_set.ml 374 8>>*/ var
-          /*<<op_set.ml 374 8>>*/ ops_rest=ops[2],
-          /*<<op_set.ml 374 8>>*/ _hU_=
+     { /*<<op_set.ml 374 4>>*/ if(ops)
+       { /*<<op_set.ml 376 8>>*/ var
+          /*<<op_set.ml 376 8>>*/ ops_rest=ops[2],
+          /*<<op_set.ml 376 8>>*/ _ie_=
           function(conflicts,op)
-           { /*<<op_set.ml 376 12>>*/ var
-              /*<<op_set.ml 376 12>>*/ link=6 <= op[2]?1:0,
-              /*<<op_set.ml 377 12>>*/ conf=[0,op[3],op[7],[0,link]];
-             /*<<op_set.ml 377 12>>*/ function _hV_(cs)
-             { /*<<op_set.ml 378 33>>*/ return  /*<<op_set.ml 378 33>>*/ caml_call2
-                      (Pervasives[25],cs,[0,conf,0]) /*<<op_set.ml 378 44>>*/ }
-             /*<<op_set.ml 377 12>>*/ return  /*<<op_set.ml 377 12>>*/ caml_call2
-                    (CCOpt[1],_hV_,conflicts) /*<<op_set.ml 378 55>>*/ };
-         /*<<op_set.ml 374 8>>*/ return  /*<<op_set.ml 374 8>>*/ caml_call3
-                (CCList[10],_hU_,_$_,ops_rest)}
-       /*<<op_set.ml 380 12>>*/ return 0 /*<<op_set.ml 380 16>>*/ }
+           { /*<<op_set.ml 378 12>>*/ var
+              /*<<op_set.ml 378 12>>*/ link=6 <= op[2]?1:0,
+              /*<<op_set.ml 379 12>>*/ conf=[0,op[3],op[7],[0,link]];
+             /*<<op_set.ml 379 12>>*/ function _if_(cs)
+             { /*<<op_set.ml 380 33>>*/ return  /*<<op_set.ml 380 33>>*/ caml_call2
+                      (Pervasives[25],cs,[0,conf,0]) /*<<op_set.ml 380 44>>*/ }
+             /*<<op_set.ml 379 12>>*/ return  /*<<op_set.ml 379 12>>*/ caml_call2
+                    (CCOpt[1],_if_,conflicts) /*<<op_set.ml 380 55>>*/ };
+         /*<<op_set.ml 376 8>>*/ return  /*<<op_set.ml 376 8>>*/ caml_call3
+                (CCList[10],_ie_,_U_,ops_rest)}
+       /*<<op_set.ml 382 12>>*/ return 0 /*<<op_set.ml 382 16>>*/ }
     function get_path(t,obj_id,path)
      {var obj_id$0=obj_id,path$0=path;
-       /*<<op_set.ml 387 4>>*/ for(;;)
-       { /*<<op_set.ml 387 4>>*/  /*<<op_set.ml 387 4>>*/ var _hG_=String[34];
-         /*<<op_set.ml 387 7>>*/ if
-         ( /*<<op_set.ml 387 7>>*/ caml_call2(_hG_,obj_id$0,root_id))
+       /*<<op_set.ml 389 4>>*/ for(;;)
+       { /*<<op_set.ml 389 4>>*/  /*<<op_set.ml 389 4>>*/ var _h2_=String[34];
+         /*<<op_set.ml 389 7>>*/ if
+         ( /*<<op_set.ml 389 7>>*/ caml_call2(_h2_,obj_id$0,root_id))
          return path$0;
-         /*<<op_set.ml 387 4>>*/ var
-          /*<<op_set.ml 389 6>>*/ _hH_=t[3],
-          /*<<op_set.ml 389 6>>*/ _hI_=ObjectIdMap[27],
-          /*<<op_set.ml 389 12>>*/ match=
-           /*<<op_set.ml 389 12>>*/ caml_call2(_hI_,obj_id$0,_hH_);
-         /*<<op_set.ml 389 12>>*/ if(match)
-         { /*<<op_set.ml 392 14>>*/ var
+         /*<<op_set.ml 389 4>>*/ var
+          /*<<op_set.ml 391 6>>*/ _h3_=t[3],
+          /*<<op_set.ml 391 6>>*/ _h4_=ObjectIdMap[27],
+          /*<<op_set.ml 391 12>>*/ match=
+           /*<<op_set.ml 391 12>>*/ caml_call2(_h4_,obj_id$0,_h3_);
+         /*<<op_set.ml 391 12>>*/ if(match)
+         { /*<<op_set.ml 394 14>>*/ var
            match$0=match[1],
            obj_aux=match$0[2],
-           _hJ_=obj_aux[4],
-            /*<<op_set.ml 392 14>>*/ match$1=
-             /*<<op_set.ml 392 14>>*/ caml_call1(choose_opt,_hJ_);
-           /*<<op_set.ml 392 14>>*/ if(match$1)
-           { /*<<op_set.ml 394 22>>*/ var
-              /*<<op_set.ml 394 22>>*/ ref=match$1[1],
-              /*<<op_set.ml 394 22>>*/ _hK_=t[3],
-              /*<<op_set.ml 394 22>>*/ _hL_=ref[5],
-              /*<<op_set.ml 394 22>>*/ _hM_=ObjectIdMap[27],
-              /*<<op_set.ml 395 16>>*/ match$2=
-               /*<<op_set.ml 395 16>>*/ caml_call2(_hM_,_hL_,_hK_);
-             /*<<op_set.ml 395 16>>*/ if(match$2)
+           _h5_=obj_aux[4],
+            /*<<op_set.ml 394 14>>*/ match$1=
+             /*<<op_set.ml 394 14>>*/ caml_call1(choose_opt,_h5_);
+           /*<<op_set.ml 394 14>>*/ if(match$1)
+           { /*<<op_set.ml 396 22>>*/ var
+              /*<<op_set.ml 396 22>>*/ ref=match$1[1],
+              /*<<op_set.ml 396 22>>*/ _h6_=t[3],
+              /*<<op_set.ml 396 22>>*/ _h7_=ref[5],
+              /*<<op_set.ml 396 22>>*/ _h8_=ObjectIdMap[27],
+              /*<<op_set.ml 397 16>>*/ match$2=
+               /*<<op_set.ml 397 16>>*/ caml_call2(_h8_,_h7_,_h6_);
+             /*<<op_set.ml 397 16>>*/ if(match$2)
              {var
                match$3=match$2[1],
                obj_aux$0=match$3[2],
                switcher=obj_aux$0[3][2] - 1 | 0;
               if(1 < switcher >>> 0)
-               { /*<<op_set.ml 407 16>>*/ var
-                  /*<<op_set.ml 407 16>>*/ _hN_=
-                   /*<<op_set.ml 407 16>>*/ function(ref)
+               { /*<<op_set.ml 409 16>>*/ var
+                  /*<<op_set.ml 409 16>>*/ _h9_=
+                   /*<<op_set.ml 409 16>>*/ function(ref)
                     { /*<<?>>*/ return function(p)
-                      { /*<<op_set.ml 408 39>>*/ return [0,[0,901025494,ref[1]],p] /*<<op_set.ml 408 60>>*/ }}
+                      { /*<<op_set.ml 410 39>>*/ return [0,[0,901025494,ref[1]],p] /*<<op_set.ml 410 60>>*/ }}
                    (ref),
-                  /*<<op_set.ml 407 16>>*/ _hO_=CCOpt[1],
-                  /*<<op_set.ml 408 18>>*/ path$1=
-                   /*<<op_set.ml 408 18>>*/ caml_call2(_hO_,_hN_,path$0),
-                  /*<<op_set.ml 408 18>>*/ obj_id$1=ref[5],
+                  /*<<op_set.ml 409 16>>*/ _h__=CCOpt[1],
+                  /*<<op_set.ml 410 18>>*/ path$1=
+                   /*<<op_set.ml 410 18>>*/ caml_call2(_h__,_h9_,path$0),
+                  /*<<op_set.ml 410 18>>*/ obj_id$1=ref[5],
                  obj_id$0=obj_id$1,
                  path$0=path$1;
                 continue}
-               /*<<op_set.ml 399 37>>*/ var
-                /*<<op_set.ml 399 37>>*/ _hP_=obj_aux$0[5],
-                /*<<op_set.ml 399 37>>*/ _hQ_=CCOpt[20],
-                /*<<op_set.ml 400 31>>*/ elem_ids=
-                 /*<<op_set.ml 400 31>>*/ caml_call1(_hQ_,_hP_),
-                /*<<op_set.ml 400 31>>*/ _hR_=ref[1],
-                /*<<op_set.ml 401 22>>*/ match$4=
-                 /*<<op_set.ml 401 22>>*/ index_of(_hR_,elem_ids);
-               /*<<op_set.ml 401 22>>*/ if(match$4)
-               { /*<<op_set.ml 405 22>>*/ var
+               /*<<op_set.ml 401 37>>*/ var
+                /*<<op_set.ml 401 37>>*/ _h$_=obj_aux$0[5],
+                /*<<op_set.ml 401 37>>*/ _ia_=CCOpt[20],
+                /*<<op_set.ml 402 31>>*/ elem_ids=
+                 /*<<op_set.ml 402 31>>*/ caml_call1(_ia_,_h$_),
+                /*<<op_set.ml 402 31>>*/ _ib_=ref[1],
+                /*<<op_set.ml 403 22>>*/ match$4=
+                 /*<<op_set.ml 403 22>>*/ index_of(_ib_,elem_ids);
+               /*<<op_set.ml 403 22>>*/ if(match$4)
+               { /*<<op_set.ml 407 22>>*/ var
                  index=match$4[1],
-                 _hS_=
+                 _ic_=
                   function(index)
                     { /*<<?>>*/ return function(p)
-                      { /*<<op_set.ml 405 43>>*/ return [0,[0,-695801324,index],p] /*<<op_set.ml 405 62>>*/ }}
+                      { /*<<op_set.ml 407 43>>*/ return [0,[0,-695801324,index],p] /*<<op_set.ml 407 62>>*/ }}
                    (index),
-                 _hT_=CCOpt[1],
-                  /*<<op_set.ml 405 22>>*/ path$2=
-                   /*<<op_set.ml 405 22>>*/ caml_call2(_hT_,_hS_,path$0),
-                  /*<<op_set.ml 405 22>>*/ obj_id$2=ref[5],
+                 _id_=CCOpt[1],
+                  /*<<op_set.ml 407 22>>*/ path$2=
+                   /*<<op_set.ml 407 22>>*/ caml_call2(_id_,_ic_,path$0),
+                  /*<<op_set.ml 407 22>>*/ obj_id$2=ref[5],
                  obj_id$0=obj_id$2,
                  path$0=path$2;
                 continue}
-               /*<<op_set.ml 402 26>>*/ return 0}
-             /*<<op_set.ml 396 20>>*/ return 0}
-           /*<<op_set.ml 393 18>>*/ return 0}
-         /*<<op_set.ml 390 16>>*/ return 0} /*<<op_set.ml 408 73>>*/ }
+               /*<<op_set.ml 404 26>>*/ return 0}
+             /*<<op_set.ml 398 20>>*/ return 0}
+           /*<<op_set.ml 395 18>>*/ return 0}
+         /*<<op_set.ml 392 16>>*/ return 0} /*<<op_set.ml 410 73>>*/ }
     function patch_list(t,obj_id,index,elem_id_key,action,ops)
-     { /*<<op_set.ml 412 4>>*/ var
-        /*<<op_set.ml 412 4>>*/ _hc_=t[3],
-        /*<<op_set.ml 412 4>>*/ _hd_=ObjectIdMap[27],
-        /*<<op_set.ml 413 23>>*/ _he_=
-         /*<<op_set.ml 413 23>>*/ caml_call2(_hd_,obj_id,_hc_),
-        /*<<op_set.ml 413 23>>*/ _hf_=CCOpt[20],
-        /*<<op_set.ml 413 23>>*/ match=
-         /*<<op_set.ml 413 23>>*/ caml_call1(_hf_,_he_),
-        /*<<op_set.ml 413 23>>*/ obj_aux=match[2],
-        /*<<op_set.ml 413 23>>*/ type=2 === obj_aux[3][2]?1:2;
-       /*<<op_set.ml 416 4>>*/ function _hg_(ops)
-       { /*<<op_set.ml 416 46>>*/ return  /*<<op_set.ml 416 46>>*/ caml_call2
-                (CCList[113],ops,0) /*<<op_set.ml 416 66>>*/ }
-       /*<<op_set.ml 416 4>>*/ var
-        /*<<op_set.ml 416 4>>*/ _hh_=CCOpt[11],
-        /*<<op_set.ml 416 19>>*/ first_op=
-         /*<<op_set.ml 416 19>>*/ caml_call2(_hh_,_hg_,ops),
-        /*<<op_set.ml 417 33>>*/ _hi_=
-         /*<<op_set.ml 417 33>>*/ get_obj_aux_exn(t,obj_id)[5],
-        /*<<op_set.ml 417 33>>*/ _hj_=CCOpt[20],
-        /*<<op_set.ml 417 19>>*/ elem_ids=
-         /*<<op_set.ml 417 19>>*/ caml_call1(_hj_,_hi_);
-       /*<<op_set.ml 417 19>>*/ function _hk_(fop)
-       { /*<<op_set.ml 418 50>>*/ return fop[7] /*<<op_set.ml 418 59>>*/ }
-       /*<<op_set.ml 417 19>>*/ var
-        /*<<op_set.ml 417 19>>*/ _hl_=CCOpt[11],
-        /*<<op_set.ml 418 16>>*/ value=
-         /*<<op_set.ml 418 16>>*/ caml_call2(_hl_,_hk_,first_op);
-       /*<<op_set.ml 418 16>>*/ function _hm_(v)
-       { /*<<op_set.ml 419 36>>*/ return [0,v] /*<<op_set.ml 419 43>>*/ }
-       /*<<op_set.ml 418 16>>*/ var
-        /*<<op_set.ml 418 16>>*/ _hn_=CCOpt[1],
-        /*<<op_set.ml 419 16>>*/ value$0=
-         /*<<op_set.ml 419 16>>*/ caml_call2(_hn_,_hm_,value),
-        /*<<op_set.ml 420 15>>*/ path=
-         /*<<op_set.ml 420 15>>*/ get_path(t,obj_id,_aa_),
-        /*<<op_set.ml 420 15>>*/ edit=
+     { /*<<op_set.ml 414 4>>*/ var
+        /*<<op_set.ml 414 4>>*/ _hB_=t[3],
+        /*<<op_set.ml 414 4>>*/ _hC_=ObjectIdMap[27],
+        /*<<op_set.ml 415 23>>*/ _hD_=
+         /*<<op_set.ml 415 23>>*/ caml_call2(_hC_,obj_id,_hB_),
+        /*<<op_set.ml 415 23>>*/ _hE_=CCOpt[20],
+        /*<<op_set.ml 415 23>>*/ match=
+         /*<<op_set.ml 415 23>>*/ caml_call1(_hE_,_hD_),
+        /*<<op_set.ml 415 23>>*/ obj_aux=match[2],
+        /*<<op_set.ml 415 23>>*/ type=2 === obj_aux[3][2]?1:2;
+       /*<<op_set.ml 418 4>>*/ function _hF_(ops)
+       { /*<<op_set.ml 418 46>>*/ return  /*<<op_set.ml 418 46>>*/ caml_call2
+                (CCList[113],ops,0) /*<<op_set.ml 418 66>>*/ }
+       /*<<op_set.ml 418 4>>*/ var
+        /*<<op_set.ml 418 4>>*/ _hG_=CCOpt[11],
+        /*<<op_set.ml 418 19>>*/ first_op=
+         /*<<op_set.ml 418 19>>*/ caml_call2(_hG_,_hF_,ops),
+        /*<<op_set.ml 419 33>>*/ _hH_=
+         /*<<op_set.ml 419 33>>*/ get_obj_aux_exn(t,obj_id)[5],
+        /*<<op_set.ml 419 33>>*/ _hI_=CCOpt[20],
+        /*<<op_set.ml 419 19>>*/ elem_ids=
+         /*<<op_set.ml 419 19>>*/ caml_call1(_hI_,_hH_);
+       /*<<op_set.ml 419 19>>*/ function _hJ_(fop)
+       { /*<<op_set.ml 420 50>>*/ return fop[7] /*<<op_set.ml 420 59>>*/ }
+       /*<<op_set.ml 419 19>>*/ var
+        /*<<op_set.ml 419 19>>*/ _hK_=CCOpt[11],
+        /*<<op_set.ml 420 16>>*/ value=
+         /*<<op_set.ml 420 16>>*/ caml_call2(_hK_,_hJ_,first_op);
+       /*<<op_set.ml 420 16>>*/ function _hL_(v)
+       { /*<<op_set.ml 421 36>>*/ return [0,v] /*<<op_set.ml 421 43>>*/ }
+       /*<<op_set.ml 420 16>>*/ var
+        /*<<op_set.ml 420 16>>*/ _hM_=CCOpt[1],
+        /*<<op_set.ml 421 16>>*/ value$0=
+         /*<<op_set.ml 421 16>>*/ caml_call2(_hM_,_hL_,value),
+        /*<<op_set.ml 422 15>>*/ path=
+         /*<<op_set.ml 422 15>>*/ get_path(t,obj_id,_V_),
+        /*<<op_set.ml 422 15>>*/ edit=
         [0,type,action,0,0,0,obj_id,0,[0,index],0,path];
-       /*<<op_set.ml 420 15>>*/ if(first_op)
-       { /*<<op_set.ml 435 22>>*/  /*<<op_set.ml 435 22>>*/ var
+       /*<<op_set.ml 422 15>>*/ if(first_op)
+       { /*<<op_set.ml 437 22>>*/  /*<<op_set.ml 437 22>>*/ var
          fop=
           first_op[1];
-         /*<<op_set.ml 435 22>>*/ if(6 === fop[2])
-          /*<<op_set.ml 436 10>>*/ var
-           /*<<op_set.ml 436 10>>*/ _ho_=fop[7],
-           /*<<op_set.ml 436 10>>*/ _hp_=CCOpt[20],
-           /*<<op_set.ml 437 35>>*/ _hq_=
-           [0,[1,[0, /*<<op_set.ml 437 35>>*/ caml_call1(_hp_,_ho_)]]],
-           /*<<op_set.ml 437 35>>*/ _hr_=
+         /*<<op_set.ml 437 22>>*/ if(6 === fop[2])
+          /*<<op_set.ml 438 10>>*/ var
+           /*<<op_set.ml 438 10>>*/ _hN_=fop[7],
+           /*<<op_set.ml 438 10>>*/ _hO_=CCOpt[20],
+           /*<<op_set.ml 439 35>>*/ _hP_=
+           [0,[1,[0, /*<<op_set.ml 439 35>>*/ caml_call1(_hO_,_hN_)]]],
+           /*<<op_set.ml 439 35>>*/ _hQ_=
            [0,
             edit[1],
             edit[2],
@@ -65617,23 +65577,23 @@
             edit[8],
             edit[9],
             edit[10]],
-          edit$0=_hr_,
-          value$1=_hq_,
+          edit$0=_hQ_,
+          value$1=_hP_,
           switch$0=1;
         else
          var switch$0=0}
       else
        var switch$0=0;
-       /*<<op_set.ml 53 2>>*/ if(! switch$0)var edit$0=edit,value$1=value$0;
-       /*<<op_set.ml 440 4>>*/ switch(action)
+       /*<<op_set.ml 54 2>>*/ if(! switch$0)var edit$0=edit,value$1=value$0;
+       /*<<op_set.ml 442 4>>*/ switch(action)
        {case 0: /*<<op_set.ml 456 18>>*/ throw Unknown_action_type;
         case 1:
-          /*<<op_set.ml 443 10>>*/ var
-           /*<<op_set.ml 443 10>>*/ _hs_=CCOpt[20],
-           /*<<op_set.ml 444 40>>*/ _ht_=
-            /*<<op_set.ml 444 40>>*/ caml_call1(_hs_,first_op)[1],
-           /*<<op_set.ml 444 12>>*/ elem_ids$0=
-            /*<<op_set.ml 444 12>>*/ insert_index(index,_ht_,value$1,elem_ids),
+          /*<<op_set.ml 445 10>>*/ var
+           /*<<op_set.ml 445 10>>*/ _hR_=CCOpt[20],
+           /*<<op_set.ml 446 40>>*/ _hS_=
+            /*<<op_set.ml 446 40>>*/ caml_call1(_hR_,first_op)[1],
+           /*<<op_set.ml 446 12>>*/ elem_ids$0=
+            /*<<op_set.ml 446 12>>*/ insert_index(index,_hS_,value$1,elem_ids),
           match$0=
            [0,
             elem_ids$0,
@@ -65655,23 +65615,12 @@
            [0, /*<<op_set.ml 455 19>>*/ remove_index(index,elem_ids),edit$0];
          break;
         default:
-          /*<<op_set.ml 449 10>>*/  /*<<op_set.ml 449 10>>*/ var
-          _hB_=
-           Pervasives[34];
-          /*<<op_set.ml 449 10>>*/  /*<<op_set.ml 449 10>>*/ caml_call1
-          (_hB_,cst_GET);
-          /*<<op_set.ml 449 10>>*/ var
-           /*<<op_set.ml 449 10>>*/ _hC_=CCOpt[20],
-           /*<<op_set.ml 450 31>>*/ _hD_=
-            /*<<op_set.ml 450 31>>*/ caml_call1(_hC_,first_op);
-          /*<<op_set.ml 450 10>>*/  /*<<op_set.ml 450 10>>*/ log
-          (cst_SET,sexp_of_op,_hD_);
-          /*<<op_set.ml 449 10>>*/ var
-           /*<<op_set.ml 450 10>>*/ _hE_=CCOpt[20],
-           /*<<op_set.ml 452 31>>*/ _hF_=
-            /*<<op_set.ml 452 31>>*/ caml_call1(_hE_,first_op)[1],
+          /*<<op_set.ml 451 10>>*/ var
+           /*<<op_set.ml 451 10>>*/ _h0_=CCOpt[20],
+           /*<<op_set.ml 452 31>>*/ _h1_=
+            /*<<op_set.ml 452 31>>*/ caml_call1(_h0_,first_op)[1],
            /*<<op_set.ml 452 12>>*/ elem_ids$2=
-            /*<<op_set.ml 452 12>>*/ set_value(_hF_,value$1,elem_ids),
+            /*<<op_set.ml 452 12>>*/ set_value(_h1_,value$1,elem_ids),
           match$0=
            [0,
             elem_ids$2,
@@ -65686,16 +65635,16 @@
              edit$0[8],
              edit$0[9],
              edit$0[10]]]}
-       /*<<op_set.ml 418 16>>*/ var edit$1=match$0[2],elem_ids$1=match$0[1];
+       /*<<op_set.ml 420 16>>*/ var edit$1=match$0[2],elem_ids$1=match$0[1];
       if(ops)
-       {var ops$0=ops[1],_hu_=List[1];
+       {var ops$0=ops[1],_hT_=List[1];
          /*<<op_set.ml 460 22>>*/ if
-         (1 <  /*<<op_set.ml 460 22>>*/ caml_call1(_hu_,ops$0))
+         (1 <  /*<<op_set.ml 460 22>>*/ caml_call1(_hT_,ops$0))
           /*<<op_set.ml 461 10>>*/ var
-           /*<<op_set.ml 461 10>>*/ _hv_=edit$1[10],
-           /*<<op_set.ml 461 32>>*/ _hw_=
+           /*<<op_set.ml 461 10>>*/ _hU_=edit$1[10],
+           /*<<op_set.ml 461 32>>*/ _hV_=
             /*<<op_set.ml 461 32>>*/ get_conflicts(ops$0),
-           /*<<op_set.ml 461 32>>*/ _hx_=
+           /*<<op_set.ml 461 32>>*/ _hW_=
            [0,
             edit$1[1],
             edit$1[2],
@@ -65705,17 +65654,17 @@
             edit$1[6],
             edit$1[7],
             edit$1[8],
-            _hw_,
-            _hv_],
-          edit$2=_hx_,
+            _hV_,
+            _hU_],
+          edit$2=_hW_,
           switch$1=1;
         else
          var switch$1=0}
       else
        var switch$1=0;
       if(! switch$1)var edit$2=edit$1;
-       /*<<op_set.ml 418 16>>*/  /*<<op_set.ml 464 4>>*/ var _hy_=t[3];
-       /*<<op_set.ml 464 4>>*/ function _hz_(param)
+       /*<<op_set.ml 420 16>>*/  /*<<op_set.ml 464 4>>*/ var _hX_=t[3];
+       /*<<op_set.ml 464 4>>*/ function _hY_(param)
        { /*<<op_set.ml 466 8>>*/ if(param)
          {var match=param[1],obj_aux=match[2],obj_map=match[1];
           return [0,
@@ -65730,9 +65679,9 @@
                     obj_aux[6]]]]}
          /*<<op_set.ml 469 20>>*/ throw Not_found /*<<op_set.ml 469 36>>*/ }
        /*<<op_set.ml 464 4>>*/ var
-        /*<<op_set.ml 464 4>>*/ _hA_=ObjectIdMap[29],
+        /*<<op_set.ml 464 4>>*/ _hZ_=ObjectIdMap[29],
         /*<<op_set.ml 465 6>>*/ by_object=
-         /*<<op_set.ml 465 6>>*/ caml_call3(_hA_,obj_id,_hz_,_hy_);
+         /*<<op_set.ml 465 6>>*/ caml_call3(_hZ_,obj_id,_hY_,_hX_);
        /*<<op_set.ml 465 6>>*/ return [0,
               [0,t[1],t[2],by_object,t[4],t[5],t[6],t[7],t[8],t[9],t[10]],
               [0,edit$2,0]] /*<<op_set.ml 472 32>>*/ }
@@ -65742,77 +65691,77 @@
         /*<<op_set.ml 477 4>>*/ actor1=op1[3],
         /*<<op_set.ml 477 4>>*/ seq2=op2[4],
         /*<<op_set.ml 477 4>>*/ actor2=op2[3],
-        /*<<op_set.ml 477 4>>*/ _gY_=seq1 - 1 | 0,
-        /*<<op_set.ml 477 4>>*/ _gZ_=t[1],
-        /*<<op_set.ml 477 4>>*/ _g0_=ActorMap[22],
-        /*<<op_set.ml 480 18>>*/ _g1_=
-         /*<<op_set.ml 480 18>>*/ caml_call2(_g0_,actor1,_gZ_),
-        /*<<op_set.ml 480 18>>*/ _g2_=CCList[4],
+        /*<<op_set.ml 477 4>>*/ _hl_=seq1 - 1 | 0,
+        /*<<op_set.ml 477 4>>*/ _hm_=t[1],
+        /*<<op_set.ml 477 4>>*/ _hn_=ActorMap[22],
+        /*<<op_set.ml 480 18>>*/ _ho_=
+         /*<<op_set.ml 480 18>>*/ caml_call2(_hn_,actor1,_hm_),
+        /*<<op_set.ml 480 18>>*/ _hp_=CCList[4],
         /*<<op_set.ml 480 6>>*/ clock1=
-         /*<<op_set.ml 480 6>>*/ caml_call2(_g2_,_g1_,_gY_)[2],
-        /*<<op_set.ml 480 6>>*/ _g3_=seq2 - 1 | 0,
-        /*<<op_set.ml 480 6>>*/ _g4_=t[1],
-        /*<<op_set.ml 480 6>>*/ _g5_=ActorMap[22],
-        /*<<op_set.ml 483 18>>*/ _g6_=
-         /*<<op_set.ml 483 18>>*/ caml_call2(_g5_,actor2,_g4_),
-        /*<<op_set.ml 483 18>>*/ _g7_=CCList[4],
+         /*<<op_set.ml 480 6>>*/ caml_call2(_hp_,_ho_,_hl_)[2],
+        /*<<op_set.ml 480 6>>*/ _hq_=seq2 - 1 | 0,
+        /*<<op_set.ml 480 6>>*/ _hr_=t[1],
+        /*<<op_set.ml 480 6>>*/ _hs_=ActorMap[22],
+        /*<<op_set.ml 483 18>>*/ _ht_=
+         /*<<op_set.ml 483 18>>*/ caml_call2(_hs_,actor2,_hr_),
+        /*<<op_set.ml 483 18>>*/ _hu_=CCList[4],
         /*<<op_set.ml 483 6>>*/ clock2=
-         /*<<op_set.ml 483 6>>*/ caml_call2(_g7_,_g6_,_g3_)[2],
-        /*<<op_set.ml 483 6>>*/ _g8_=0,
-        /*<<op_set.ml 483 6>>*/ _g9_=ActorMap[28],
-        /*<<op_set.ml 485 4>>*/ _g__=
-         /*<<op_set.ml 485 4>>*/ caml_call3(_g9_,actor2,clock1,_g8_) < seq2
+         /*<<op_set.ml 483 6>>*/ caml_call2(_hu_,_ht_,_hq_)[2],
+        /*<<op_set.ml 483 6>>*/ _hv_=0,
+        /*<<op_set.ml 483 6>>*/ _hw_=ActorMap[28],
+        /*<<op_set.ml 485 4>>*/ _hx_=
+         /*<<op_set.ml 485 4>>*/ caml_call3(_hw_,actor2,clock1,_hv_) < seq2
          ?1
          :0;
-       /*<<op_set.ml 485 4>>*/ if(_g__)
+       /*<<op_set.ml 485 4>>*/ if(_hx_)
        var
-        _g$_=0,
-        _ha_=ActorMap[28],
-        _hb_=
-          /*<<op_set.ml 486 7>>*/ caml_call3(_ha_,actor1,clock2,_g$_) < seq1
+        _hy_=0,
+        _hz_=ActorMap[28],
+        _hA_=
+          /*<<op_set.ml 486 7>>*/ caml_call3(_hz_,actor1,clock2,_hy_) < seq1
           ?1
           :0;
       else
-       var _hb_=_g__;
-       /*<<op_set.ml 466 8>>*/ return _hb_ /*<<op_set.ml 486 54>>*/ }
+       var _hA_=_hx_;
+       /*<<op_set.ml 466 8>>*/ return _hA_ /*<<op_set.ml 486 54>>*/ }
     function get_field_ops(t,obj_id,key)
      { /*<<op_set.ml 489 4>>*/ var
-        /*<<op_set.ml 489 4>>*/ _gW_=t[3],
-        /*<<op_set.ml 489 4>>*/ _gX_=ObjectIdMap[27],
+        /*<<op_set.ml 489 4>>*/ _hj_=t[3],
+        /*<<op_set.ml 489 4>>*/ _hk_=ObjectIdMap[27],
         /*<<op_set.ml 489 10>>*/ match=
-         /*<<op_set.ml 489 10>>*/ caml_call2(_gX_,obj_id,_gW_);
+         /*<<op_set.ml 489 10>>*/ caml_call2(_hk_,obj_id,_hj_);
        /*<<op_set.ml 489 10>>*/ if(match)
        {var match$0=match[1],obj_map=match$0[1];
         return caml_call3(KeyMap[28],key,obj_map,0)}
        /*<<op_set.ml 491 14>>*/ return 0 /*<<op_set.ml 491 16>>*/ }
     function get_parent(t,obj_id,key)
      { /*<<op_set.ml 494 4>>*/ if(key)
-       {var key$0=key[1],_gM_=String[34];
+       {var key$0=key[1],_g$_=String[34];
          /*<<op_set.ml 496 20>>*/ if
-         ( /*<<op_set.ml 496 20>>*/ caml_call2(_gM_,key$0,cst_head))
+         ( /*<<op_set.ml 496 20>>*/ caml_call2(_g$_,key$0,cst_head))
          return 0;
          /*<<op_set.ml 499 8>>*/ var
-          /*<<op_set.ml 499 8>>*/ _gN_=
+          /*<<op_set.ml 499 8>>*/ _ha_=
           function(param)
            { /*<<op_set.ml 501 14>>*/  /*<<op_set.ml 501 14>>*/ var
              obj_aux=
               param[2];
-             /*<<op_set.ml 501 14>>*/ function _gS_(op)
+             /*<<op_set.ml 501 14>>*/ function _hf_(op)
              { /*<<op_set.ml 502 61>>*/ return op[1] /*<<op_set.ml 502 67>>*/ }
              /*<<op_set.ml 501 14>>*/ var
-              /*<<op_set.ml 501 14>>*/ _gT_=obj_aux[6],
-              /*<<op_set.ml 501 14>>*/ _gU_=ElemIdMap[27],
-              /*<<op_set.ml 502 10>>*/ _gV_=
-               /*<<op_set.ml 502 10>>*/ caml_call2(_gU_,key$0,_gT_);
+              /*<<op_set.ml 501 14>>*/ _hg_=obj_aux[6],
+              /*<<op_set.ml 501 14>>*/ _hh_=ElemIdMap[27],
+              /*<<op_set.ml 502 10>>*/ _hi_=
+               /*<<op_set.ml 502 10>>*/ caml_call2(_hh_,key$0,_hg_);
              /*<<op_set.ml 502 10>>*/ return  /*<<op_set.ml 502 10>>*/ caml_call2
-                    (CCOpt[34][1],_gV_,_gS_) /*<<op_set.ml 502 67>>*/ },
-          /*<<op_set.ml 499 8>>*/ _gO_=t[3],
-          /*<<op_set.ml 499 8>>*/ _gP_=ObjectIdMap[27],
-          /*<<op_set.ml 500 10>>*/ _gQ_=
-           /*<<op_set.ml 500 10>>*/ caml_call2(_gP_,obj_id,_gO_),
-          /*<<op_set.ml 500 10>>*/ _gR_=CCOpt[34][2],
+                    (CCOpt[34][1],_hi_,_hf_) /*<<op_set.ml 502 67>>*/ },
+          /*<<op_set.ml 499 8>>*/ _hb_=t[3],
+          /*<<op_set.ml 499 8>>*/ _hc_=ObjectIdMap[27],
+          /*<<op_set.ml 500 10>>*/ _hd_=
+           /*<<op_set.ml 500 10>>*/ caml_call2(_hc_,obj_id,_hb_),
+          /*<<op_set.ml 500 10>>*/ _he_=CCOpt[34][2],
           /*<<op_set.ml 500 10>>*/ insertion=
-           /*<<op_set.ml 500 10>>*/ caml_call2(_gR_,_gQ_,_gN_);
+           /*<<op_set.ml 500 10>>*/ caml_call2(_he_,_hd_,_ha_);
          /*<<op_set.ml 500 10>>*/ if(insertion)
          { /*<<op_set.ml 506 20>>*/  /*<<op_set.ml 506 20>>*/ var
            k=
@@ -65822,29 +65771,27 @@
        /*<<op_set.ml 495 14>>*/ return 0 /*<<op_set.ml 506 28>>*/ }
     function insertions_after(t,obj_id,parent_id,child_id)
      { /*<<op_set.ml 510 4>>*/ if(child_id)
-       { /*<<op_set.ml 514 21>>*/ var
-         child_id$0=child_id[1],
-         _ge_=Str[1],
-          /*<<op_set.ml 514 21>>*/ regx=
-           /*<<op_set.ml 514 21>>*/ caml_call1(_ge_,cst_d),
-          /*<<op_set.ml 514 21>>*/ _gf_=0,
-          /*<<op_set.ml 514 21>>*/ _gg_=Str[6];
-         /*<<op_set.ml 515 13>>*/ if
-         ( /*<<op_set.ml 515 13>>*/ caml_call3(_gg_,regx,child_id$0,_gf_))
-          /*<<op_set.ml 516 12>>*/ var
-           /*<<op_set.ml 516 12>>*/ _gh_=1,
-           /*<<op_set.ml 516 12>>*/ _gi_=Str[13],
+       {var child_id$0=child_id[1],_gC_=58,_gD_=Datastructures[1][16];
+         /*<<op_set.ml 514 13>>*/ if
+         ( /*<<op_set.ml 514 13>>*/ caml_call2(_gD_,child_id$0,_gC_))
+          /*<<op_set.ml 515 12>>*/ var
+           /*<<op_set.ml 515 12>>*/ _gE_=58,
+           /*<<op_set.ml 515 12>>*/ _gF_=Datastructures[1][93],
+           /*<<op_set.ml 515 24>>*/ parts=
+            /*<<op_set.ml 515 24>>*/ caml_call2(_gF_,_gE_,child_id$0),
+           /*<<op_set.ml 515 24>>*/ _gG_=0,
+           /*<<op_set.ml 515 24>>*/ _gH_=CCList[4],
            /*<<op_set.ml 516 24>>*/ actor=
-            /*<<op_set.ml 516 24>>*/ caml_call2(_gi_,_gh_,child_id$0),
-           /*<<op_set.ml 516 24>>*/ _gj_=2,
-           /*<<op_set.ml 516 24>>*/ _gk_=Str[13],
+            /*<<op_set.ml 516 24>>*/ caml_call2(_gH_,parts,_gG_),
+           /*<<op_set.ml 516 24>>*/ _gI_=1,
+           /*<<op_set.ml 516 24>>*/ _gJ_=CCList[4],
            /*<<op_set.ml 517 37>>*/ elem=
             /*<<op_set.ml 517 37>>*/ runtime.caml_int_of_string
-            ( /*<<op_set.ml 517 37>>*/ caml_call2(_gk_,_gj_,child_id$0)),
-          _gl_=[0,[0,actor,elem]];
+            ( /*<<op_set.ml 517 37>>*/ caml_call2(_gJ_,parts,_gI_)),
+          _gK_=[0,[0,actor,elem]];
         else
-         var _gl_=0;
-         /*<<op_set.ml 514 21>>*/ var child_key=_gl_}
+         var _gK_=0;
+        var child_key=_gK_}
       else
        var child_key=0;
        /*<<op_set.ml 523 12>>*/  /*<<op_set.ml 523 12>>*/ var
@@ -65857,129 +65804,129 @@
          /*<<op_set.ml 524 24>>*/ if(parent_id)
           /*<<op_set.ml 528 12>>*/ var
            /*<<op_set.ml 528 12>>*/ parent_id$0=parent_id[1],
-           /*<<op_set.ml 528 12>>*/ _gm_=0,
-           /*<<op_set.ml 528 12>>*/ _gn_=obj_aux[2],
-           /*<<op_set.ml 528 12>>*/ _go_=KeyMap[28],
-          _gp_=
-            /*<<op_set.ml 528 12>>*/ caml_call3(_go_,parent_id$0,_gn_,_gm_);
+           /*<<op_set.ml 528 12>>*/ _gL_=0,
+           /*<<op_set.ml 528 12>>*/ _gM_=obj_aux[2],
+           /*<<op_set.ml 528 12>>*/ _gN_=KeyMap[28],
+          _gO_=
+            /*<<op_set.ml 528 12>>*/ caml_call3(_gN_,parent_id$0,_gM_,_gL_);
         else
-         var _gp_=0;
-         /*<<op_set.ml 524 24>>*/ var following=_gp_}
+         var _gO_=0;
+         /*<<op_set.ml 524 24>>*/ var following=_gO_}
       else
        var following=0;
-       /*<<op_set.ml 531 4>>*/ function _gq_(op)
+       /*<<op_set.ml 531 4>>*/ function _gP_(op)
        { /*<<op_set.ml 532 24>>*/ return 3 === op[2]?1:0 /*<<op_set.ml 532 69>>*/ }
        /*<<op_set.ml 531 4>>*/ var
-        /*<<op_set.ml 531 4>>*/ _gr_=CCList[39],
-        /*<<op_set.ml 531 4>>*/ _gs_=
-         /*<<op_set.ml 531 4>>*/ caml_call2(_gr_,_gq_,following);
-       /*<<op_set.ml 531 4>>*/ function _gt_(op)
+        /*<<op_set.ml 531 4>>*/ _gQ_=CCList[39],
+        /*<<op_set.ml 531 4>>*/ _gR_=
+         /*<<op_set.ml 531 4>>*/ caml_call2(_gQ_,_gP_,following);
+       /*<<op_set.ml 531 4>>*/ function _gS_(op)
        { /*<<op_set.ml 535 11>>*/ if(child_key)
          { /*<<op_set.ml 538 15>>*/ var
             /*<<op_set.ml 538 15>>*/ child_key$0=child_key[1],
-            /*<<op_set.ml 539 41>>*/ _gK_=
+            /*<<op_set.ml 539 41>>*/ _g9_=
              /*<<op_set.ml 539 41>>*/ get_op_elem(op),
-            /*<<op_set.ml 539 41>>*/ _gL_=[0,op[3],_gK_];
+            /*<<op_set.ml 539 41>>*/ _g__=[0,op[3],_g9_];
            /*<<op_set.ml 538 15>>*/ return  /*<<op_set.ml 538 15>>*/ lamport_compare
-                   (_gL_,child_key$0)
+                   (_g__,child_key$0)
                   <
                   0
                   ?1
                   :0}
          /*<<op_set.ml 536 21>>*/ return 1 /*<<op_set.ml 541 18>>*/ }
        /*<<op_set.ml 531 4>>*/ var
-        /*<<op_set.ml 531 4>>*/ _gu_=CCList[39],
-        /*<<op_set.ml 531 4>>*/ _gv_=
-         /*<<op_set.ml 531 4>>*/ caml_call2(_gu_,_gt_,_gs_);
-       /*<<op_set.ml 531 4>>*/ function _gw_(op1,op2)
+        /*<<op_set.ml 531 4>>*/ _gT_=CCList[39],
+        /*<<op_set.ml 531 4>>*/ _gU_=
+         /*<<op_set.ml 531 4>>*/ caml_call2(_gT_,_gS_,_gR_);
+       /*<<op_set.ml 531 4>>*/ function _gV_(op1,op2)
        { /*<<op_set.ml 545 38>>*/ var
-          /*<<op_set.ml 545 38>>*/ _gH_=
+          /*<<op_set.ml 545 38>>*/ _g6_=
            /*<<op_set.ml 545 38>>*/ get_op_elem(op2),
-          /*<<op_set.ml 545 38>>*/ _gI_=[0,op2[3],_gH_],
-          /*<<op_set.ml 544 38>>*/ _gJ_=
+          /*<<op_set.ml 545 38>>*/ _g7_=[0,op2[3],_g6_],
+          /*<<op_set.ml 544 38>>*/ _g8_=
            /*<<op_set.ml 544 38>>*/ get_op_elem(op1);
          /*<<op_set.ml 544 38>>*/ return  /*<<op_set.ml 544 38>>*/ lamport_compare
-                ([0,op1[3],_gJ_],_gI_) /*<<op_set.ml 545 54>>*/ }
+                ([0,op1[3],_g8_],_g7_) /*<<op_set.ml 545 54>>*/ }
        /*<<op_set.ml 531 4>>*/ var
-        /*<<op_set.ml 531 4>>*/ _gx_=CCList[27],
-        /*<<op_set.ml 531 4>>*/ _gy_=
-         /*<<op_set.ml 531 4>>*/ caml_call2(_gx_,_gw_,_gv_),
-        /*<<op_set.ml 531 4>>*/ _gz_=CCList[5],
-        /*<<op_set.ml 531 4>>*/ _gA_=
-         /*<<op_set.ml 531 4>>*/ caml_call1(_gz_,_gy_);
-       /*<<op_set.ml 531 4>>*/ function _gB_(op)
+        /*<<op_set.ml 531 4>>*/ _gW_=CCList[27],
+        /*<<op_set.ml 531 4>>*/ _gX_=
+         /*<<op_set.ml 531 4>>*/ caml_call2(_gW_,_gV_,_gU_),
+        /*<<op_set.ml 531 4>>*/ _gY_=CCList[5],
+        /*<<op_set.ml 531 4>>*/ _gZ_=
+         /*<<op_set.ml 531 4>>*/ caml_call1(_gY_,_gX_);
+       /*<<op_set.ml 531 4>>*/ function _g0_(op)
        { /*<<op_set.ml 548 42>>*/ var
-          /*<<op_set.ml 548 42>>*/ _gC_=
+          /*<<op_set.ml 548 42>>*/ _g1_=
            /*<<op_set.ml 548 42>>*/ get_op_elem(op),
-          /*<<op_set.ml 548 42>>*/ _gD_=Pervasives[21],
-          /*<<op_set.ml 548 28>>*/ _gE_=
-           /*<<op_set.ml 548 28>>*/ caml_call1(_gD_,_gC_),
-          /*<<op_set.ml 548 28>>*/ _gF_=Pervasives[16],
-          /*<<op_set.ml 548 22>>*/ _gG_=
-           /*<<op_set.ml 548 22>>*/ caml_call2(_gF_,cst$0,_gE_);
+          /*<<op_set.ml 548 42>>*/ _g2_=Pervasives[21],
+          /*<<op_set.ml 548 28>>*/ _g3_=
+           /*<<op_set.ml 548 28>>*/ caml_call1(_g2_,_g1_),
+          /*<<op_set.ml 548 28>>*/ _g4_=Pervasives[16],
+          /*<<op_set.ml 548 22>>*/ _g5_=
+           /*<<op_set.ml 548 22>>*/ caml_call2(_g4_,cst$0,_g3_);
          /*<<op_set.ml 548 22>>*/ return  /*<<op_set.ml 548 22>>*/ caml_call2
-                (Pervasives[16],op[3],_gG_) /*<<op_set.ml 548 58>>*/ }
+                (Pervasives[16],op[3],_g5_) /*<<op_set.ml 548 58>>*/ }
        /*<<op_set.ml 531 4>>*/ return  /*<<op_set.ml 531 4>>*/ caml_call2
-              (CCList[33],_gB_,_gA_) /*<<op_set.ml 548 60>>*/ }
+              (CCList[33],_g0_,_gZ_) /*<<op_set.ml 548 60>>*/ }
     function get_previous(t,obj_id,key)
      { /*<<op_set.ml 553 4>>*/ var
-        /*<<op_set.ml 553 4>>*/ _f1_=[0,key],
+        /*<<op_set.ml 553 4>>*/ _gn_=[0,key],
         /*<<op_set.ml 553 20>>*/ parent_id=
-         /*<<op_set.ml 553 20>>*/ get_parent(t,obj_id,_f1_),
-        /*<<op_set.ml 553 20>>*/ _f2_=0,
+         /*<<op_set.ml 553 20>>*/ get_parent(t,obj_id,_gn_),
+        /*<<op_set.ml 553 20>>*/ _go_=0,
         /*<<op_set.ml 554 19>>*/ children=
-         /*<<op_set.ml 554 19>>*/ insertions_after(t,obj_id,parent_id,_f2_),
-        /*<<op_set.ml 554 19>>*/ _f3_=CCList[1];
+         /*<<op_set.ml 554 19>>*/ insertions_after(t,obj_id,parent_id,_go_),
+        /*<<op_set.ml 554 19>>*/ _gp_=CCList[1];
        /*<<op_set.ml 555 7>>*/ if
-       (0 <  /*<<op_set.ml 555 7>>*/ caml_call1(_f3_,children))
+       (0 <  /*<<op_set.ml 555 7>>*/ caml_call1(_gp_,children))
        { /*<<op_set.ml 555 50>>*/ var
-         _f4_=CCList[2],
-          /*<<op_set.ml 555 50>>*/ _f5_=
-           /*<<op_set.ml 555 50>>*/ caml_call1(_f4_,children),
-          /*<<op_set.ml 555 50>>*/ _f6_=String[34];
+         _gq_=CCList[2],
+          /*<<op_set.ml 555 50>>*/ _gr_=
+           /*<<op_set.ml 555 50>>*/ caml_call1(_gq_,children),
+          /*<<op_set.ml 555 50>>*/ _gs_=String[34];
          /*<<op_set.ml 555 37>>*/ if
-         ( /*<<op_set.ml 555 37>>*/ caml_call2(_f6_,_f5_,key))
+         ( /*<<op_set.ml 555 37>>*/ caml_call2(_gs_,_gr_,key))
          { /*<<op_set.ml 556 6>>*/ if(parent_id)
            if(! runtime.caml_string_notequal(parent_id[1],cst_head$0))
             return 0;
            /*<<op_set.ml 556 55>>*/ return parent_id}}
-       /*<<op_set.ml 560 6>>*/ function _f7_(child)
+       /*<<op_set.ml 560 6>>*/ function _gt_(child)
        { /*<<op_set.ml 562 40>>*/ return  /*<<op_set.ml 562 40>>*/ caml_call2
                 (String[34],child,key) /*<<op_set.ml 562 62>>*/ }
        /*<<op_set.ml 560 6>>*/ var
-        /*<<op_set.ml 560 6>>*/ _f8_=CCList[93],
+        /*<<op_set.ml 560 6>>*/ _gu_=CCList[93],
         /*<<op_set.ml 562 10>>*/ match=
-         /*<<op_set.ml 562 10>>*/ caml_call2(_f8_,_f7_,children);
+         /*<<op_set.ml 562 10>>*/ caml_call2(_gu_,_gt_,children);
        /*<<op_set.ml 562 10>>*/ if(match)
        {var match$0=match[1],idx=match$0[1];
         if(0 === idx)
-         var _f9_=0;
+         var _gv_=0;
         else
           /*<<op_set.ml 565 38>>*/ var
-           /*<<op_set.ml 565 38>>*/ _f__=idx - 1 | 0,
-           /*<<op_set.ml 565 38>>*/ _f$_=CCList[4],
-          _f9_=[0, /*<<op_set.ml 565 43>>*/ caml_call2(_f$_,children,_f__)];
-        var prev_id=_f9_}
+           /*<<op_set.ml 565 38>>*/ _gw_=idx - 1 | 0,
+           /*<<op_set.ml 565 38>>*/ _gx_=CCList[4],
+          _gv_=[0, /*<<op_set.ml 565 43>>*/ caml_call2(_gx_,children,_gw_)];
+        var prev_id=_gv_}
       else
         /*<<op_set.ml 566 18>>*/ var
-         /*<<op_set.ml 566 18>>*/ _ga_=CCList[87],
-        prev_id= /*<<op_set.ml 566 18>>*/ caml_call1(_ga_,children);
+         /*<<op_set.ml 566 18>>*/ _gy_=CCList[87],
+        prev_id= /*<<op_set.ml 566 18>>*/ caml_call1(_gy_,children);
        /*<<op_set.ml 566 42>>*/ function loop(children,prev_id)
        { /*<<?>>*/ var prev_id$0=prev_id;
          /*<<op_set.ml 569 8>>*/ for(;;)
          { /*<<op_set.ml 569 8>>*/ var
-            /*<<op_set.ml 569 8>>*/ _gb_=0,
+            /*<<op_set.ml 569 8>>*/ _gz_=0,
             /*<<op_set.ml 569 23>>*/ children$0=
              /*<<op_set.ml 569 23>>*/ insertions_after
-             (t,obj_id,prev_id$0,_gb_),
-            /*<<op_set.ml 569 23>>*/ _gc_=CCList[32];
+             (t,obj_id,prev_id$0,_gz_),
+            /*<<op_set.ml 569 23>>*/ _gA_=CCList[32];
            /*<<op_set.ml 570 11>>*/ if
-           ( /*<<op_set.ml 570 11>>*/ caml_call1(_gc_,children$0))
+           ( /*<<op_set.ml 570 11>>*/ caml_call1(_gA_,children$0))
            return prev_id$0;
            /*<<op_set.ml 569 8>>*/ var
-            /*<<op_set.ml 571 13>>*/ _gd_=CCList[87],
+            /*<<op_set.ml 571 13>>*/ _gB_=CCList[87],
             /*<<op_set.ml 571 27>>*/ prev_id$1=
-             /*<<op_set.ml 571 27>>*/ caml_call1(_gd_,children$0),
+             /*<<op_set.ml 571 27>>*/ caml_call1(_gB_,children$0),
            prev_id$0=prev_id$1;
           continue} /*<<op_set.ml 571 53>>*/ }
        /*<<op_set.ml 566 42>>*/ return  /*<<op_set.ml 566 42>>*/ loop
@@ -65988,29 +65935,29 @@
      { /*<<op_set.ml 576 14>>*/ var
         /*<<op_set.ml 576 14>>*/ ops=
          /*<<op_set.ml 576 14>>*/ get_field_ops(t,obj_id,elem_id_key),
-        /*<<op_set.ml 576 14>>*/ _fW_=t[3],
-        /*<<op_set.ml 576 14>>*/ _fX_=ObjectIdMap[22],
+        /*<<op_set.ml 576 14>>*/ _gi_=t[3],
+        /*<<op_set.ml 576 14>>*/ _gj_=ObjectIdMap[22],
         /*<<op_set.ml 577 25>>*/ match=
-         /*<<op_set.ml 577 25>>*/ caml_call2(_fX_,obj_id,_fW_)[2],
+         /*<<op_set.ml 577 25>>*/ caml_call2(_gj_,obj_id,_gi_)[2],
         /*<<op_set.ml 577 25>>*/ elem_ids=match[5],
-        /*<<op_set.ml 577 25>>*/ _fY_=CCOpt[20],
+        /*<<op_set.ml 577 25>>*/ _gk_=CCOpt[20],
         /*<<op_set.ml 578 19>>*/ elem_ids$0=
-         /*<<op_set.ml 578 19>>*/ caml_call1(_fY_,elem_ids),
+         /*<<op_set.ml 578 19>>*/ caml_call1(_gk_,elem_ids),
         /*<<op_set.ml 579 16>>*/ index=
          /*<<op_set.ml 579 16>>*/ index_of(elem_id_key,elem_ids$0);
        /*<<op_set.ml 579 16>>*/ if(index)
        { /*<<op_set.ml 582 8>>*/ var
           /*<<op_set.ml 582 8>>*/ index$0=index[1],
-          /*<<op_set.ml 582 8>>*/ _fZ_=CCList[32];
+          /*<<op_set.ml 582 8>>*/ _gl_=CCList[32];
          /*<<op_set.ml 582 11>>*/ return  /*<<op_set.ml 582 11>>*/ caml_call1
-                 (_fZ_,ops)
+                 (_gl_,ops)
                 ? /*<<op_set.ml 583 10>>*/ patch_list
                   (t,obj_id,index$0,elem_id_key,2,0)
                 : /*<<op_set.ml 584 13>>*/ patch_list
                   (t,obj_id,index$0,elem_id_key,3,[0,ops])}
-       /*<<op_set.ml 576 14>>*/  /*<<op_set.ml 587 8>>*/ var _f0_=CCList[32];
+       /*<<op_set.ml 576 14>>*/  /*<<op_set.ml 587 8>>*/ var _gm_=CCList[32];
        /*<<op_set.ml 587 11>>*/ if
-       ( /*<<op_set.ml 587 11>>*/ caml_call1(_f0_,ops))
+       ( /*<<op_set.ml 587 11>>*/ caml_call1(_gm_,ops))
        return [0,t,0];
        /*<<op_set.ml 589 10>>*/ function loop(prev_id)
        { /*<<?>>*/ var prev_id$0=prev_id;
@@ -66041,101 +65988,101 @@
         /*<<op_set.ml 602 14>>*/ ops=
          /*<<op_set.ml 602 14>>*/ get_field_ops(t,obj_id,key),
         /*<<op_set.ml 603 15>>*/ path=
-         /*<<op_set.ml 603 15>>*/ get_path(t,obj_id,_ab_),
-        /*<<op_set.ml 603 15>>*/ _fQ_=CCList[32];
+         /*<<op_set.ml 603 15>>*/ get_path(t,obj_id,_W_),
+        /*<<op_set.ml 603 15>>*/ _gc_=CCList[32];
        /*<<op_set.ml 605 9>>*/ if
-       ( /*<<op_set.ml 605 9>>*/ caml_call1(_fQ_,ops))
+       ( /*<<op_set.ml 605 9>>*/ caml_call1(_gc_,ops))
        var edit=[0,0,2,0,[0,key],0,obj_id,0,0,0,path];
       else
         /*<<op_set.ml 617 8>>*/ var
-         /*<<op_set.ml 617 8>>*/ _fR_=CCList[2],
+         /*<<op_set.ml 617 8>>*/ _gd_=CCList[2],
          /*<<op_set.ml 617 18>>*/ fst=
-          /*<<op_set.ml 617 18>>*/ caml_call1(_fR_,ops),
-         /*<<op_set.ml 617 18>>*/ _fS_=fst[7],
-         /*<<op_set.ml 617 18>>*/ _fT_=
+          /*<<op_set.ml 617 18>>*/ caml_call1(_gd_,ops),
+         /*<<op_set.ml 617 18>>*/ _ge_=fst[7],
+         /*<<op_set.ml 617 18>>*/ _gf_=
          function(s)
           { /*<<op_set.ml 618 40>>*/ return [0,s] /*<<op_set.ml 618 47>>*/ },
-         /*<<op_set.ml 617 18>>*/ _fU_=CCOpt[1],
+         /*<<op_set.ml 617 18>>*/ _gg_=CCOpt[1],
          /*<<op_set.ml 618 20>>*/ value=
-          /*<<op_set.ml 618 20>>*/ caml_call2(_fU_,_fT_,_fS_),
-         /*<<op_set.ml 618 20>>*/ _fV_=CCList[1],
+          /*<<op_set.ml 618 20>>*/ caml_call2(_gg_,_gf_,_ge_),
+         /*<<op_set.ml 618 20>>*/ _gh_=CCList[1],
          /*<<op_set.ml 620 13>>*/ conflicts=
-         1 <  /*<<op_set.ml 620 13>>*/ caml_call1(_fV_,ops)
+         1 <  /*<<op_set.ml 620 13>>*/ caml_call1(_gh_,ops)
           ? /*<<op_set.ml 620 40>>*/ get_conflicts(ops)
           :0,
         edit=[0,0,3,0,[0,key],value,obj_id,6 === fst[2]?1:0,0,conflicts,path];
        /*<<op_set.ml 633 4>>*/ return [0,t,[0,edit,0]] /*<<op_set.ml 633 15>>*/ }
     function apply_assign(t,op,is_top_level)
      { /*<<op_set.ml 637 4>>*/ var
-        /*<<op_set.ml 637 4>>*/ _eK_=t[3],
-        /*<<op_set.ml 637 4>>*/ _eL_=op[5],
-        /*<<op_set.ml 637 4>>*/ _eM_=ObjectIdMap[3];
+        /*<<op_set.ml 637 4>>*/ _e8_=t[3],
+        /*<<op_set.ml 637 4>>*/ _e9_=op[5],
+        /*<<op_set.ml 637 4>>*/ _e__=ObjectIdMap[3];
        /*<<op_set.ml 637 11>>*/ if
-       ( /*<<op_set.ml 637 11>>*/ caml_call2(_eM_,_eL_,_eK_))
-       { /*<<op_set.ml 640 6>>*/  /*<<op_set.ml 640 6>>*/ var _eN_=t[10];
-         /*<<op_set.ml 640 6>>*/ if(_eN_)
+       ( /*<<op_set.ml 637 11>>*/ caml_call2(_e__,_e9_,_e8_))
+       { /*<<op_set.ml 640 6>>*/  /*<<op_set.ml 640 6>>*/ var _e$_=t[10];
+         /*<<op_set.ml 640 6>>*/ if(_e$_)
          { /*<<op_set.ml 642 25>>*/  /*<<op_set.ml 642 25>>*/ var
            uloc=
-            _eN_[1];
+            _e$_[1];
            /*<<op_set.ml 642 25>>*/ if(is_top_level)
             /*<<op_set.ml 643 12>>*/ var
-             /*<<op_set.ml 643 12>>*/ _eO_=t[3],
-             /*<<op_set.ml 643 12>>*/ _eP_=op[5],
-             /*<<op_set.ml 643 12>>*/ _eQ_=ObjectIdMap[22],
+             /*<<op_set.ml 643 12>>*/ _fa_=t[3],
+             /*<<op_set.ml 643 12>>*/ _fb_=op[5],
+             /*<<op_set.ml 643 12>>*/ _fc_=ObjectIdMap[22],
              /*<<op_set.ml 643 35>>*/ match=
-              /*<<op_set.ml 643 35>>*/ caml_call2(_eQ_,_eP_,_eO_),
+              /*<<op_set.ml 643 35>>*/ caml_call2(_fc_,_fb_,_fa_),
              /*<<op_set.ml 643 35>>*/ obj_map=match[1],
-             /*<<op_set.ml 643 35>>*/ _eR_=0,
-             /*<<op_set.ml 643 35>>*/ _eS_=op[1],
-             /*<<op_set.ml 643 35>>*/ _eT_=KeyMap[28],
-             /*<<op_set.ml 645 14>>*/ _eU_=
-              /*<<op_set.ml 645 14>>*/ caml_call3(_eT_,_eS_,obj_map,_eR_),
-             /*<<op_set.ml 645 14>>*/ _eV_=
+             /*<<op_set.ml 643 35>>*/ _fd_=0,
+             /*<<op_set.ml 643 35>>*/ _fe_=op[1],
+             /*<<op_set.ml 643 35>>*/ _ff_=KeyMap[28],
+             /*<<op_set.ml 645 14>>*/ _fg_=
+              /*<<op_set.ml 645 14>>*/ caml_call3(_ff_,_fe_,obj_map,_fd_),
+             /*<<op_set.ml 645 14>>*/ _fh_=
              function(op)
               { /*<<op_set.ml 647 21>>*/  /*<<op_set.ml 647 21>>*/ var
-                _fM_=
+                _f__=
                  op[7];
-                /*<<op_set.ml 647 21>>*/ function _fN_(v)
+                /*<<op_set.ml 647 21>>*/ function _f$_(v)
                 { /*<<op_set.ml 650 50>>*/ return [0,v] /*<<op_set.ml 650 57>>*/ }
                 /*<<op_set.ml 647 21>>*/ var
-                 /*<<op_set.ml 647 21>>*/ _fO_=CCOpt[1],
-                 /*<<op_set.ml 650 30>>*/ _fP_=
-                  /*<<op_set.ml 650 30>>*/ caml_call2(_fO_,_fN_,_fM_);
-                /*<<op_set.ml 650 30>>*/ return [0,op[2],op[5],op[1],_fP_] /*<<op_set.ml 650 69>>*/ },
-             /*<<op_set.ml 645 14>>*/ _eW_=CCList[33],
+                 /*<<op_set.ml 647 21>>*/ _ga_=CCOpt[1],
+                 /*<<op_set.ml 650 30>>*/ _gb_=
+                  /*<<op_set.ml 650 30>>*/ caml_call2(_ga_,_f$_,_f__);
+                /*<<op_set.ml 650 30>>*/ return [0,op[2],op[5],op[1],_gb_] /*<<op_set.ml 650 69>>*/ },
+             /*<<op_set.ml 645 14>>*/ _fi_=CCList[33],
              /*<<op_set.ml 645 14>>*/ undo_ops=
-              /*<<op_set.ml 645 14>>*/ caml_call2(_eW_,_eV_,_eU_),
-             /*<<op_set.ml 645 14>>*/ _eX_=CCList[32],
+              /*<<op_set.ml 645 14>>*/ caml_call2(_fi_,_fh_,_fg_),
+             /*<<op_set.ml 645 14>>*/ _fj_=CCList[32],
              /*<<op_set.ml 653 17>>*/ undo_ops$0=
-              /*<<op_set.ml 653 17>>*/ caml_call1(_eX_,undo_ops)
+              /*<<op_set.ml 653 17>>*/ caml_call1(_fj_,undo_ops)
               ?[0,[0,5,op[5],op[1],0],0]
               :undo_ops,
-             /*<<op_set.ml 657 12>>*/ _eY_=[0,uloc,[0,undo_ops$0,0]],
-             /*<<op_set.ml 657 12>>*/ _eZ_=CCList[7],
+             /*<<op_set.ml 657 12>>*/ _fk_=[0,uloc,[0,undo_ops$0,0]],
+             /*<<op_set.ml 657 12>>*/ _fl_=CCList[7],
              /*<<op_set.ml 657 23>>*/ uloc$0=
-              /*<<op_set.ml 657 23>>*/ caml_call1(_eZ_,_eY_),
-             /*<<op_set.ml 657 23>>*/ _e0_=
+              /*<<op_set.ml 657 23>>*/ caml_call1(_fl_,_fk_),
+             /*<<op_set.ml 657 23>>*/ _fm_=
              [0,t[1],t[2],t[3],t[4],t[5],t[6],t[7],t[8],t[9],[0,uloc$0]],
-            t$0=_e0_,
+            t$0=_fm_,
             switch$0=1;
           else
            var switch$0=0}
         else
          var switch$0=0;
-         /*<<op_set.ml 53 2>>*/ if(! switch$0)var t$0=t;
+         /*<<op_set.ml 54 2>>*/ if(! switch$0)var t$0=t;
          /*<<op_set.ml 640 6>>*/ var
-          /*<<op_set.ml 661 6>>*/ _e1_=t$0[3],
-          /*<<op_set.ml 661 6>>*/ _e2_=op[5],
-          /*<<op_set.ml 661 6>>*/ _e3_=ObjectIdMap[22],
+          /*<<op_set.ml 661 6>>*/ _fn_=t$0[3],
+          /*<<op_set.ml 661 6>>*/ _fo_=op[5],
+          /*<<op_set.ml 661 6>>*/ _fp_=ObjectIdMap[22],
           /*<<op_set.ml 662 25>>*/ match$0=
-           /*<<op_set.ml 662 25>>*/ caml_call2(_e3_,_e2_,_e1_),
+           /*<<op_set.ml 662 25>>*/ caml_call2(_fp_,_fo_,_fn_),
           /*<<op_set.ml 662 25>>*/ obj_map$0=match$0[1],
-          /*<<op_set.ml 662 25>>*/ _e4_=0,
-          /*<<op_set.ml 662 25>>*/ _e5_=op[1],
-          /*<<op_set.ml 662 25>>*/ _e6_=KeyMap[28],
+          /*<<op_set.ml 662 25>>*/ _fq_=0,
+          /*<<op_set.ml 662 25>>*/ _fr_=op[1],
+          /*<<op_set.ml 662 25>>*/ _fs_=KeyMap[28],
           /*<<op_set.ml 663 19>>*/ refs=
-           /*<<op_set.ml 663 19>>*/ caml_call3(_e6_,_e5_,obj_map$0,_e4_),
-          /*<<op_set.ml 663 19>>*/ _e7_=
+           /*<<op_set.ml 663 19>>*/ caml_call3(_fs_,_fr_,obj_map$0,_fq_),
+          /*<<op_set.ml 663 19>>*/ _ft_=
           function(param,ref)
            { /*<<op_set.ml 665 10>>*/ var
               /*<<op_set.ml 665 10>>*/ rem=param[2],
@@ -66144,46 +66091,46 @@
                      (t$0,ref,op)
                     ?[0,over,[0,ref,rem]]
                     :[0,[0,ref,over],rem] /*<<op_set.ml 667 37>>*/ },
-          /*<<op_set.ml 663 19>>*/ _e8_=CCList[10],
+          /*<<op_set.ml 663 19>>*/ _fu_=CCList[10],
           /*<<op_set.ml 664 8>>*/ match$1=
-           /*<<op_set.ml 664 8>>*/ caml_call3(_e8_,_e7_,_ac_,refs),
+           /*<<op_set.ml 664 8>>*/ caml_call3(_fu_,_ft_,_X_,refs),
           /*<<op_set.ml 664 8>>*/ remaining=match$1[2],
           /*<<op_set.ml 664 8>>*/ overwritten=match$1[1],
-          /*<<op_set.ml 664 8>>*/ _e9_=
+          /*<<op_set.ml 664 8>>*/ _fv_=
           function(op)
            { /*<<op_set.ml 673 28>>*/ return 6 <= op[2]?1:0 /*<<op_set.ml 673 74>>*/ },
-          /*<<op_set.ml 664 8>>*/ _e__=CCList[39],
+          /*<<op_set.ml 664 8>>*/ _fw_=CCList[39],
           /*<<op_set.ml 672 8>>*/ overwritten_links=
-           /*<<op_set.ml 672 8>>*/ caml_call2(_e__,_e9_,overwritten),
-          /*<<op_set.ml 672 8>>*/ _e$_=
+           /*<<op_set.ml 672 8>>*/ caml_call2(_fw_,_fv_,overwritten),
+          /*<<op_set.ml 672 8>>*/ _fx_=
           function(t,op)
-           { /*<<op_set.ml 679 12>>*/  /*<<op_set.ml 679 12>>*/ var _fB_=t[3];
-             /*<<op_set.ml 679 12>>*/ function _fC_(param)
+           { /*<<op_set.ml 679 12>>*/  /*<<op_set.ml 679 12>>*/ var _fZ_=t[3];
+             /*<<op_set.ml 679 12>>*/ function _f0_(param)
              { /*<<op_set.ml 682 16>>*/ if(param)
                { /*<<op_set.ml 687 38>>*/ var
                  match=param[1],
                  obj_aux=match[2],
                  obj_map=match[1],
-                 _fI_=obj_aux[6],
-                 _fJ_=obj_aux[5],
-                 _fK_=obj_aux[4],
-                  /*<<op_set.ml 687 38>>*/ _fL_=
-                   /*<<op_set.ml 687 38>>*/ caml_call2(remove,op,_fK_);
+                 _f6_=obj_aux[6],
+                 _f7_=obj_aux[5],
+                 _f8_=obj_aux[4],
+                  /*<<op_set.ml 687 38>>*/ _f9_=
+                   /*<<op_set.ml 687 38>>*/ caml_call2(remove,op,_f8_);
                  /*<<op_set.ml 687 38>>*/ return [0,
                         [0,
                          obj_map,
-                         [0,obj_aux[1],obj_aux[2],obj_aux[3],_fL_,_fJ_,_fI_]]]}
+                         [0,obj_aux[1],obj_aux[2],obj_aux[3],_f9_,_f7_,_f6_]]]}
                /*<<op_set.ml 688 28>>*/ throw Not_found /*<<op_set.ml 688 44>>*/ }
              /*<<op_set.ml 679 12>>*/ var
-              /*<<op_set.ml 679 12>>*/ _fD_=op[7],
-              /*<<op_set.ml 679 12>>*/ _fE_=CCOpt[20],
-              /*<<op_set.ml 681 44>>*/ _fF_=
-               /*<<op_set.ml 681 44>>*/ caml_call1(_fE_,_fD_),
-              /*<<op_set.ml 681 16>>*/ _fG_=
-               /*<<op_set.ml 681 16>>*/ get_op_value_as_string_exn(_fF_),
-              /*<<op_set.ml 681 16>>*/ _fH_=ObjectIdMap[29],
+              /*<<op_set.ml 679 12>>*/ _f1_=op[7],
+              /*<<op_set.ml 679 12>>*/ _f2_=CCOpt[20],
+              /*<<op_set.ml 681 44>>*/ _f3_=
+               /*<<op_set.ml 681 44>>*/ caml_call1(_f2_,_f1_),
+              /*<<op_set.ml 681 16>>*/ _f4_=
+               /*<<op_set.ml 681 16>>*/ get_op_value_as_string_exn(_f3_),
+              /*<<op_set.ml 681 16>>*/ _f5_=ObjectIdMap[29],
               /*<<op_set.ml 680 14>>*/ by_object=
-               /*<<op_set.ml 680 14>>*/ caml_call3(_fH_,_fG_,_fC_,_fB_);
+               /*<<op_set.ml 680 14>>*/ caml_call3(_f5_,_f4_,_f0_,_fZ_);
              /*<<op_set.ml 680 14>>*/ return [0,
                     t[1],
                     t[2],
@@ -66195,38 +66142,38 @@
                     t[8],
                     t[9],
                     t[10]] /*<<op_set.ml 691 30>>*/ },
-          /*<<op_set.ml 672 8>>*/ _fa_=CCList[10],
+          /*<<op_set.ml 672 8>>*/ _fy_=CCList[10],
           /*<<op_set.ml 677 8>>*/ t$1=
-           /*<<op_set.ml 677 8>>*/ caml_call3(_fa_,_e$_,t$0,overwritten_links);
+           /*<<op_set.ml 677 8>>*/ caml_call3(_fy_,_fx_,t$0,overwritten_links);
          /*<<op_set.ml 677 8>>*/ if(6 <= op[2])
           /*<<op_set.ml 697 12>>*/ var
-           /*<<op_set.ml 697 12>>*/ _fb_=t$1[3],
-           /*<<op_set.ml 697 12>>*/ _fc_=
+           /*<<op_set.ml 697 12>>*/ _fz_=t$1[3],
+           /*<<op_set.ml 697 12>>*/ _fA_=
            function(param)
             { /*<<op_set.ml 700 16>>*/ if(param)
               { /*<<op_set.ml 704 50>>*/ var
                 match=param[1],
                 obj_aux=match[2],
                 obj_map=match[1],
-                _fx_=obj_aux[6],
-                _fy_=obj_aux[5],
-                _fz_=obj_aux[4],
-                 /*<<op_set.ml 704 50>>*/ _fA_=
-                  /*<<op_set.ml 704 50>>*/ caml_call2(add,op,_fz_);
+                _fV_=obj_aux[6],
+                _fW_=obj_aux[5],
+                _fX_=obj_aux[4],
+                 /*<<op_set.ml 704 50>>*/ _fY_=
+                  /*<<op_set.ml 704 50>>*/ caml_call2(add,op,_fX_);
                 /*<<op_set.ml 704 50>>*/ return [0,
                        [0,
                         obj_map,
-                        [0,obj_aux[1],obj_aux[2],obj_aux[3],_fA_,_fy_,_fx_]]]}
+                        [0,obj_aux[1],obj_aux[2],obj_aux[3],_fY_,_fW_,_fV_]]]}
               /*<<op_set.ml 706 28>>*/ throw Not_found /*<<op_set.ml 706 44>>*/ },
-           /*<<op_set.ml 697 12>>*/ _fd_=op[7],
-           /*<<op_set.ml 697 12>>*/ _fe_=CCOpt[20],
-           /*<<op_set.ml 699 44>>*/ _ff_=
-            /*<<op_set.ml 699 44>>*/ caml_call1(_fe_,_fd_),
-           /*<<op_set.ml 699 16>>*/ _fg_=
-            /*<<op_set.ml 699 16>>*/ get_op_value_as_string_exn(_ff_),
-           /*<<op_set.ml 699 16>>*/ _fh_=ObjectIdMap[29],
+           /*<<op_set.ml 697 12>>*/ _fB_=op[7],
+           /*<<op_set.ml 697 12>>*/ _fC_=CCOpt[20],
+           /*<<op_set.ml 699 44>>*/ _fD_=
+            /*<<op_set.ml 699 44>>*/ caml_call1(_fC_,_fB_),
+           /*<<op_set.ml 699 16>>*/ _fE_=
+            /*<<op_set.ml 699 16>>*/ get_op_value_as_string_exn(_fD_),
+           /*<<op_set.ml 699 16>>*/ _fF_=ObjectIdMap[29],
            /*<<op_set.ml 698 14>>*/ by_object=
-            /*<<op_set.ml 698 14>>*/ caml_call3(_fh_,_fg_,_fc_,_fb_),
+            /*<<op_set.ml 698 14>>*/ caml_call3(_fF_,_fE_,_fA_,_fz_),
           t$2=
            [0,
             t$1[1],
@@ -66245,41 +66192,41 @@
          var remaining$0=remaining;
         else
           /*<<op_set.ml 715 15>>*/ var
-           /*<<op_set.ml 715 15>>*/ _ft_=[0,op,0],
-           /*<<op_set.ml 715 15>>*/ _fu_=CCList[36],
+           /*<<op_set.ml 715 15>>*/ _fR_=[0,op,0],
+           /*<<op_set.ml 715 15>>*/ _fS_=CCList[36],
           remaining$0=
-            /*<<op_set.ml 715 15>>*/ caml_call2(_fu_,remaining,_ft_);
+            /*<<op_set.ml 715 15>>*/ caml_call2(_fS_,remaining,_fR_);
          /*<<op_set.ml 640 6>>*/ var
-          /*<<op_set.ml 717 6>>*/ _fi_=
+          /*<<op_set.ml 717 6>>*/ _fG_=
           function(op1,op2)
            { /*<<op_set.ml 719 40>>*/ return  /*<<op_set.ml 719 40>>*/ caml_call2
                     (String[33],op1[3],op2[3]) /*<<op_set.ml 719 74>>*/ },
-          /*<<op_set.ml 717 6>>*/ _fj_=CCList[27],
-          /*<<op_set.ml 718 8>>*/ _fk_=
-           /*<<op_set.ml 718 8>>*/ caml_call2(_fj_,_fi_,remaining$0),
-          /*<<op_set.ml 718 8>>*/ _fl_=CCList[5],
+          /*<<op_set.ml 717 6>>*/ _fH_=CCList[27],
+          /*<<op_set.ml 718 8>>*/ _fI_=
+           /*<<op_set.ml 718 8>>*/ caml_call2(_fH_,_fG_,remaining$0),
+          /*<<op_set.ml 718 8>>*/ _fJ_=CCList[5],
           /*<<op_set.ml 718 8>>*/ remaining$1=
-           /*<<op_set.ml 718 8>>*/ caml_call1(_fl_,_fk_),
-          /*<<op_set.ml 718 8>>*/ _fm_=t$2[3],
-          /*<<op_set.ml 718 8>>*/ _fn_=
+           /*<<op_set.ml 718 8>>*/ caml_call1(_fJ_,_fI_),
+          /*<<op_set.ml 718 8>>*/ _fK_=t$2[3],
+          /*<<op_set.ml 718 8>>*/ _fL_=
           function(param)
            { /*<<op_set.ml 725 10>>*/ if(param)
              {var
                match=param[1],
                obj_aux=match[2],
                obj_map=match[1],
-               _fv_=op[1],
-               _fw_=ObjectIdMap[4];
+               _fT_=op[1],
+               _fU_=ObjectIdMap[4];
                /*<<op_set.ml 727 22>>*/ return [0,
                       [0,
                         /*<<op_set.ml 727 22>>*/ caml_call3
-                        (_fw_,_fv_,remaining$1,obj_map),
+                        (_fU_,_fT_,remaining$1,obj_map),
                        obj_aux]]}
              /*<<op_set.ml 728 22>>*/ throw Not_found /*<<op_set.ml 728 38>>*/ },
-          /*<<op_set.ml 718 8>>*/ _fo_=op[5],
-          /*<<op_set.ml 718 8>>*/ _fp_=ObjectIdMap[29],
+          /*<<op_set.ml 718 8>>*/ _fM_=op[5],
+          /*<<op_set.ml 718 8>>*/ _fN_=ObjectIdMap[29],
           /*<<op_set.ml 724 8>>*/ by_object$0=
-           /*<<op_set.ml 724 8>>*/ caml_call3(_fp_,_fo_,_fn_,_fm_),
+           /*<<op_set.ml 724 8>>*/ caml_call3(_fN_,_fM_,_fL_,_fK_),
           /*<<op_set.ml 724 8>>*/ t$3=
           [0,
            t$2[1],
@@ -66292,11 +66239,11 @@
            t$2[8],
            t$2[9],
            t$2[10]],
-          /*<<op_set.ml 724 8>>*/ _fq_=t$3[3],
-          /*<<op_set.ml 724 8>>*/ _fr_=op[5],
-          /*<<op_set.ml 724 8>>*/ _fs_=ObjectIdMap[22],
+          /*<<op_set.ml 724 8>>*/ _fO_=t$3[3],
+          /*<<op_set.ml 724 8>>*/ _fP_=op[5],
+          /*<<op_set.ml 724 8>>*/ _fQ_=ObjectIdMap[22],
           /*<<op_set.ml 733 13>>*/ obj_type=
-           /*<<op_set.ml 733 13>>*/ caml_call2(_fs_,_fr_,_fq_)[2][3][2],
+           /*<<op_set.ml 733 13>>*/ caml_call2(_fQ_,_fP_,_fO_)[2][3][2],
           /*<<op_set.ml 733 13>>*/ switcher=obj_type - 1 | 0;
          /*<<op_set.ml 733 13>>*/ return 1 < switcher >>> 0
                 ? /*<<op_set.ml 737 13>>*/ update_map_key(t$3,op[5],op[1])
@@ -66305,182 +66252,182 @@
        /*<<op_set.ml 638 6>>*/ throw Modification_of_unknown_object /*<<op_set.ml 737 43>>*/ }
     function apply_ops(t,ops)
      { /*<<op_set.ml 740 4>>*/  /*<<op_set.ml 740 4>>*/ var
-       _ey_=
+       _eW_=
         [0,t,0,ObjectIdSet[1]];
-       /*<<op_set.ml 740 4>>*/ function _ez_(param,op)
+       /*<<op_set.ml 740 4>>*/ function _eX_(param,op)
        { /*<<op_set.ml 742 8>>*/ var
           /*<<op_set.ml 742 8>>*/ new_objs=param[3],
           /*<<op_set.ml 742 8>>*/ all_diffs=param[2],
           /*<<op_set.ml 742 8>>*/ t=param[1],
-          /*<<op_set.ml 742 8>>*/ _eB_=op[2];
-         /*<<op_set.ml 742 8>>*/ if(3 === _eB_)
+          /*<<op_set.ml 742 8>>*/ _eZ_=op[2];
+         /*<<op_set.ml 742 8>>*/ if(3 === _eZ_)
          { /*<<op_set.ml 749 29>>*/ var
             /*<<op_set.ml 749 29>>*/ match=
              /*<<op_set.ml 749 29>>*/ apply_insert(t,op),
             /*<<op_set.ml 749 29>>*/ diffs=match[2],
             /*<<op_set.ml 749 29>>*/ t$0=match[1],
-            /*<<op_set.ml 749 29>>*/ _eC_=List[11];
+            /*<<op_set.ml 749 29>>*/ _e0_=List[11];
            /*<<op_set.ml 750 18>>*/ return [0,
                   t$0,
-                   /*<<op_set.ml 750 18>>*/ caml_call2(_eC_,all_diffs,diffs),
+                   /*<<op_set.ml 750 18>>*/ caml_call2(_e0_,all_diffs,diffs),
                   new_objs]}
-        if(4 <= _eB_)
+        if(4 <= _eZ_)
          { /*<<op_set.ml 752 14>>*/ var
-            /*<<op_set.ml 752 14>>*/ _eD_=op[5],
-            /*<<op_set.ml 752 14>>*/ _eE_=ObjectIdSet[3],
-            /*<<op_set.ml 753 39>>*/ _eF_=
+            /*<<op_set.ml 752 14>>*/ _e1_=op[5],
+            /*<<op_set.ml 752 14>>*/ _e2_=ObjectIdSet[3],
+            /*<<op_set.ml 753 39>>*/ _e3_=
             1
             -
-             /*<<op_set.ml 753 39>>*/ caml_call2(_eE_,_eD_,new_objs),
+             /*<<op_set.ml 753 39>>*/ caml_call2(_e2_,_e1_,new_objs),
             /*<<op_set.ml 753 16>>*/ match$0=
-             /*<<op_set.ml 753 16>>*/ apply_assign(t,op,_eF_),
+             /*<<op_set.ml 753 16>>*/ apply_assign(t,op,_e3_),
             /*<<op_set.ml 753 16>>*/ diffs$0=match$0[2],
             /*<<op_set.ml 753 16>>*/ t$1=match$0[1],
-            /*<<op_set.ml 753 16>>*/ _eG_=List[11];
+            /*<<op_set.ml 753 16>>*/ _e4_=List[11];
            /*<<op_set.ml 755 18>>*/ return [0,
                   t$1,
-                   /*<<op_set.ml 755 18>>*/ caml_call2(_eG_,all_diffs,diffs$0),
+                   /*<<op_set.ml 755 18>>*/ caml_call2(_e4_,all_diffs,diffs$0),
                   new_objs]}
          /*<<op_set.ml 742 8>>*/ var
-          /*<<op_set.ml 745 14>>*/ _eH_=op[5],
-          /*<<op_set.ml 745 14>>*/ _eI_=ObjectIdSet[4],
+          /*<<op_set.ml 745 14>>*/ _e5_=op[5],
+          /*<<op_set.ml 745 14>>*/ _e6_=ObjectIdSet[4],
           /*<<op_set.ml 745 29>>*/ new_objs$0=
-           /*<<op_set.ml 745 29>>*/ caml_call2(_eI_,_eH_,new_objs),
+           /*<<op_set.ml 745 29>>*/ caml_call2(_e6_,_e5_,new_objs),
           /*<<op_set.ml 746 29>>*/ match$1=
            /*<<op_set.ml 746 29>>*/ apply_make(t,op),
           /*<<op_set.ml 746 29>>*/ diffs$1=match$1[2],
           /*<<op_set.ml 746 29>>*/ t$2=match$1[1],
-          /*<<op_set.ml 746 29>>*/ _eJ_=List[11];
+          /*<<op_set.ml 746 29>>*/ _e7_=List[11];
          /*<<op_set.ml 747 18>>*/ return [0,
                 t$2,
-                 /*<<op_set.ml 747 18>>*/ caml_call2(_eJ_,all_diffs,diffs$1),
+                 /*<<op_set.ml 747 18>>*/ caml_call2(_e7_,all_diffs,diffs$1),
                 new_objs$0] /*<<op_set.ml 755 58>>*/ }
        /*<<op_set.ml 740 4>>*/ var
-        /*<<op_set.ml 740 4>>*/ _eA_=List[20],
+        /*<<op_set.ml 740 4>>*/ _eY_=List[20],
         /*<<op_set.ml 741 6>>*/ match=
-         /*<<op_set.ml 741 6>>*/ caml_call3(_eA_,_ez_,_ey_,ops),
+         /*<<op_set.ml 741 6>>*/ caml_call3(_eY_,_eX_,_eW_,ops),
         /*<<op_set.ml 741 6>>*/ all_diffs=match[2],
         /*<<op_set.ml 741 6>>*/ t$0=match[1];
        /*<<op_set.ml 741 6>>*/ return [0,t$0,all_diffs] /*<<op_set.ml 758 18>>*/ }
     function apply_change(t,change)
-     { /*<<op_set.ml 763 4>>*/ var
-        /*<<op_set.ml 763 4>>*/ _dI_=0,
-        /*<<op_set.ml 763 4>>*/ _dJ_=t[1],
-        /*<<op_set.ml 763 4>>*/ _dK_=change[1],
-        /*<<op_set.ml 763 4>>*/ _dL_=ActorMap[28],
-        /*<<op_set.ml 763 16>>*/ prior=
-         /*<<op_set.ml 763 16>>*/ caml_call3(_dL_,_dK_,_dJ_,_dI_),
-        /*<<op_set.ml 763 16>>*/ _dM_=List[1],
-        /*<<op_set.ml 764 21>>*/ _dN_=
-         /*<<op_set.ml 764 21>>*/ caml_call1(_dM_,prior);
-       /*<<op_set.ml 764 21>>*/ if(change[2] <= _dN_)
-       { /*<<op_set.ml 765 6>>*/ var
-          /*<<op_set.ml 765 6>>*/ _dO_=change[2] - 1 | 0,
-          /*<<op_set.ml 765 6>>*/ _dP_=List[8],
-          /*<<op_set.ml 765 12>>*/ match=
-           /*<<op_set.ml 765 12>>*/ caml_call2(_dP_,prior,_dO_);
-         /*<<op_set.ml 765 12>>*/ if(match)
-         { /*<<op_set.ml 766 24>>*/ var
-            /*<<op_set.ml 766 24>>*/ state=match[1],
-            /*<<op_set.ml 766 24>>*/ _dQ_=state[1];
-           /*<<op_set.ml 766 24>>*/ if
-           ( /*<<op_set.ml 766 24>>*/ runtime.caml_equal(_dQ_,change))
+     { /*<<op_set.ml 762 4>>*/ var
+        /*<<op_set.ml 762 4>>*/ _d6_=0,
+        /*<<op_set.ml 762 4>>*/ _d7_=t[1],
+        /*<<op_set.ml 762 4>>*/ _d8_=change[1],
+        /*<<op_set.ml 762 4>>*/ _d9_=ActorMap[28],
+        /*<<op_set.ml 762 16>>*/ prior=
+         /*<<op_set.ml 762 16>>*/ caml_call3(_d9_,_d8_,_d7_,_d6_),
+        /*<<op_set.ml 762 16>>*/ _d__=List[1],
+        /*<<op_set.ml 763 21>>*/ _d$_=
+         /*<<op_set.ml 763 21>>*/ caml_call1(_d__,prior);
+       /*<<op_set.ml 763 21>>*/ if(change[2] <= _d$_)
+       { /*<<op_set.ml 764 6>>*/ var
+          /*<<op_set.ml 764 6>>*/ _ea_=change[2] - 1 | 0,
+          /*<<op_set.ml 764 6>>*/ _eb_=List[8],
+          /*<<op_set.ml 764 12>>*/ match=
+           /*<<op_set.ml 764 12>>*/ caml_call2(_eb_,prior,_ea_);
+         /*<<op_set.ml 764 12>>*/ if(match)
+         { /*<<op_set.ml 765 24>>*/ var
+            /*<<op_set.ml 765 24>>*/ state=match[1],
+            /*<<op_set.ml 765 24>>*/ _ec_=state[1];
+           /*<<op_set.ml 765 24>>*/ if
+           ( /*<<op_set.ml 765 24>>*/ runtime.caml_equal(_ec_,change))
            throw Inconsistent_reuse_of_sequence}
-         /*<<op_set.ml 768 13>>*/ return [0,t,0]}
-       /*<<op_set.ml 763 4>>*/ var
-        /*<<op_set.ml 770 6>>*/ _dR_=change[3],
-        /*<<op_set.ml 770 6>>*/ _dS_=change[2] - 1 | 0,
-        /*<<op_set.ml 770 6>>*/ _dT_=change[1],
-        /*<<op_set.ml 770 6>>*/ _dU_=ActorMap[4],
-        /*<<op_set.ml 771 8>>*/ _dV_=
-         /*<<op_set.ml 771 8>>*/ caml_call3(_dU_,_dT_,_dS_,_dR_),
-        /*<<op_set.ml 771 8>>*/ allDeps=
-         /*<<op_set.ml 771 8>>*/ transitive_deps(t,_dV_),
-        /*<<op_set.ml 771 8>>*/ _dW_=[0,[0,change,allDeps],0],
-        /*<<op_set.ml 771 8>>*/ _dX_=List[11],
-        /*<<op_set.ml 774 22>>*/ new_prior=
-         /*<<op_set.ml 774 22>>*/ caml_call2(_dX_,prior,_dW_),
-        /*<<op_set.ml 774 22>>*/ _dY_=t[10],
-        /*<<op_set.ml 774 22>>*/ _dZ_=t[9],
-        /*<<op_set.ml 774 22>>*/ _d0_=t[8],
-        /*<<op_set.ml 774 22>>*/ _d1_=t[7],
-        /*<<op_set.ml 774 22>>*/ _d2_=t[6],
-        /*<<op_set.ml 774 22>>*/ _d3_=t[5],
-        /*<<op_set.ml 774 22>>*/ _d4_=t[4],
-        /*<<op_set.ml 774 22>>*/ _d5_=t[3],
-        /*<<op_set.ml 774 22>>*/ _d6_=t[2],
-        /*<<op_set.ml 774 22>>*/ _d7_=t[1],
-        /*<<op_set.ml 774 22>>*/ _d8_=change[1],
-        /*<<op_set.ml 774 22>>*/ _d9_=ActorMap[4],
-        /*<<op_set.ml 775 30>>*/ t$0=
+         /*<<op_set.ml 767 13>>*/ return [0,t,0]}
+       /*<<op_set.ml 762 4>>*/ var
+        /*<<op_set.ml 769 6>>*/ _ed_=change[3],
+        /*<<op_set.ml 769 6>>*/ _ee_=change[2] - 1 | 0,
+        /*<<op_set.ml 769 6>>*/ _ef_=change[1],
+        /*<<op_set.ml 769 6>>*/ _eg_=ActorMap[4],
+        /*<<op_set.ml 770 8>>*/ _eh_=
+         /*<<op_set.ml 770 8>>*/ caml_call3(_eg_,_ef_,_ee_,_ed_),
+        /*<<op_set.ml 770 8>>*/ allDeps=
+         /*<<op_set.ml 770 8>>*/ transitive_deps(t,_eh_),
+        /*<<op_set.ml 770 8>>*/ _ei_=[0,[0,change,allDeps],0],
+        /*<<op_set.ml 770 8>>*/ _ej_=List[11],
+        /*<<op_set.ml 773 22>>*/ new_prior=
+         /*<<op_set.ml 773 22>>*/ caml_call2(_ej_,prior,_ei_),
+        /*<<op_set.ml 773 22>>*/ _ek_=t[10],
+        /*<<op_set.ml 773 22>>*/ _el_=t[9],
+        /*<<op_set.ml 773 22>>*/ _em_=t[8],
+        /*<<op_set.ml 773 22>>*/ _en_=t[7],
+        /*<<op_set.ml 773 22>>*/ _eo_=t[6],
+        /*<<op_set.ml 773 22>>*/ _ep_=t[5],
+        /*<<op_set.ml 773 22>>*/ _eq_=t[4],
+        /*<<op_set.ml 773 22>>*/ _er_=t[3],
+        /*<<op_set.ml 773 22>>*/ _es_=t[2],
+        /*<<op_set.ml 773 22>>*/ _et_=t[1],
+        /*<<op_set.ml 773 22>>*/ _eu_=change[1],
+        /*<<op_set.ml 773 22>>*/ _ev_=ActorMap[4],
+        /*<<op_set.ml 774 30>>*/ t$0=
         [0,
-          /*<<op_set.ml 775 30>>*/ caml_call3(_d9_,_d8_,new_prior,_d7_),
-         _d6_,
-         _d5_,
-         _d4_,
-         _d3_,
-         _d2_,
-         _d1_,
-         _d0_,
-         _dZ_,
-         _dY_],
-        /*<<op_set.ml 775 30>>*/ _d__=change[4];
-       /*<<op_set.ml 775 30>>*/ function _d$_(ch_op)
-       { /*<<op_set.ml 781 12>>*/ var
-          /*<<op_set.ml 781 12>>*/ _ex_=ch_op[1],
-          /*<<op_set.ml 781 12>>*/ _er_=ch_op[5],
-          /*<<op_set.ml 781 12>>*/ _es_=ch_op[4],
-          /*<<op_set.ml 781 12>>*/ _et_=ch_op[3],
-          /*<<op_set.ml 781 12>>*/ _eu_=change[2],
-          /*<<op_set.ml 781 12>>*/ _ev_=change[1],
-          /*<<op_set.ml 781 12>>*/ _ew_=ch_op[2];
-         /*<<op_set.ml 781 12>>*/ if(_ex_)
-          /*<<op_set.ml 784 51>>*/ var
-           /*<<op_set.ml 784 51>>*/ k=_ex_[1],
+          /*<<op_set.ml 774 30>>*/ caml_call3(_ev_,_eu_,new_prior,_et_),
+         _es_,
+         _er_,
+         _eq_,
+         _ep_,
+         _eo_,
+         _en_,
+         _em_,
+         _el_,
+         _ek_],
+        /*<<op_set.ml 774 30>>*/ _ew_=change[4];
+       /*<<op_set.ml 774 30>>*/ function _ex_(ch_op)
+       { /*<<op_set.ml 780 12>>*/ var
+          /*<<op_set.ml 780 12>>*/ _eV_=ch_op[1],
+          /*<<op_set.ml 780 12>>*/ _eP_=ch_op[5],
+          /*<<op_set.ml 780 12>>*/ _eQ_=ch_op[4],
+          /*<<op_set.ml 780 12>>*/ _eR_=ch_op[3],
+          /*<<op_set.ml 780 12>>*/ _eS_=change[2],
+          /*<<op_set.ml 780 12>>*/ _eT_=change[1],
+          /*<<op_set.ml 780 12>>*/ _eU_=ch_op[2];
+         /*<<op_set.ml 780 12>>*/ if(_eV_)
+          /*<<op_set.ml 783 51>>*/ var
+           /*<<op_set.ml 783 51>>*/ k=_eV_[1],
           k$0=k;
         else
          var k$0=cst$1;
-        return [0,k$0,_ew_,_ev_,_eu_,_et_,_es_,_er_] /*<<op_set.ml 787 34>>*/ }
-       /*<<op_set.ml 775 30>>*/ var
-        /*<<op_set.ml 775 30>>*/ _ea_=CCList[33],
-        /*<<op_set.ml 779 8>>*/ ops=
-         /*<<op_set.ml 779 8>>*/ caml_call2(_ea_,_d$_,_d__),
-        /*<<op_set.ml 790 21>>*/ match$0=
-         /*<<op_set.ml 790 21>>*/ apply_ops(t$0,ops),
-        /*<<op_set.ml 790 21>>*/ diffs=match$0[2],
-        /*<<op_set.ml 790 21>>*/ t$1=match$0[1],
-        /*<<op_set.ml 790 21>>*/ _eb_=t$1[5];
-       /*<<op_set.ml 790 21>>*/ function _ec_(depActor,depSeq)
-       { /*<<op_set.ml 794 12>>*/ var
-          /*<<op_set.ml 794 12>>*/ _ep_=0,
-          /*<<op_set.ml 794 12>>*/ _eq_=ActorMap[28];
-         /*<<op_set.ml 794 21>>*/ return  /*<<op_set.ml 794 21>>*/ caml_call3
-                 (_eq_,depActor,allDeps,_ep_)
+        return [0,k$0,_eU_,_eT_,_eS_,_eR_,_eQ_,_eP_] /*<<op_set.ml 786 34>>*/ }
+       /*<<op_set.ml 774 30>>*/ var
+        /*<<op_set.ml 774 30>>*/ _ey_=CCList[33],
+        /*<<op_set.ml 778 8>>*/ ops=
+         /*<<op_set.ml 778 8>>*/ caml_call2(_ey_,_ex_,_ew_),
+        /*<<op_set.ml 789 21>>*/ match$0=
+         /*<<op_set.ml 789 21>>*/ apply_ops(t$0,ops),
+        /*<<op_set.ml 789 21>>*/ diffs=match$0[2],
+        /*<<op_set.ml 789 21>>*/ t$1=match$0[1],
+        /*<<op_set.ml 789 21>>*/ _ez_=t$1[5];
+       /*<<op_set.ml 789 21>>*/ function _eA_(depActor,depSeq)
+       { /*<<op_set.ml 793 12>>*/ var
+          /*<<op_set.ml 793 12>>*/ _eN_=0,
+          /*<<op_set.ml 793 12>>*/ _eO_=ActorMap[28];
+         /*<<op_set.ml 793 21>>*/ return  /*<<op_set.ml 793 21>>*/ caml_call3
+                 (_eO_,depActor,allDeps,_eN_)
                 <
                 depSeq
                 ?1
-                :0 /*<<op_set.ml 794 64>>*/ }
-       /*<<op_set.ml 790 21>>*/ var
-        /*<<op_set.ml 790 21>>*/ _ed_=ActorMap[14],
-        /*<<op_set.ml 792 8>>*/ _ee_=
-         /*<<op_set.ml 792 8>>*/ caml_call2(_ed_,_ec_,_eb_),
-        /*<<op_set.ml 792 8>>*/ _ef_=change[2],
-        /*<<op_set.ml 792 8>>*/ _eg_=change[1],
-        /*<<op_set.ml 792 8>>*/ _eh_=ActorMap[4],
-        /*<<op_set.ml 792 8>>*/ remaining_deps=
-         /*<<op_set.ml 792 8>>*/ caml_call3(_eh_,_eg_,_ef_,_ee_),
-        /*<<op_set.ml 792 8>>*/ _ei_=t$1[4],
-        /*<<op_set.ml 792 8>>*/ _ej_=change[2],
-        /*<<op_set.ml 792 8>>*/ _ek_=change[1],
-        /*<<op_set.ml 792 8>>*/ _el_=ActorMap[4],
-        /*<<op_set.ml 798 18>>*/ clock=
-         /*<<op_set.ml 798 18>>*/ caml_call3(_el_,_ek_,_ej_,_ei_),
-        /*<<op_set.ml 798 18>>*/ _em_=[0,change,0],
-        /*<<op_set.ml 798 18>>*/ _en_=t$1[2],
-        /*<<op_set.ml 798 18>>*/ _eo_=List[11],
-        /*<<op_set.ml 799 20>>*/ history=
-         /*<<op_set.ml 799 20>>*/ caml_call2(_eo_,_en_,_em_);
-       /*<<op_set.ml 799 20>>*/ return [0,
+                :0 /*<<op_set.ml 793 64>>*/ }
+       /*<<op_set.ml 789 21>>*/ var
+        /*<<op_set.ml 789 21>>*/ _eB_=ActorMap[14],
+        /*<<op_set.ml 791 8>>*/ _eC_=
+         /*<<op_set.ml 791 8>>*/ caml_call2(_eB_,_eA_,_ez_),
+        /*<<op_set.ml 791 8>>*/ _eD_=change[2],
+        /*<<op_set.ml 791 8>>*/ _eE_=change[1],
+        /*<<op_set.ml 791 8>>*/ _eF_=ActorMap[4],
+        /*<<op_set.ml 791 8>>*/ remaining_deps=
+         /*<<op_set.ml 791 8>>*/ caml_call3(_eF_,_eE_,_eD_,_eC_),
+        /*<<op_set.ml 791 8>>*/ _eG_=t$1[4],
+        /*<<op_set.ml 791 8>>*/ _eH_=change[2],
+        /*<<op_set.ml 791 8>>*/ _eI_=change[1],
+        /*<<op_set.ml 791 8>>*/ _eJ_=ActorMap[4],
+        /*<<op_set.ml 797 18>>*/ clock=
+         /*<<op_set.ml 797 18>>*/ caml_call3(_eJ_,_eI_,_eH_,_eG_),
+        /*<<op_set.ml 797 18>>*/ _eK_=[0,change,0],
+        /*<<op_set.ml 797 18>>*/ _eL_=t$1[2],
+        /*<<op_set.ml 797 18>>*/ _eM_=List[11],
+        /*<<op_set.ml 798 20>>*/ history=
+         /*<<op_set.ml 798 20>>*/ caml_call2(_eM_,_eL_,_eK_);
+       /*<<op_set.ml 798 20>>*/ return [0,
               [0,
                t$1[1],
                history,
@@ -66492,67 +66439,58 @@
                t$1[8],
                t$1[9],
                t$1[10]],
-              diffs] /*<<op_set.ml 800 60>>*/ }
+              diffs] /*<<op_set.ml 799 60>>*/ }
     function apply_queued_ops(t,diffs)
      {var t$0=t,diffs$0=diffs;
-       /*<<op_set.ml 815 4>>*/ for(;;)
-       { /*<<op_set.ml 815 4>>*/ var
-          /*<<op_set.ml 815 4>>*/ _dr_=t$0[9],
-          /*<<op_set.ml 815 4>>*/ _ds_=[0,t$0,diffs$0,Datastructures[5][1]],
-          /*<<op_set.ml 815 4>>*/ _dt_=
+       /*<<op_set.ml 814 4>>*/ for(;;)
+       { /*<<op_set.ml 814 4>>*/ var
+          /*<<op_set.ml 814 4>>*/ _dS_=t$0[9],
+          /*<<op_set.ml 814 4>>*/ _dT_=[0,t$0,diffs$0,Datastructures[5][1]],
+          /*<<op_set.ml 814 4>>*/ _dU_=
           function(param,change)
-           { /*<<op_set.ml 817 8>>*/ var
-              /*<<op_set.ml 817 8>>*/ queue=param[3],
-              /*<<op_set.ml 817 8>>*/ diffs=param[2],
-              /*<<op_set.ml 817 8>>*/ t=param[1];
-             /*<<op_set.ml 818 13>>*/ if
-             ( /*<<op_set.ml 818 13>>*/ causaly_ready(t,change))
-             { /*<<op_set.ml 819 26>>*/ var
-                /*<<op_set.ml 819 26>>*/ match=
-                 /*<<op_set.ml 819 26>>*/ apply_change(t,change),
-                /*<<op_set.ml 819 26>>*/ diff=match[2],
-                /*<<op_set.ml 819 26>>*/ t$0=match[1],
-                /*<<op_set.ml 819 26>>*/ _dB_=t$0[9],
-                /*<<op_set.ml 819 26>>*/ _dC_=Datastructures[5][43],
-                /*<<op_set.ml 821 14>>*/ _dD_=
-                 /*<<op_set.ml 821 14>>*/ caml_call1(_dC_,sexp_of_change);
-               /*<<op_set.ml 820 12>>*/  /*<<op_set.ml 820 12>>*/ log
-               (cst_causally_ready,_dD_,_dB_);
-               /*<<op_set.ml 819 26>>*/ var
-                /*<<op_set.ml 820 12>>*/ _dE_=[0,diffs,[0,diff,0]],
-                /*<<op_set.ml 820 12>>*/ _dF_=CCList[7];
-               /*<<op_set.ml 823 16>>*/ return [0,
+           { /*<<op_set.ml 816 8>>*/ var
+              /*<<op_set.ml 816 8>>*/ queue=param[3],
+              /*<<op_set.ml 816 8>>*/ diffs=param[2],
+              /*<<op_set.ml 816 8>>*/ t=param[1];
+             /*<<op_set.ml 817 13>>*/ if
+             ( /*<<op_set.ml 817 13>>*/ causaly_ready(t,change))
+             { /*<<op_set.ml 818 26>>*/ var
+                /*<<op_set.ml 818 26>>*/ match=
+                 /*<<op_set.ml 818 26>>*/ apply_change(t,change),
+                /*<<op_set.ml 818 26>>*/ diff=match[2],
+                /*<<op_set.ml 818 26>>*/ t$0=match[1],
+                /*<<op_set.ml 818 26>>*/ _d2_=[0,diffs,[0,diff,0]],
+                /*<<op_set.ml 818 26>>*/ _d3_=CCList[7];
+               /*<<op_set.ml 819 16>>*/ return [0,
                       t$0,
-                       /*<<op_set.ml 823 16>>*/ caml_call1(_dF_,_dE_),
+                       /*<<op_set.ml 819 16>>*/ caml_call1(_d3_,_d2_),
                       queue]}
-             /*<<op_set.ml 825 12>>*/  /*<<op_set.ml 825 12>>*/ log
-             (cst_not_causally_ready,sexp_of_change,change);
-             /*<<op_set.ml 817 8>>*/ var
-              /*<<op_set.ml 825 12>>*/ _dG_=t[9],
-              /*<<op_set.ml 825 12>>*/ _dH_=CCFQueue[7];
-             /*<<op_set.ml 826 23>>*/ return [0,
+             /*<<op_set.ml 816 8>>*/ var
+              /*<<op_set.ml 820 15>>*/ _d4_=t[9],
+              /*<<op_set.ml 820 15>>*/ _d5_=CCFQueue[7];
+             /*<<op_set.ml 821 23>>*/ return [0,
                     t,
                     diffs,
-                     /*<<op_set.ml 826 23>>*/ caml_call2(_dH_,_dG_,change)] /*<<op_set.ml 826 56>>*/ },
-          /*<<op_set.ml 815 4>>*/ _du_=CCFQueue[29],
-          /*<<op_set.ml 816 6>>*/ match=
-           /*<<op_set.ml 816 6>>*/ caml_call3(_du_,_dt_,_ds_,_dr_),
-          /*<<op_set.ml 816 6>>*/ queue=match[3],
-          /*<<op_set.ml 816 6>>*/ diffs$1=match[2],
-          /*<<op_set.ml 816 6>>*/ t$1=match[1],
-          /*<<op_set.ml 816 6>>*/ _dv_=t$1[9],
-          /*<<op_set.ml 816 6>>*/ _dw_=CCFQueue[28],
-          /*<<op_set.ml 830 41>>*/ _dx_=
-           /*<<op_set.ml 830 41>>*/ caml_call1(_dw_,_dv_),
-          /*<<op_set.ml 830 41>>*/ _dy_=CCFQueue[28],
-          /*<<op_set.ml 830 19>>*/ _dz_=
-           /*<<op_set.ml 830 19>>*/ caml_call1(_dy_,queue),
-          /*<<op_set.ml 830 19>>*/ _dA_=Datastructures[2][2];
-         /*<<op_set.ml 830 7>>*/ if
-         ( /*<<op_set.ml 830 7>>*/ caml_call2(_dA_,_dz_,_dx_))
+                     /*<<op_set.ml 821 23>>*/ caml_call2(_d5_,_d4_,change)] /*<<op_set.ml 821 56>>*/ },
+          /*<<op_set.ml 814 4>>*/ _dV_=CCFQueue[29],
+          /*<<op_set.ml 815 6>>*/ match=
+           /*<<op_set.ml 815 6>>*/ caml_call3(_dV_,_dU_,_dT_,_dS_),
+          /*<<op_set.ml 815 6>>*/ queue=match[3],
+          /*<<op_set.ml 815 6>>*/ diffs$1=match[2],
+          /*<<op_set.ml 815 6>>*/ t$1=match[1],
+          /*<<op_set.ml 815 6>>*/ _dW_=t$1[9],
+          /*<<op_set.ml 815 6>>*/ _dX_=CCFQueue[28],
+          /*<<op_set.ml 825 41>>*/ _dY_=
+           /*<<op_set.ml 825 41>>*/ caml_call1(_dX_,_dW_),
+          /*<<op_set.ml 825 41>>*/ _dZ_=CCFQueue[28],
+          /*<<op_set.ml 825 19>>*/ _d0_=
+           /*<<op_set.ml 825 19>>*/ caml_call1(_dZ_,queue),
+          /*<<op_set.ml 825 19>>*/ _d1_=Datastructures[2][2];
+         /*<<op_set.ml 825 7>>*/ if
+         ( /*<<op_set.ml 825 7>>*/ caml_call2(_d1_,_d0_,_dY_))
          return [0,t$1,diffs$1];
-         /*<<op_set.ml 815 4>>*/ var
-          /*<<op_set.ml 831 9>>*/ t$2=
+         /*<<op_set.ml 814 4>>*/ var
+          /*<<op_set.ml 826 9>>*/ t$2=
           [0,
            t$1[1],
            t$1[2],
@@ -66566,23 +66504,23 @@
            t$1[10]],
          t$0=t$2,
          diffs$0=diffs$1;
-        continue} /*<<op_set.ml 831 46>>*/ }
+        continue} /*<<op_set.ml 826 46>>*/ }
     function push_undo_history(t)
-     { /*<<op_set.ml 834 4>>*/ var
-        /*<<op_set.ml 834 4>>*/ _di_=0,
-        /*<<op_set.ml 834 4>>*/ _dj_=t[10],
-        /*<<op_set.ml 834 4>>*/ _dk_=CCOpt[20],
-        /*<<op_set.ml 837 9>>*/ _dl_=
-        [0, /*<<op_set.ml 837 9>>*/ caml_call1(_dk_,_dj_),_di_],
-        /*<<op_set.ml 837 9>>*/ _dm_=t[7],
-        /*<<op_set.ml 837 9>>*/ _dn_=t[6],
-        /*<<op_set.ml 837 9>>*/ _do_=CCList[77],
-        /*<<op_set.ml 836 8>>*/ _dp_=
-         /*<<op_set.ml 836 8>>*/ caml_call2(_do_,_dn_,_dm_),
-        /*<<op_set.ml 836 8>>*/ _dq_=CCList[36],
-        /*<<op_set.ml 835 6>>*/ undo_stack=
-         /*<<op_set.ml 835 6>>*/ caml_call2(_dq_,_dp_,_dl_);
-       /*<<op_set.ml 835 6>>*/ return [0,
+     { /*<<op_set.ml 829 4>>*/ var
+        /*<<op_set.ml 829 4>>*/ _dJ_=0,
+        /*<<op_set.ml 829 4>>*/ _dK_=t[10],
+        /*<<op_set.ml 829 4>>*/ _dL_=CCOpt[20],
+        /*<<op_set.ml 832 9>>*/ _dM_=
+        [0, /*<<op_set.ml 832 9>>*/ caml_call1(_dL_,_dK_),_dJ_],
+        /*<<op_set.ml 832 9>>*/ _dN_=t[7],
+        /*<<op_set.ml 832 9>>*/ _dO_=t[6],
+        /*<<op_set.ml 832 9>>*/ _dP_=CCList[77],
+        /*<<op_set.ml 831 8>>*/ _dQ_=
+         /*<<op_set.ml 831 8>>*/ caml_call2(_dP_,_dO_,_dN_),
+        /*<<op_set.ml 831 8>>*/ _dR_=CCList[36],
+        /*<<op_set.ml 830 6>>*/ undo_stack=
+         /*<<op_set.ml 830 6>>*/ caml_call2(_dR_,_dQ_,_dM_);
+       /*<<op_set.ml 830 6>>*/ return [0,
               t[1],
               t[2],
               t[3],
@@ -66592,15 +66530,15 @@
               undo_stack,
               0,
               t[9],
-              0] /*<<op_set.ml 840 78>>*/ }
+              0] /*<<op_set.ml 835 78>>*/ }
     function add_change(init,change,isUndoable)
-     { /*<<op_set.ml 843 4>>*/ var
-        /*<<op_set.ml 843 4>>*/ _dd_=init[10],
-        /*<<op_set.ml 843 4>>*/ _de_=init[9],
-        /*<<op_set.ml 843 4>>*/ _df_=CCFQueue[7],
-        /*<<op_set.ml 843 27>>*/ _dg_=
-         /*<<op_set.ml 843 27>>*/ caml_call2(_df_,_de_,change),
-        /*<<op_set.ml 843 27>>*/ t=
+     { /*<<op_set.ml 838 4>>*/ var
+        /*<<op_set.ml 838 4>>*/ _dE_=init[10],
+        /*<<op_set.ml 838 4>>*/ _dF_=init[9],
+        /*<<op_set.ml 838 4>>*/ _dG_=CCFQueue[7],
+        /*<<op_set.ml 838 27>>*/ _dH_=
+         /*<<op_set.ml 838 27>>*/ caml_call2(_dG_,_dF_,change),
+        /*<<op_set.ml 838 27>>*/ t=
         [0,
          init[1],
          init[2],
@@ -66610,178 +66548,178 @@
          init[6],
          init[7],
          init[8],
-         _dg_,
-         _dd_];
-       /*<<op_set.ml 843 27>>*/ if(isUndoable)
-       { /*<<op_set.ml 845 6>>*/ var
-          /*<<op_set.ml 845 6>>*/ t$0=
-          [0,t[1],t[2],t[3],t[4],t[5],t[6],t[7],t[8],t[9],_ad_],
-          /*<<op_set.ml 845 6>>*/ _dh_=0,
-          /*<<op_set.ml 846 21>>*/ match=
-           /*<<op_set.ml 846 21>>*/ apply_queued_ops(t$0,_dh_),
-          /*<<op_set.ml 846 21>>*/ diffs=match[2],
-          /*<<op_set.ml 846 21>>*/ t$1=match[1],
-          /*<<op_set.ml 847 14>>*/ t$2=
-           /*<<op_set.ml 847 14>>*/ push_undo_history(t$1);
-         /*<<op_set.ml 847 14>>*/ return [0,t$2,diffs]}
-       /*<<op_set.ml 849 9>>*/ return  /*<<op_set.ml 849 9>>*/ apply_queued_ops
-              (t,0) /*<<op_set.ml 849 30>>*/ }
+         _dH_,
+         _dE_];
+       /*<<op_set.ml 838 27>>*/ if(isUndoable)
+       { /*<<op_set.ml 840 6>>*/ var
+          /*<<op_set.ml 840 6>>*/ t$0=
+          [0,t[1],t[2],t[3],t[4],t[5],t[6],t[7],t[8],t[9],_Y_],
+          /*<<op_set.ml 840 6>>*/ _dI_=0,
+          /*<<op_set.ml 841 21>>*/ match=
+           /*<<op_set.ml 841 21>>*/ apply_queued_ops(t$0,_dI_),
+          /*<<op_set.ml 841 21>>*/ diffs=match[2],
+          /*<<op_set.ml 841 21>>*/ t$1=match[1],
+          /*<<op_set.ml 842 14>>*/ t$2=
+           /*<<op_set.ml 842 14>>*/ push_undo_history(t$1);
+         /*<<op_set.ml 842 14>>*/ return [0,t$2,diffs]}
+       /*<<op_set.ml 844 9>>*/ return  /*<<op_set.ml 844 9>>*/ apply_queued_ops
+              (t,0) /*<<op_set.ml 844 30>>*/ }
     function init(param)
-     { /*<<op_set.ml 852 4>>*/ var
-        /*<<op_set.ml 852 4>>*/ root_obj=
+     { /*<<op_set.ml 847 4>>*/ var
+        /*<<op_set.ml 847 4>>*/ root_obj=
         [0,KeyMap[1],[0,0,KeyMap[1],root_op,empty,0,ElemIdMap[1]]],
-        /*<<op_set.ml 852 4>>*/ _c5_=0,
-        /*<<op_set.ml 852 4>>*/ _c6_=CCFQueue[1],
-        /*<<op_set.ml 852 4>>*/ _c7_=0,
-        /*<<op_set.ml 852 4>>*/ _c8_=0,
-        /*<<op_set.ml 852 4>>*/ _c9_=0,
-        /*<<op_set.ml 852 4>>*/ _c__=ActorMap[1],
-        /*<<op_set.ml 852 4>>*/ _c$_=ActorMap[1],
-        /*<<op_set.ml 852 4>>*/ _da_=ObjectIdMap[1],
-        /*<<op_set.ml 852 4>>*/ _db_=ObjectIdMap[4],
-        /*<<op_set.ml 872 17>>*/ _dc_=
-         /*<<op_set.ml 872 17>>*/ caml_call3(_db_,root_id,root_obj,_da_);
-       /*<<op_set.ml 872 17>>*/ return [0,
+        /*<<op_set.ml 847 4>>*/ _du_=0,
+        /*<<op_set.ml 847 4>>*/ _dv_=CCFQueue[1],
+        /*<<op_set.ml 847 4>>*/ _dw_=0,
+        /*<<op_set.ml 847 4>>*/ _dx_=0,
+        /*<<op_set.ml 847 4>>*/ _dy_=0,
+        /*<<op_set.ml 847 4>>*/ _dz_=ActorMap[1],
+        /*<<op_set.ml 847 4>>*/ _dA_=ActorMap[1],
+        /*<<op_set.ml 847 4>>*/ _dB_=ObjectIdMap[1],
+        /*<<op_set.ml 847 4>>*/ _dC_=ObjectIdMap[4],
+        /*<<op_set.ml 867 17>>*/ _dD_=
+         /*<<op_set.ml 867 17>>*/ caml_call3(_dC_,root_id,root_obj,_dB_);
+       /*<<op_set.ml 867 17>>*/ return [0,
               ActorMap[1],
               0,
-              _dc_,
-              _c$_,
-              _c__,
-              _c9_,
-              _c8_,
-              _c7_,
-              _c6_,
-              _c5_] /*<<op_set.ml 879 24>>*/ }
+              _dD_,
+              _dA_,
+              _dz_,
+              _dy_,
+              _dx_,
+              _dw_,
+              _dv_,
+              _du_] /*<<op_set.ml 874 24>>*/ }
     function get_missing_changes(t,have_deps)
-     { /*<<op_set.ml 884 19>>*/ var
-        /*<<op_set.ml 884 19>>*/ all_deps=
-         /*<<op_set.ml 884 19>>*/ transitive_deps(t,have_deps),
-        /*<<op_set.ml 884 19>>*/ _cR_=t[1];
-       /*<<op_set.ml 884 19>>*/ function _cS_(actor,states)
-       { /*<<op_set.ml 887 8>>*/ var
-          /*<<op_set.ml 887 8>>*/ _c2_=0,
-          /*<<op_set.ml 887 8>>*/ _c3_=ActorMap[28],
-          /*<<op_set.ml 887 20>>*/ _c4_=
-           /*<<op_set.ml 887 20>>*/ caml_call3(_c3_,actor,all_deps,_c2_);
-         /*<<op_set.ml 887 20>>*/ return  /*<<op_set.ml 887 20>>*/ caml_call2
-                (CCList[78],_c4_,states) /*<<op_set.ml 887 70>>*/ }
-       /*<<op_set.ml 884 19>>*/ var
-        /*<<op_set.ml 884 19>>*/ _cT_=ActorMap[26],
-        /*<<op_set.ml 885 4>>*/ _cU_=
-         /*<<op_set.ml 885 4>>*/ caml_call2(_cT_,_cS_,_cR_),
-        /*<<op_set.ml 885 4>>*/ _cV_=ActorMap[44],
-        /*<<op_set.ml 885 4>>*/ _cW_=
-         /*<<op_set.ml 885 4>>*/ caml_call1(_cV_,_cU_),
-        /*<<op_set.ml 885 4>>*/ _cX_=CCList[146],
-        /*<<op_set.ml 885 4>>*/ _cY_=
-         /*<<op_set.ml 885 4>>*/ caml_call1(_cX_,_cW_),
-        /*<<op_set.ml 885 4>>*/ _cZ_=CCList[57],
-        /*<<op_set.ml 885 4>>*/ _c0_=
-         /*<<op_set.ml 885 4>>*/ caml_call1(_cZ_,_cY_);
-       /*<<op_set.ml 885 4>>*/ function _c1_(state)
-       { /*<<op_set.ml 890 32>>*/ return state[1] /*<<op_set.ml 890 44>>*/ }
-       /*<<op_set.ml 885 4>>*/ return  /*<<op_set.ml 885 4>>*/ caml_call2
-              (CCList[33],_c1_,_c0_) /*<<op_set.ml 890 45>>*/ }
+     { /*<<op_set.ml 879 19>>*/ var
+        /*<<op_set.ml 879 19>>*/ all_deps=
+         /*<<op_set.ml 879 19>>*/ transitive_deps(t,have_deps),
+        /*<<op_set.ml 879 19>>*/ _dg_=t[1];
+       /*<<op_set.ml 879 19>>*/ function _dh_(actor,states)
+       { /*<<op_set.ml 882 8>>*/ var
+          /*<<op_set.ml 882 8>>*/ _dr_=0,
+          /*<<op_set.ml 882 8>>*/ _ds_=ActorMap[28],
+          /*<<op_set.ml 882 20>>*/ _dt_=
+           /*<<op_set.ml 882 20>>*/ caml_call3(_ds_,actor,all_deps,_dr_);
+         /*<<op_set.ml 882 20>>*/ return  /*<<op_set.ml 882 20>>*/ caml_call2
+                (CCList[78],_dt_,states) /*<<op_set.ml 882 70>>*/ }
+       /*<<op_set.ml 879 19>>*/ var
+        /*<<op_set.ml 879 19>>*/ _di_=ActorMap[26],
+        /*<<op_set.ml 880 4>>*/ _dj_=
+         /*<<op_set.ml 880 4>>*/ caml_call2(_di_,_dh_,_dg_),
+        /*<<op_set.ml 880 4>>*/ _dk_=ActorMap[44],
+        /*<<op_set.ml 880 4>>*/ _dl_=
+         /*<<op_set.ml 880 4>>*/ caml_call1(_dk_,_dj_),
+        /*<<op_set.ml 880 4>>*/ _dm_=CCList[146],
+        /*<<op_set.ml 880 4>>*/ _dn_=
+         /*<<op_set.ml 880 4>>*/ caml_call1(_dm_,_dl_),
+        /*<<op_set.ml 880 4>>*/ _do_=CCList[57],
+        /*<<op_set.ml 880 4>>*/ _dp_=
+         /*<<op_set.ml 880 4>>*/ caml_call1(_do_,_dn_);
+       /*<<op_set.ml 880 4>>*/ function _dq_(state)
+       { /*<<op_set.ml 885 32>>*/ return state[1] /*<<op_set.ml 885 44>>*/ }
+       /*<<op_set.ml 880 4>>*/ return  /*<<op_set.ml 880 4>>*/ caml_call2
+              (CCList[33],_dq_,_dp_) /*<<op_set.ml 885 45>>*/ }
     function get_changes_for_actor(t,opt,for_actor)
-     { /*<<op_set.ml 893 4>>*/ if(opt)
-        /*<<op_set.ml 892 44>>*/ var
-         /*<<op_set.ml 892 44>>*/ sth=opt[1],
+     { /*<<op_set.ml 888 4>>*/ if(opt)
+        /*<<op_set.ml 887 44>>*/ var
+         /*<<op_set.ml 887 44>>*/ sth=opt[1],
         after_seq=sth;
       else
        var after_seq=0;
-       /*<<op_set.ml 893 4>>*/  /*<<op_set.ml 893 4>>*/ var _cD_=t[1];
-       /*<<op_set.ml 893 4>>*/ function _cE_(actor,states)
-       { /*<<op_set.ml 893 41>>*/ return  /*<<op_set.ml 893 41>>*/ caml_call2
-                (String[34],actor,for_actor) /*<<op_set.ml 893 69>>*/ }
-       /*<<op_set.ml 893 4>>*/ var
-        /*<<op_set.ml 893 4>>*/ _cF_=ActorMap[14],
-        /*<<op_set.ml 893 4>>*/ _cG_=
-         /*<<op_set.ml 893 4>>*/ caml_call2(_cF_,_cE_,_cD_);
-       /*<<op_set.ml 893 4>>*/ function _cH_(states)
-       { /*<<op_set.ml 894 35>>*/ return  /*<<op_set.ml 894 35>>*/ caml_call2
-                (CCList[78],after_seq,states) /*<<op_set.ml 894 63>>*/ }
-       /*<<op_set.ml 893 4>>*/ var
-        /*<<op_set.ml 893 4>>*/ _cI_=ActorMap[25],
-        /*<<op_set.ml 893 4>>*/ _cJ_=
-         /*<<op_set.ml 893 4>>*/ caml_call2(_cI_,_cH_,_cG_),
-        /*<<op_set.ml 893 4>>*/ _cK_=ActorMap[44],
-        /*<<op_set.ml 893 4>>*/ _cL_=
-         /*<<op_set.ml 893 4>>*/ caml_call1(_cK_,_cJ_),
-        /*<<op_set.ml 893 4>>*/ _cM_=CCList[146],
-        /*<<op_set.ml 893 4>>*/ _cN_=
-         /*<<op_set.ml 893 4>>*/ caml_call1(_cM_,_cL_),
-        /*<<op_set.ml 893 4>>*/ _cO_=CCList[57],
-        /*<<op_set.ml 893 4>>*/ _cP_=
-         /*<<op_set.ml 893 4>>*/ caml_call1(_cO_,_cN_);
-       /*<<op_set.ml 893 4>>*/ function _cQ_(state)
-       { /*<<op_set.ml 896 32>>*/ return state[1] /*<<op_set.ml 896 44>>*/ }
-       /*<<op_set.ml 893 4>>*/ return  /*<<op_set.ml 893 4>>*/ caml_call2
-              (CCList[33],_cQ_,_cP_) /*<<op_set.ml 896 45>>*/ }
+       /*<<op_set.ml 888 4>>*/  /*<<op_set.ml 888 4>>*/ var _c4_=t[1];
+       /*<<op_set.ml 888 4>>*/ function _c5_(actor,states)
+       { /*<<op_set.ml 888 41>>*/ return  /*<<op_set.ml 888 41>>*/ caml_call2
+                (String[34],actor,for_actor) /*<<op_set.ml 888 69>>*/ }
+       /*<<op_set.ml 888 4>>*/ var
+        /*<<op_set.ml 888 4>>*/ _c6_=ActorMap[14],
+        /*<<op_set.ml 888 4>>*/ _c7_=
+         /*<<op_set.ml 888 4>>*/ caml_call2(_c6_,_c5_,_c4_);
+       /*<<op_set.ml 888 4>>*/ function _c8_(states)
+       { /*<<op_set.ml 889 35>>*/ return  /*<<op_set.ml 889 35>>*/ caml_call2
+                (CCList[78],after_seq,states) /*<<op_set.ml 889 63>>*/ }
+       /*<<op_set.ml 888 4>>*/ var
+        /*<<op_set.ml 888 4>>*/ _c9_=ActorMap[25],
+        /*<<op_set.ml 888 4>>*/ _c__=
+         /*<<op_set.ml 888 4>>*/ caml_call2(_c9_,_c8_,_c7_),
+        /*<<op_set.ml 888 4>>*/ _c$_=ActorMap[44],
+        /*<<op_set.ml 888 4>>*/ _da_=
+         /*<<op_set.ml 888 4>>*/ caml_call1(_c$_,_c__),
+        /*<<op_set.ml 888 4>>*/ _db_=CCList[146],
+        /*<<op_set.ml 888 4>>*/ _dc_=
+         /*<<op_set.ml 888 4>>*/ caml_call1(_db_,_da_),
+        /*<<op_set.ml 888 4>>*/ _dd_=CCList[57],
+        /*<<op_set.ml 888 4>>*/ _de_=
+         /*<<op_set.ml 888 4>>*/ caml_call1(_dd_,_dc_);
+       /*<<op_set.ml 888 4>>*/ function _df_(state)
+       { /*<<op_set.ml 891 32>>*/ return state[1] /*<<op_set.ml 891 44>>*/ }
+       /*<<op_set.ml 888 4>>*/ return  /*<<op_set.ml 888 4>>*/ caml_call2
+              (CCList[33],_df_,_de_) /*<<op_set.ml 891 45>>*/ }
     function get_missing_deps(t)
-     { /*<<op_set.ml 899 4>>*/ var
-        /*<<op_set.ml 899 4>>*/ _co_=t[9],
-        /*<<op_set.ml 899 4>>*/ _cp_=ActorMap[1];
-       /*<<op_set.ml 899 4>>*/ function _cq_(missing,change)
-       { /*<<op_set.ml 901 8>>*/ var
-          /*<<op_set.ml 901 8>>*/ _cr_=change[3],
-          /*<<op_set.ml 901 8>>*/ _cs_=change[2] - 1 | 0,
-          /*<<op_set.ml 901 8>>*/ _ct_=change[1],
-          /*<<op_set.ml 901 8>>*/ _cu_=ActorMap[4],
-          /*<<op_set.ml 901 19>>*/ deps=
-           /*<<op_set.ml 901 19>>*/ caml_call3(_cu_,_ct_,_cs_,_cr_);
-         /*<<op_set.ml 901 19>>*/ function _cv_(depActor,depSeq,missing)
-         { /*<<op_set.ml 904 12>>*/ var
-            /*<<op_set.ml 904 12>>*/ _cw_=0,
-            /*<<op_set.ml 904 12>>*/ _cx_=t[4],
-            /*<<op_set.ml 904 12>>*/ _cy_=ActorMap[28];
-           /*<<op_set.ml 904 15>>*/ if
-           ( /*<<op_set.ml 904 15>>*/ caml_call3(_cy_,depActor,_cx_,_cw_)
+     { /*<<op_set.ml 894 4>>*/ var
+        /*<<op_set.ml 894 4>>*/ _cP_=t[9],
+        /*<<op_set.ml 894 4>>*/ _cQ_=ActorMap[1];
+       /*<<op_set.ml 894 4>>*/ function _cR_(missing,change)
+       { /*<<op_set.ml 896 8>>*/ var
+          /*<<op_set.ml 896 8>>*/ _cS_=change[3],
+          /*<<op_set.ml 896 8>>*/ _cT_=change[2] - 1 | 0,
+          /*<<op_set.ml 896 8>>*/ _cU_=change[1],
+          /*<<op_set.ml 896 8>>*/ _cV_=ActorMap[4],
+          /*<<op_set.ml 896 19>>*/ deps=
+           /*<<op_set.ml 896 19>>*/ caml_call3(_cV_,_cU_,_cT_,_cS_);
+         /*<<op_set.ml 896 19>>*/ function _cW_(depActor,depSeq,missing)
+         { /*<<op_set.ml 899 12>>*/ var
+            /*<<op_set.ml 899 12>>*/ _cX_=0,
+            /*<<op_set.ml 899 12>>*/ _cY_=t[4],
+            /*<<op_set.ml 899 12>>*/ _cZ_=ActorMap[28];
+           /*<<op_set.ml 899 15>>*/ if
+           ( /*<<op_set.ml 899 15>>*/ caml_call3(_cZ_,depActor,_cY_,_cX_)
             <
             depSeq)
-           { /*<<op_set.ml 905 14>>*/ var
-              /*<<op_set.ml 905 14>>*/ _cz_=0,
-              /*<<op_set.ml 905 14>>*/ _cA_=ActorMap[28],
-              /*<<op_set.ml 905 25>>*/ curr=
-               /*<<op_set.ml 905 25>>*/ caml_call3(_cA_,depActor,missing,_cz_),
-              /*<<op_set.ml 905 25>>*/ _cB_=Pervasives[5],
-              /*<<op_set.ml 906 36>>*/ _cC_=
-               /*<<op_set.ml 906 36>>*/ caml_call2(_cB_,depSeq,curr);
-             /*<<op_set.ml 906 36>>*/ return  /*<<op_set.ml 906 36>>*/ caml_call3
-                    (ActorMap[4],depActor,_cC_,missing)}
-           /*<<op_set.ml 907 17>>*/ return missing /*<<op_set.ml 907 24>>*/ }
-         /*<<op_set.ml 901 19>>*/ return  /*<<op_set.ml 901 19>>*/ caml_call3
-                (ActorMap[11],_cv_,missing,deps) /*<<op_set.ml 908 22>>*/ }
-       /*<<op_set.ml 899 4>>*/ return  /*<<op_set.ml 899 4>>*/ caml_call3
-              (CCFQueue[29],_cq_,_cp_,_co_) /*<<op_set.ml 909 28>>*/ }
+           { /*<<op_set.ml 900 14>>*/ var
+              /*<<op_set.ml 900 14>>*/ _c0_=0,
+              /*<<op_set.ml 900 14>>*/ _c1_=ActorMap[28],
+              /*<<op_set.ml 900 25>>*/ curr=
+               /*<<op_set.ml 900 25>>*/ caml_call3(_c1_,depActor,missing,_c0_),
+              /*<<op_set.ml 900 25>>*/ _c2_=Pervasives[5],
+              /*<<op_set.ml 901 36>>*/ _c3_=
+               /*<<op_set.ml 901 36>>*/ caml_call2(_c2_,depSeq,curr);
+             /*<<op_set.ml 901 36>>*/ return  /*<<op_set.ml 901 36>>*/ caml_call3
+                    (ActorMap[4],depActor,_c3_,missing)}
+           /*<<op_set.ml 902 17>>*/ return missing /*<<op_set.ml 902 24>>*/ }
+         /*<<op_set.ml 896 19>>*/ return  /*<<op_set.ml 896 19>>*/ caml_call3
+                (ActorMap[11],_cW_,missing,deps) /*<<op_set.ml 903 22>>*/ }
+       /*<<op_set.ml 894 4>>*/ return  /*<<op_set.ml 894 4>>*/ caml_call3
+              (CCFQueue[29],_cR_,_cQ_,_cP_) /*<<op_set.ml 904 28>>*/ }
     function valid_field_name(key)
-     { /*<<op_set.ml 912 29>>*/  /*<<op_set.ml 912 29>>*/ var
-       _ck_=
+     { /*<<op_set.ml 907 29>>*/  /*<<op_set.ml 907 29>>*/ var
+       _cL_=
         cst$2 !== key?1:0;
-       /*<<op_set.ml 912 29>>*/ if(_ck_)
+       /*<<op_set.ml 907 29>>*/ if(_cL_)
        var
-        _cl_=1,
-        _cm_=Str[29],
-        _cn_=cst$3 !==  /*<<op_set.ml 912 42>>*/ caml_call2(_cm_,key,_cl_)?1:0;
+        _cM_=1,
+        _cN_=Str[29],
+        _cO_=cst$3 !==  /*<<op_set.ml 907 42>>*/ caml_call2(_cN_,key,_cM_)?1:0;
       else
-       var _cn_=_ck_;
-      return _cn_ /*<<op_set.ml 912 70>>*/ }
+       var _cO_=_cL_;
+      return _cO_ /*<<op_set.ml 907 70>>*/ }
     function is_field_present(t,obj_id,key)
-     { /*<<op_set.ml 915 4>>*/  /*<<op_set.ml 915 4>>*/ var
-       _cg_=
-         /*<<op_set.ml 915 4>>*/ valid_field_name(key);
-       /*<<op_set.ml 915 4>>*/ if(_cg_)
-        /*<<op_set.ml 915 49>>*/ var
-         /*<<op_set.ml 915 49>>*/ _ch_=
-          /*<<op_set.ml 915 49>>*/ get_field_ops(t,obj_id,key),
-         /*<<op_set.ml 915 49>>*/ _ci_=CCList[32],
-        _cj_=1 -  /*<<op_set.ml 915 32>>*/ caml_call1(_ci_,_ch_);
+     { /*<<op_set.ml 910 4>>*/  /*<<op_set.ml 910 4>>*/ var
+       _cH_=
+         /*<<op_set.ml 910 4>>*/ valid_field_name(key);
+       /*<<op_set.ml 910 4>>*/ if(_cH_)
+        /*<<op_set.ml 910 49>>*/ var
+         /*<<op_set.ml 910 49>>*/ _cI_=
+          /*<<op_set.ml 910 49>>*/ get_field_ops(t,obj_id,key),
+         /*<<op_set.ml 910 49>>*/ _cJ_=CCList[32],
+        _cK_=1 -  /*<<op_set.ml 910 32>>*/ caml_call1(_cJ_,_cI_);
       else
-       var _cj_=_cg_;
-       /*<<op_set.ml 912 29>>*/ return _cj_ /*<<op_set.ml 915 78>>*/ }
+       var _cK_=_cH_;
+       /*<<op_set.ml 907 29>>*/ return _cK_ /*<<op_set.ml 910 78>>*/ }
     function unpack_value(parent_id,patch_diff,children,value)
-     { /*<<op_set.ml 918 4>>*/ if(0 === value[0])
-       { /*<<op_set.ml 931 22>>*/  /*<<op_set.ml 931 22>>*/ var v=value[1];
-         /*<<op_set.ml 931 22>>*/ return [0,
+     { /*<<op_set.ml 913 4>>*/ if(0 === value[0])
+       { /*<<op_set.ml 926 22>>*/  /*<<op_set.ml 926 22>>*/ var v=value[1];
+         /*<<op_set.ml 926 22>>*/ return [0,
                 [0,
                  patch_diff[1],
                  patch_diff[2],
@@ -66791,7 +66729,7 @@
                  patch_diff[6],
                  patch_diff[7]],
                 children]}
-       /*<<op_set.ml 920 8>>*/  /*<<op_set.ml 920 8>>*/ var
+       /*<<op_set.ml 915 8>>*/  /*<<op_set.ml 915 8>>*/ var
        patch_diff$0=
         [0,
          patch_diff[1],
@@ -66799,79 +66737,79 @@
          patch_diff[3],
          patch_diff[4],
          [0,[1,value[1]]],
-         _ae_,
+         _Z_,
          patch_diff[7]];
-       /*<<op_set.ml 920 8>>*/ function _cc_(param)
-       { /*<<op_set.ml 925 12>>*/ if(param)
-         { /*<<op_set.ml 926 31>>*/ var
-            /*<<op_set.ml 926 31>>*/ childs=param[1],
-            /*<<op_set.ml 926 31>>*/ _ce_=[0,value[1],0],
-            /*<<op_set.ml 926 31>>*/ _cf_=CCList[36];
-           /*<<op_set.ml 926 36>>*/ return [0,
-                   /*<<op_set.ml 926 36>>*/ caml_call2(_cf_,childs,_ce_)]}
-         /*<<op_set.ml 927 24>>*/ throw [0,Invalid_argument,cst_child_id] /*<<op_set.ml 927 60>>*/ }
-       /*<<op_set.ml 920 8>>*/ var
-        /*<<op_set.ml 920 8>>*/ _cd_=ChildMap[29],
-        /*<<op_set.ml 924 10>>*/ children$0=
-         /*<<op_set.ml 924 10>>*/ caml_call3(_cd_,parent_id,_cc_,children);
-       /*<<op_set.ml 924 10>>*/ return [0,patch_diff$0,children$0] /*<<op_set.ml 931 65>>*/ }
+       /*<<op_set.ml 915 8>>*/ function _cD_(param)
+       { /*<<op_set.ml 920 12>>*/ if(param)
+         { /*<<op_set.ml 921 31>>*/ var
+            /*<<op_set.ml 921 31>>*/ childs=param[1],
+            /*<<op_set.ml 921 31>>*/ _cF_=[0,value[1],0],
+            /*<<op_set.ml 921 31>>*/ _cG_=CCList[36];
+           /*<<op_set.ml 921 36>>*/ return [0,
+                   /*<<op_set.ml 921 36>>*/ caml_call2(_cG_,childs,_cF_)]}
+         /*<<op_set.ml 922 24>>*/ throw [0,Invalid_argument,cst_child_id] /*<<op_set.ml 922 60>>*/ }
+       /*<<op_set.ml 915 8>>*/ var
+        /*<<op_set.ml 915 8>>*/ _cE_=ChildMap[29],
+        /*<<op_set.ml 919 10>>*/ children$0=
+         /*<<op_set.ml 919 10>>*/ caml_call3(_cE_,parent_id,_cD_,children);
+       /*<<op_set.ml 919 10>>*/ return [0,patch_diff$0,children$0] /*<<op_set.ml 926 65>>*/ }
     function unpack_conflict_value(parent_id,conflict,children,value)
-     { /*<<op_set.ml 934 4>>*/ if(0 === value[0])
-       { /*<<op_set.ml 947 22>>*/  /*<<op_set.ml 947 22>>*/ var v=value[1];
-         /*<<op_set.ml 947 22>>*/ return [0,
+     { /*<<op_set.ml 929 4>>*/ if(0 === value[0])
+       { /*<<op_set.ml 942 22>>*/  /*<<op_set.ml 942 22>>*/ var v=value[1];
+         /*<<op_set.ml 942 22>>*/ return [0,
                 [0,conflict[1],[0,v],conflict[3]],
                 children]}
-       /*<<op_set.ml 936 8>>*/  /*<<op_set.ml 936 8>>*/ var
+       /*<<op_set.ml 931 8>>*/  /*<<op_set.ml 931 8>>*/ var
        patch_diff=
-        [0,conflict[1],[0,[1,value[1]]],_af_];
-       /*<<op_set.ml 936 8>>*/ function _b__(param)
-       { /*<<op_set.ml 941 12>>*/ if(param)
-         { /*<<op_set.ml 942 31>>*/ var
-            /*<<op_set.ml 942 31>>*/ childs=param[1],
-            /*<<op_set.ml 942 31>>*/ _ca_=[0,value[1],0],
-            /*<<op_set.ml 942 31>>*/ _cb_=CCList[36];
-           /*<<op_set.ml 942 36>>*/ return [0,
-                   /*<<op_set.ml 942 36>>*/ caml_call2(_cb_,childs,_ca_)]}
-         /*<<op_set.ml 943 24>>*/ throw [0,Invalid_argument,cst_child_id$0] /*<<op_set.ml 943 60>>*/ }
-       /*<<op_set.ml 936 8>>*/ var
-        /*<<op_set.ml 936 8>>*/ _b$_=ChildMap[29],
-        /*<<op_set.ml 940 10>>*/ children$0=
-         /*<<op_set.ml 940 10>>*/ caml_call3(_b$_,parent_id,_b__,children);
-       /*<<op_set.ml 940 10>>*/ return [0,patch_diff,children$0] /*<<op_set.ml 947 63>>*/ }
+        [0,conflict[1],[0,[1,value[1]]],___];
+       /*<<op_set.ml 931 8>>*/ function _cz_(param)
+       { /*<<op_set.ml 936 12>>*/ if(param)
+         { /*<<op_set.ml 937 31>>*/ var
+            /*<<op_set.ml 937 31>>*/ childs=param[1],
+            /*<<op_set.ml 937 31>>*/ _cB_=[0,value[1],0],
+            /*<<op_set.ml 937 31>>*/ _cC_=CCList[36];
+           /*<<op_set.ml 937 36>>*/ return [0,
+                   /*<<op_set.ml 937 36>>*/ caml_call2(_cC_,childs,_cB_)]}
+         /*<<op_set.ml 938 24>>*/ throw [0,Invalid_argument,cst_child_id$0] /*<<op_set.ml 938 60>>*/ }
+       /*<<op_set.ml 931 8>>*/ var
+        /*<<op_set.ml 931 8>>*/ _cA_=ChildMap[29],
+        /*<<op_set.ml 935 10>>*/ children$0=
+         /*<<op_set.ml 935 10>>*/ caml_call3(_cA_,parent_id,_cz_,children);
+       /*<<op_set.ml 935 10>>*/ return [0,patch_diff,children$0] /*<<op_set.ml 942 63>>*/ }
     function unpack_conflicts_for_key
      (key,parent_id,patch_diff,children,conflicts)
-     { /*<<op_set.ml 951 4>>*/ if(conflicts)
-       { /*<<op_set.ml 952 23>>*/ var
-          /*<<op_set.ml 952 23>>*/ all_conf=conflicts[1],
-          /*<<op_set.ml 952 23>>*/ _b4_=KeyMap[27],
-          /*<<op_set.ml 953 12>>*/ match=
-           /*<<op_set.ml 953 12>>*/ caml_call2(_b4_,key,all_conf);
-         /*<<op_set.ml 953 12>>*/ if(match)
-         { /*<<op_set.ml 955 10>>*/ var
-            /*<<op_set.ml 955 10>>*/ cs=match[1],
-            /*<<op_set.ml 955 10>>*/ _b5_=[0,0,children],
-            /*<<op_set.ml 955 10>>*/ _b6_=
+     { /*<<op_set.ml 946 4>>*/ if(conflicts)
+       { /*<<op_set.ml 947 23>>*/ var
+          /*<<op_set.ml 947 23>>*/ all_conf=conflicts[1],
+          /*<<op_set.ml 947 23>>*/ _ct_=KeyMap[27],
+          /*<<op_set.ml 948 12>>*/ match=
+           /*<<op_set.ml 948 12>>*/ caml_call2(_ct_,key,all_conf);
+         /*<<op_set.ml 948 12>>*/ if(match)
+         { /*<<op_set.ml 950 10>>*/ var
+            /*<<op_set.ml 950 10>>*/ cs=match[1],
+            /*<<op_set.ml 950 10>>*/ _cu_=[0,0,children],
+            /*<<op_set.ml 950 10>>*/ _cv_=
             function(actor,value,param)
-             { /*<<op_set.ml 957 14>>*/ var
-                /*<<op_set.ml 957 14>>*/ children=param[2],
-                /*<<op_set.ml 957 14>>*/ conflicts=param[1],
-                /*<<op_set.ml 957 14>>*/ conflict=[0,actor,0,0],
-                /*<<op_set.ml 960 18>>*/ match=
-                 /*<<op_set.ml 960 18>>*/ unpack_conflict_value
+             { /*<<op_set.ml 952 14>>*/ var
+                /*<<op_set.ml 952 14>>*/ children=param[2],
+                /*<<op_set.ml 952 14>>*/ conflicts=param[1],
+                /*<<op_set.ml 952 14>>*/ conflict=[0,actor,0,0],
+                /*<<op_set.ml 955 18>>*/ match=
+                 /*<<op_set.ml 955 18>>*/ unpack_conflict_value
                  (parent_id,conflict,children,value),
-                /*<<op_set.ml 960 18>>*/ children$0=match[2],
-                /*<<op_set.ml 960 18>>*/ conflict$0=match[1],
-                /*<<op_set.ml 960 18>>*/ _b8_=[0,conflict$0,0],
-                /*<<op_set.ml 960 18>>*/ _b9_=CCList[36];
-               /*<<op_set.ml 962 17>>*/ return [0,
-                       /*<<op_set.ml 962 17>>*/ caml_call2(_b9_,conflicts,_b8_),
-                      children$0] /*<<op_set.ml 962 64>>*/ },
-            /*<<op_set.ml 955 10>>*/ _b7_=OpMap[11],
-            /*<<op_set.ml 956 12>>*/ match$0=
-             /*<<op_set.ml 956 12>>*/ caml_call3(_b7_,_b6_,cs,_b5_),
-            /*<<op_set.ml 956 12>>*/ children$0=match$0[2],
-            /*<<op_set.ml 956 12>>*/ conflicts$0=match$0[1];
-           /*<<op_set.ml 956 12>>*/ return [0,
+                /*<<op_set.ml 955 18>>*/ children$0=match[2],
+                /*<<op_set.ml 955 18>>*/ conflict$0=match[1],
+                /*<<op_set.ml 955 18>>*/ _cx_=[0,conflict$0,0],
+                /*<<op_set.ml 955 18>>*/ _cy_=CCList[36];
+               /*<<op_set.ml 957 17>>*/ return [0,
+                       /*<<op_set.ml 957 17>>*/ caml_call2(_cy_,conflicts,_cx_),
+                      children$0] /*<<op_set.ml 957 64>>*/ },
+            /*<<op_set.ml 950 10>>*/ _cw_=OpMap[11],
+            /*<<op_set.ml 951 12>>*/ match$0=
+             /*<<op_set.ml 951 12>>*/ caml_call3(_cw_,_cv_,cs,_cu_),
+            /*<<op_set.ml 951 12>>*/ children$0=match$0[2],
+            /*<<op_set.ml 951 12>>*/ conflicts$0=match$0[1];
+           /*<<op_set.ml 951 12>>*/ return [0,
                   [0,
                    patch_diff[1],
                    patch_diff[2],
@@ -66881,414 +66819,600 @@
                    patch_diff[6],
                    [0,conflicts$0]],
                   children$0]}
-         /*<<op_set.ml 966 16>>*/ return [0,patch_diff,children]}
-       /*<<op_set.ml 967 14>>*/ return [0,patch_diff,children] /*<<op_set.ml 967 36>>*/ }
+         /*<<op_set.ml 961 16>>*/ return [0,patch_diff,children]}
+       /*<<op_set.ml 962 14>>*/ return [0,patch_diff,children] /*<<op_set.ml 962 36>>*/ }
     function get_object_fields(t,obj_id)
-     { /*<<op_set.ml 971 4>>*/  /*<<op_set.ml 971 4>>*/ var _bL_=KeySet[38];
-       /*<<op_set.ml 971 4>>*/ function _bM_(key)
-       { /*<<op_set.ml 973 34>>*/ return  /*<<op_set.ml 973 34>>*/ is_field_present
-                (t,obj_id,key) /*<<op_set.ml 973 63>>*/ }
-       /*<<op_set.ml 971 4>>*/ var
-        /*<<op_set.ml 971 4>>*/ _bN_=CCList[39],
-        /*<<op_set.ml 973 8>>*/ _bO_=
-         /*<<op_set.ml 973 8>>*/ caml_call1(_bN_,_bM_),
-        /*<<op_set.ml 973 8>>*/ _bP_=CCList[146],
-        /*<<op_set.ml 973 8>>*/ _bQ_=KeyMap[43];
-       /*<<op_set.ml 973 8>>*/ function _bR_(_b3_){ /*<<?>>*/ return _b3_[1]}
-       /*<<op_set.ml 973 8>>*/ var
-        /*<<op_set.ml 973 8>>*/ _bS_=t[3],
-        /*<<op_set.ml 973 8>>*/ _bT_=ObjectIdMap[27],
-        /*<<op_set.ml 971 4>>*/ _bU_=
-         /*<<op_set.ml 971 4>>*/ caml_call2(_bT_,obj_id,_bS_),
-        /*<<op_set.ml 971 4>>*/ _bV_=CCOpt[34][1],
-        /*<<op_set.ml 971 4>>*/ _bW_=
-         /*<<op_set.ml 971 4>>*/ caml_call2(_bV_,_bU_,_bR_),
-        /*<<op_set.ml 971 4>>*/ _bX_=CCOpt[34][1],
-        /*<<op_set.ml 971 4>>*/ _bY_=
-         /*<<op_set.ml 971 4>>*/ caml_call2(_bX_,_bW_,_bQ_),
-        /*<<op_set.ml 971 4>>*/ _bZ_=CCOpt[34][1],
-        /*<<op_set.ml 971 4>>*/ _b0_=
-         /*<<op_set.ml 971 4>>*/ caml_call2(_bZ_,_bY_,_bP_),
-        /*<<op_set.ml 971 4>>*/ _b1_=CCOpt[34][1],
-        /*<<op_set.ml 971 4>>*/ _b2_=
-         /*<<op_set.ml 971 4>>*/ caml_call2(_b1_,_b0_,_bO_);
-       /*<<op_set.ml 971 4>>*/ return  /*<<op_set.ml 971 4>>*/ caml_call2
-              (CCOpt[34][1],_b2_,_bL_) /*<<op_set.ml 974 22>>*/ }
+     { /*<<op_set.ml 966 4>>*/  /*<<op_set.ml 966 4>>*/ var _ca_=KeySet[38];
+       /*<<op_set.ml 966 4>>*/ function _cb_(key)
+       { /*<<op_set.ml 968 34>>*/ return  /*<<op_set.ml 968 34>>*/ is_field_present
+                (t,obj_id,key) /*<<op_set.ml 968 63>>*/ }
+       /*<<op_set.ml 966 4>>*/ var
+        /*<<op_set.ml 966 4>>*/ _cc_=CCList[39],
+        /*<<op_set.ml 968 8>>*/ _cd_=
+         /*<<op_set.ml 968 8>>*/ caml_call1(_cc_,_cb_),
+        /*<<op_set.ml 968 8>>*/ _ce_=CCList[146],
+        /*<<op_set.ml 968 8>>*/ _cf_=KeyMap[43];
+       /*<<op_set.ml 968 8>>*/ function _cg_(_cs_){ /*<<?>>*/ return _cs_[1]}
+       /*<<op_set.ml 968 8>>*/ var
+        /*<<op_set.ml 968 8>>*/ _ch_=t[3],
+        /*<<op_set.ml 968 8>>*/ _ci_=ObjectIdMap[27],
+        /*<<op_set.ml 966 4>>*/ _cj_=
+         /*<<op_set.ml 966 4>>*/ caml_call2(_ci_,obj_id,_ch_),
+        /*<<op_set.ml 966 4>>*/ _ck_=CCOpt[34][1],
+        /*<<op_set.ml 966 4>>*/ _cl_=
+         /*<<op_set.ml 966 4>>*/ caml_call2(_ck_,_cj_,_cg_),
+        /*<<op_set.ml 966 4>>*/ _cm_=CCOpt[34][1],
+        /*<<op_set.ml 966 4>>*/ _cn_=
+         /*<<op_set.ml 966 4>>*/ caml_call2(_cm_,_cl_,_cf_),
+        /*<<op_set.ml 966 4>>*/ _co_=CCOpt[34][1],
+        /*<<op_set.ml 966 4>>*/ _cp_=
+         /*<<op_set.ml 966 4>>*/ caml_call2(_co_,_cn_,_ce_),
+        /*<<op_set.ml 966 4>>*/ _cq_=CCOpt[34][1],
+        /*<<op_set.ml 966 4>>*/ _cr_=
+         /*<<op_set.ml 966 4>>*/ caml_call2(_cq_,_cp_,_cd_);
+       /*<<op_set.ml 966 4>>*/ return  /*<<op_set.ml 966 4>>*/ caml_call2
+              (CCOpt[34][1],_cr_,_ca_) /*<<op_set.ml 969 22>>*/ }
+    function sexp_of_iterator_val(param)
+     { /*<<op_set.ml 974 2>>*/ switch(param[0])
+       {case 0:
+          /*<<op_set.ml 975 4>>*/ var
+           /*<<op_set.ml 975 4>>*/ v0=param[1],
+           /*<<op_set.ml 975 4>>*/ _b5_=Sexplib_Conv[10],
+           /*<<op_set.ml 975 4>>*/ v0$0=
+            /*<<op_set.ml 975 4>>*/ caml_call1(_b5_,v0);
+          /*<<op_set.ml 975 4>>*/ return [1,[0,_$_,[0,v0$0,0]]];
+        case 1:
+          /*<<op_set.ml 976 4>>*/ var
+           /*<<op_set.ml 976 4>>*/ v0$1=param[1],
+           /*<<op_set.ml 976 4>>*/ _b6_=Sexplib_Conv[17],
+           /*<<op_set.ml 976 33>>*/ v0$2=
+            /*<<op_set.ml 976 33>>*/ caml_call2
+            (_b6_,sexp_of_materialized,v0$1);
+          /*<<op_set.ml 976 33>>*/ return [1,[0,_aa_,[0,v0$2,0]]];
+        case 2:
+          /*<<op_set.ml 977 4>>*/ var
+          v1=param[2],
+          v0$3=param[1],
+          _b7_=Sexplib_Conv[10],
+           /*<<op_set.ml 977 4>>*/ v0$4=
+            /*<<op_set.ml 977 4>>*/ caml_call1(_b7_,v0$3),
+           /*<<op_set.ml 977 4>>*/ _b8_=Sexplib_Conv[17],
+           /*<<op_set.ml 977 39>>*/ v1$0=
+            /*<<op_set.ml 977 39>>*/ caml_call2(_b8_,sexp_of_materialized,v1);
+          /*<<op_set.ml 977 39>>*/ return [1,[0,_ab_,[0,v0$4,[0,v1$0,0]]]];
+        case 3:
+          /*<<op_set.ml 978 4>>*/ var
+          v1$1=param[2],
+          v0$5=param[1],
+          _b9_=Sexplib_Conv[10],
+           /*<<op_set.ml 978 4>>*/ v0$6=
+            /*<<op_set.ml 978 4>>*/ caml_call1(_b9_,v0$5),
+           /*<<op_set.ml 978 4>>*/ _b__=Sexplib_Conv[7],
+           /*<<op_set.ml 978 4>>*/ v1$2=
+            /*<<op_set.ml 978 4>>*/ caml_call1(_b__,v1$1);
+          /*<<op_set.ml 978 4>>*/ return [1,[0,_ac_,[0,v0$6,[0,v1$2,0]]]];
+        default:
+          /*<<op_set.ml 979 4>>*/ var
+           /*<<op_set.ml 979 4>>*/ v0$7=param[1],
+           /*<<op_set.ml 979 4>>*/ _b$_=OpMap[47],
+           /*<<op_set.ml 979 26>>*/ v0$8=
+            /*<<op_set.ml 979 26>>*/ caml_call2(_b$_,sexp_of_op,v0$7);
+          /*<<op_set.ml 979 26>>*/ return [1,[0,_ad_,[0,v0$8,0]]]} /*<<op_set.ml 980 24>>*/ }
+    function sexp_of_iterator_res(param)
+     { /*<<op_set.ml 982 2>>*/ var
+        /*<<op_set.ml 982 2>>*/ v_value=param[2],
+        /*<<op_set.ml 982 2>>*/ v_done=param[1],
+        /*<<op_set.ml 982 2>>*/ bnds=0,
+        /*<<op_set.ml 982 2>>*/ _b3_=Sexplib_Conv[17],
+        /*<<op_set.ml 982 56>>*/ arg=
+         /*<<op_set.ml 982 56>>*/ caml_call2
+         (_b3_,sexp_of_iterator_val,v_value),
+        /*<<op_set.ml 982 56>>*/ bnds$0=[0,[1,[0,_ae_,[0,arg,0]]],bnds],
+        /*<<op_set.ml 982 56>>*/ _b4_=Sexplib_Conv[6],
+        /*<<op_set.ml 982 23>>*/ arg$0=
+         /*<<op_set.ml 982 23>>*/ caml_call1(_b4_,v_done),
+        /*<<op_set.ml 982 23>>*/ bnds$1=[0,[1,[0,_af_,[0,arg$0,0]]],bnds$0];
+       /*<<op_set.ml 982 23>>*/ return [1,bnds$1] /*<<op_set.ml 982 84>>*/ }
     function instantiate_object(t,obj_id,param)
-     { /*<<op_set.ml 977 10>>*/ var
+     { /*<<op_set.ml 987 10>>*/ var
        children=param[2],
        diffs=param[1],
-       _bE_=DiffMap[33],
-        /*<<op_set.ml 977 10>>*/ match=
-         /*<<op_set.ml 977 10>>*/ caml_call2(_bE_,obj_id,diffs);
-       /*<<op_set.ml 977 10>>*/ if(match)return [0,diffs,children,[1,obj_id]];
-       /*<<op_set.ml 977 10>>*/ var
-        /*<<op_set.ml 980 8>>*/ _bF_=String[34],
-        /*<<op_set.ml 980 22>>*/ is_root=
-         /*<<op_set.ml 980 22>>*/ caml_call2(_bF_,obj_id,root_id),
-        /*<<op_set.ml 981 22>>*/ obj_typ=
-         /*<<op_set.ml 981 22>>*/ get_obj_action(t,obj_id),
-        /*<<op_set.ml 981 22>>*/ _bG_=0,
-        /*<<op_set.ml 981 22>>*/ _bH_=ChildMap[4],
-        /*<<op_set.ml 983 40>>*/ _bI_=
-         /*<<op_set.ml 983 40>>*/ caml_call3(_bH_,obj_id,_bG_,children),
-        /*<<op_set.ml 983 40>>*/ _bJ_=0,
-        /*<<op_set.ml 983 40>>*/ _bK_=DiffMap[4],
-        /*<<op_set.ml 983 11>>*/ context=
-        [0, /*<<op_set.ml 983 11>>*/ caml_call3(_bK_,obj_id,_bJ_,diffs),_bI_];
-       /*<<op_set.ml 983 11>>*/ if(is_root)
+       _bU_=DiffMap[33],
+        /*<<op_set.ml 987 10>>*/ match=
+         /*<<op_set.ml 987 10>>*/ caml_call2(_bU_,obj_id,diffs);
+       /*<<op_set.ml 987 10>>*/ if(match)return [0,diffs,children,[1,obj_id]];
+       /*<<op_set.ml 987 10>>*/ var
+        /*<<op_set.ml 990 8>>*/ _bV_=String[34],
+        /*<<op_set.ml 990 22>>*/ is_root=
+         /*<<op_set.ml 990 22>>*/ caml_call2(_bV_,obj_id,root_id),
+        /*<<op_set.ml 991 22>>*/ obj_typ=
+         /*<<op_set.ml 991 22>>*/ get_obj_action(t,obj_id),
+        /*<<op_set.ml 991 22>>*/ _bW_=0,
+        /*<<op_set.ml 991 22>>*/ _bX_=ChildMap[4],
+        /*<<op_set.ml 993 40>>*/ _bY_=
+         /*<<op_set.ml 993 40>>*/ caml_call3(_bX_,obj_id,_bW_,children),
+        /*<<op_set.ml 993 40>>*/ _bZ_=0,
+        /*<<op_set.ml 993 40>>*/ _b0_=DiffMap[4],
+        /*<<op_set.ml 993 11>>*/ context=
+        [0, /*<<op_set.ml 993 11>>*/ caml_call3(_b0_,obj_id,_bZ_,diffs),_bY_];
+       /*<<op_set.ml 993 11>>*/ if(is_root)
        var
         match$0=
-          /*<<op_set.ml 986 26>>*/ instantiate_map(t,obj_id,context);
+          /*<<op_set.ml 996 26>>*/ instantiate_map(t,obj_id,context);
       else
        switch(obj_typ)
         {case 0:
           var
            match$0=
-             /*<<op_set.ml 989 25>>*/ instantiate_map(t,obj_id,context);
+             /*<<op_set.ml 999 25>>*/ instantiate_map(t,obj_id,context);
           break;
          case 1:
-          var
+           /*<<op_set.ml 1000 26>>*/ var
+            /*<<op_set.ml 1000 26>>*/ _b1_=1,
            match$0=
-             /*<<op_set.ml 990 26>>*/ instantiate_list
-             (t,obj_id,cst_list,context);
+             /*<<op_set.ml 1000 26>>*/ instantiate_list(t,obj_id,_b1_,context);
           break;
          case 2:
-          var
+           /*<<op_set.ml 1001 26>>*/ var
+            /*<<op_set.ml 1001 26>>*/ _b2_=2,
            match$0=
-             /*<<op_set.ml 991 26>>*/ instantiate_list
-             (t,obj_id,cst_text,context);
+             /*<<op_set.ml 1001 26>>*/ instantiate_list(t,obj_id,_b2_,context);
           break;
-         default: /*<<op_set.ml 992 19>>*/ throw Unknown_object_type}
-       /*<<op_set.ml 977 10>>*/ var children$0=match$0[2],diffs$0=match$0[1];
+         default: /*<<op_set.ml 1002 19>>*/ throw Unknown_object_type}
+       /*<<op_set.ml 987 10>>*/ var children$0=match$0[2],diffs$0=match$0[1];
       return [0,diffs$0,children$0,[1,obj_id]]}
     function instantiate_list(t,obj_id,typ,param)
-     {var children=param[2],diffs=param[1];return [0,diffs,children]}
-    function instantiate_map(t,obj_id,param)
-     { /*<<op_set.ml 1000 22>>*/ var
+     { /*<<op_set.ml 1007 22>>*/ var
        children=param[2],
        diffs=param[1],
-       _a$_=DiffMap[22],
-        /*<<op_set.ml 1000 22>>*/ patch_diffs=
-         /*<<op_set.ml 1000 22>>*/ caml_call2(_a$_,obj_id,diffs),
-        /*<<op_set.ml 1000 22>>*/ _ba_=Datastructures[1][23];
-       /*<<op_set.ml 1002 13>>*/ if
-       ( /*<<op_set.ml 1002 13>>*/ caml_call2(_ba_,obj_id,root_id))
+       _bH_=DiffMap[22],
+        /*<<op_set.ml 1007 22>>*/ patch_diffs=
+         /*<<op_set.ml 1007 22>>*/ caml_call2(_bH_,obj_id,diffs),
+        /*<<op_set.ml 1007 22>>*/ _bI_=[0,[0,obj_id,typ,0,0,0,0,0],0],
+        /*<<op_set.ml 1007 22>>*/ _bJ_=CCList[36];
+       /*<<op_set.ml 1008 22>>*/  /*<<op_set.ml 1008 22>>*/ caml_call2
+       (_bJ_,patch_diffs,_bI_);
+       /*<<op_set.ml 1007 22>>*/ var
+        /*<<op_set.ml 1018 17>>*/ _bK_=[0,diffs,children],
+        /*<<op_set.ml 1018 17>>*/ _bL_=3,
+        /*<<op_set.ml 1019 16>>*/ elems=
+         /*<<op_set.ml 1019 16>>*/ list_iterator(t,obj_id,_bL_,_bK_),
+        /*<<op_set.ml 1019 16>>*/ _bM_=[0,diffs,children],
+        /*<<op_set.ml 1019 16>>*/ _bN_=elems[1],
+        /*<<op_set.ml 1021 32>>*/ match=
+         /*<<op_set.ml 1021 32>>*/ caml_call1(_bN_,_bM_),
+        /*<<op_set.ml 1021 32>>*/ el=match[3],
+        /*<<op_set.ml 1021 32>>*/ children$0=match[2],
+        /*<<op_set.ml 1021 32>>*/ diffs$0=match[1],
+        /*<<op_set.ml 1021 32>>*/ _bO_=Sexplib_Conv[17],
+        /*<<op_set.ml 1022 20>>*/ _bP_=
+         /*<<op_set.ml 1022 20>>*/ caml_call1(_bO_,sexp_of_iterator_res);
+       /*<<op_set.ml 1022 6>>*/  /*<<op_set.ml 1022 6>>*/ log
+       (cst_ITERATE,_bP_,el);
+       /*<<op_set.ml 1007 22>>*/ var
+        /*<<op_set.ml 1022 6>>*/ _bQ_=[0,diffs$0,children$0],
+        /*<<op_set.ml 1022 6>>*/ _bR_=elems[1],
+        /*<<op_set.ml 1023 32>>*/ match$0=
+         /*<<op_set.ml 1023 32>>*/ caml_call1(_bR_,_bQ_),
+        /*<<op_set.ml 1023 32>>*/ el$0=match$0[3],
+        /*<<op_set.ml 1023 32>>*/ children$1=match$0[2],
+        /*<<op_set.ml 1023 32>>*/ diffs$1=match$0[1],
+        /*<<op_set.ml 1023 32>>*/ _bS_=Sexplib_Conv[17],
+        /*<<op_set.ml 1024 20>>*/ _bT_=
+         /*<<op_set.ml 1024 20>>*/ caml_call1(_bS_,sexp_of_iterator_res);
+       /*<<op_set.ml 1024 6>>*/  /*<<op_set.ml 1024 6>>*/ log
+       (cst_ITERATE$0,_bT_,el$0);
+       /*<<op_set.ml 1024 6>>*/ return [0,diffs$1,children$1]}
+    function instantiate_map(t,obj_id,param)
+     { /*<<op_set.ml 1028 22>>*/ var
+       children=param[2],
+       diffs=param[1],
+       _bo_=DiffMap[22],
+        /*<<op_set.ml 1028 22>>*/ patch_diffs=
+         /*<<op_set.ml 1028 22>>*/ caml_call2(_bo_,obj_id,diffs),
+        /*<<op_set.ml 1028 22>>*/ _bp_=Datastructures[1][23];
+       /*<<op_set.ml 1030 13>>*/ if
+       ( /*<<op_set.ml 1030 13>>*/ caml_call2(_bp_,obj_id,root_id))
        var patch_diffs$0=patch_diffs;
       else
-        /*<<op_set.ml 1003 8>>*/ var
-         /*<<op_set.ml 1003 8>>*/ _bj_=[0,[0,obj_id,0,0,0,0,0,0],0],
-         /*<<op_set.ml 1003 8>>*/ _bk_=CCList[36],
+        /*<<op_set.ml 1031 8>>*/ var
+         /*<<op_set.ml 1031 8>>*/ _by_=[0,[0,obj_id,0,0,0,0,0,0],0],
+         /*<<op_set.ml 1031 8>>*/ _bz_=CCList[36],
         patch_diffs$0=
-          /*<<op_set.ml 1003 8>>*/ caml_call2(_bk_,patch_diffs,_bj_);
-       /*<<op_set.ml 1000 22>>*/ var
-        /*<<op_set.ml 1013 4>>*/ _bb_=[0,diffs,children],
-        /*<<op_set.ml 1014 6>>*/ match=
-         /*<<op_set.ml 1014 6>>*/ get_object_conflicts(t,obj_id,_bb_),
-        /*<<op_set.ml 1014 6>>*/ conflicts=match[3],
-        /*<<op_set.ml 1014 6>>*/ children$0=match[2],
-        /*<<op_set.ml 1014 6>>*/ diffs$0=match[1],
-        /*<<op_set.ml 1017 12>>*/ match$0=
-         /*<<op_set.ml 1017 12>>*/ get_object_fields(t,obj_id);
-       /*<<op_set.ml 1017 12>>*/ if(match$0)
+          /*<<op_set.ml 1031 8>>*/ caml_call2(_bz_,patch_diffs,_by_);
+       /*<<op_set.ml 1028 22>>*/ var
+        /*<<op_set.ml 1041 4>>*/ _bq_=[0,diffs,children],
+        /*<<op_set.ml 1042 6>>*/ match=
+         /*<<op_set.ml 1042 6>>*/ get_object_conflicts(t,obj_id,_bq_),
+        /*<<op_set.ml 1042 6>>*/ conflicts=match[3],
+        /*<<op_set.ml 1042 6>>*/ children$0=match[2],
+        /*<<op_set.ml 1042 6>>*/ diffs$0=match[1],
+        /*<<op_set.ml 1045 12>>*/ match$0=
+         /*<<op_set.ml 1045 12>>*/ get_object_fields(t,obj_id);
+       /*<<op_set.ml 1045 12>>*/ if(match$0)
        var
         fields=match$0[1],
-        _bc_=[0,diffs$0,children$0,patch_diffs$0],
-        _bd_=
+        _br_=[0,diffs$0,children$0,patch_diffs$0],
+        _bs_=
          function(key,param)
-          { /*<<op_set.ml 1020 12>>*/ var
-             /*<<op_set.ml 1020 12>>*/ patch_diffs=param[3],
-             /*<<op_set.ml 1020 12>>*/ children=param[2],
-             /*<<op_set.ml 1020 12>>*/ diffs=param[1],
-             /*<<op_set.ml 1020 12>>*/ _bl_=Sexplib_Conv[20],
-             /*<<op_set.ml 1021 62>>*/ _bm_=
-              /*<<op_set.ml 1021 62>>*/ caml_call1(_bl_,sexp_of_diff),
-             /*<<op_set.ml 1021 62>>*/ _bn_=DiffMap[47],
-             /*<<op_set.ml 1021 43>>*/ _bo_=
-              /*<<op_set.ml 1021 43>>*/ caml_call1(_bn_,_bm_);
-            /*<<op_set.ml 1021 14>>*/  /*<<op_set.ml 1021 14>>*/ log
-            (cst_INSTANTIATE_MAP_ADIFFS,_bo_,diffs);
-            /*<<op_set.ml 1020 12>>*/ var
-             /*<<op_set.ml 1021 14>>*/ patch_diff=[0,obj_id,0,1,[0,key],0,0,0],
-             /*<<op_set.ml 1021 14>>*/ _bp_=[0,diffs,children],
-             /*<<op_set.ml 1034 22>>*/ _bq_=
-              /*<<op_set.ml 1034 22>>*/ get_object_field(t,obj_id,key,_bp_),
-             /*<<op_set.ml 1034 22>>*/ _br_=_bq_[3],
-             /*<<op_set.ml 1034 22>>*/ _bt_=_bq_[1],
-             /*<<op_set.ml 1034 22>>*/ _bs_=_bq_[2];
-            /*<<op_set.ml 1034 22>>*/ if(_br_)
-            { /*<<op_set.ml 1036 20>>*/ var
-               /*<<op_set.ml 1036 20>>*/ mat_value=_br_[1],
-               /*<<op_set.ml 1037 22>>*/ match=
-                /*<<op_set.ml 1037 22>>*/ unpack_value
-                (obj_id,patch_diff,_bs_,mat_value),
-               /*<<op_set.ml 1037 22>>*/ children$0=match[2],
-               /*<<op_set.ml 1037 22>>*/ patch_diff$0=match[1],
-               /*<<op_set.ml 1037 22>>*/ _bu_=Sexplib_Conv[20],
-               /*<<op_set.ml 1042 62>>*/ _bv_=
-                /*<<op_set.ml 1042 62>>*/ caml_call1(_bu_,sexp_of_diff),
-               /*<<op_set.ml 1042 62>>*/ _bw_=DiffMap[47],
-               /*<<op_set.ml 1042 43>>*/ _bx_=
-                /*<<op_set.ml 1042 43>>*/ caml_call1(_bw_,_bv_);
-              /*<<op_set.ml 1042 14>>*/  /*<<op_set.ml 1042 14>>*/ log
-              (cst_INSTANTIATE_MAP_BDIFFS,_bx_,_bt_);
-              /*<<op_set.ml 1036 20>>*/ var
-               /*<<op_set.ml 1044 16>>*/ match$0=
-                /*<<op_set.ml 1044 16>>*/ unpack_conflicts_for_key
+          { /*<<op_set.ml 1048 12>>*/ var
+             /*<<op_set.ml 1048 12>>*/ patch_diffs=param[3],
+             /*<<op_set.ml 1048 12>>*/ children=param[2],
+             /*<<op_set.ml 1048 12>>*/ diffs=param[1],
+             /*<<op_set.ml 1048 12>>*/ patch_diff=[0,obj_id,0,1,[0,key],0,0,0],
+             /*<<op_set.ml 1048 12>>*/ _bA_=[0,diffs,children],
+             /*<<op_set.ml 1060 22>>*/ _bB_=
+              /*<<op_set.ml 1060 22>>*/ get_object_field(t,obj_id,key,_bA_),
+             /*<<op_set.ml 1060 22>>*/ _bC_=_bB_[3],
+             /*<<op_set.ml 1060 22>>*/ _bD_=_bB_[2],
+             /*<<op_set.ml 1060 22>>*/ _bE_=_bB_[1];
+            /*<<op_set.ml 1060 22>>*/ if(_bC_)
+            { /*<<op_set.ml 1062 20>>*/ var
+               /*<<op_set.ml 1062 20>>*/ mat_value=_bC_[1],
+               /*<<op_set.ml 1063 22>>*/ match=
+                /*<<op_set.ml 1063 22>>*/ unpack_value
+                (obj_id,patch_diff,_bD_,mat_value),
+               /*<<op_set.ml 1063 22>>*/ children$0=match[2],
+               /*<<op_set.ml 1063 22>>*/ patch_diff$0=match[1],
+               /*<<op_set.ml 1069 16>>*/ match$0=
+                /*<<op_set.ml 1069 16>>*/ unpack_conflicts_for_key
                 (key,obj_id,patch_diff$0,children$0,conflicts),
-               /*<<op_set.ml 1044 16>>*/ children$1=match$0[2],
-               /*<<op_set.ml 1044 16>>*/ patch_diff$1=match$0[1],
-               /*<<op_set.ml 1044 16>>*/ _by_=Sexplib_Conv[20],
-               /*<<op_set.ml 1047 62>>*/ _bz_=
-                /*<<op_set.ml 1047 62>>*/ caml_call1(_by_,sexp_of_diff),
-               /*<<op_set.ml 1047 62>>*/ _bA_=DiffMap[47],
-               /*<<op_set.ml 1047 43>>*/ _bB_=
-                /*<<op_set.ml 1047 43>>*/ caml_call1(_bA_,_bz_);
-              /*<<op_set.ml 1047 14>>*/  /*<<op_set.ml 1047 14>>*/ log
-              (cst_INSTANTIATE_MAP_CDIFFS,_bB_,_bt_);
-              /*<<op_set.ml 1036 20>>*/ var
-               /*<<op_set.ml 1047 14>>*/ _bC_=[0,patch_diff$1,0],
-               /*<<op_set.ml 1047 14>>*/ _bD_=CCList[36];
-              /*<<op_set.ml 1048 32>>*/ return [0,
-                     _bt_,
+               /*<<op_set.ml 1069 16>>*/ children$1=match$0[2],
+               /*<<op_set.ml 1069 16>>*/ patch_diff$1=match$0[1],
+               /*<<op_set.ml 1069 16>>*/ _bF_=[0,patch_diff$1,0],
+               /*<<op_set.ml 1069 16>>*/ _bG_=CCList[36];
+              /*<<op_set.ml 1072 32>>*/ return [0,
+                     _bE_,
                      children$1,
-                      /*<<op_set.ml 1048 32>>*/ caml_call2(_bD_,patch_diffs,_bC_)]}
-            /*<<op_set.ml 1040 23>>*/ throw [0,Invalid_argument,cst_obj_key] /*<<op_set.ml 1048 73>>*/ },
-        _be_=caml_call3(KeySet[15],_bd_,fields,_bc_),
-        _bf_=_be_[3],
-        _bg_=_be_[2],
-        _bh_=_be_[1],
-        diffs$1=_bh_,
-        children$1=_bg_,
-        patch_diffs$1=_bf_;
+                      /*<<op_set.ml 1072 32>>*/ caml_call2(_bG_,patch_diffs,_bF_)]}
+            /*<<op_set.ml 1066 23>>*/ throw [0,Invalid_argument,cst_obj_key] /*<<op_set.ml 1072 73>>*/ },
+        _bt_=caml_call3(KeySet[15],_bs_,fields,_br_),
+        _bu_=_bt_[3],
+        _bv_=_bt_[2],
+        _bw_=_bt_[1],
+        diffs$1=_bw_,
+        children$1=_bv_,
+        patch_diffs$1=_bu_;
       else
        var diffs$1=diffs$0,children$1=children$0,patch_diffs$1=patch_diffs$0;
-       /*<<op_set.ml 1000 22>>*/  /*<<op_set.ml 1053 4>>*/ var
-       _bi_=
+       /*<<op_set.ml 1028 22>>*/  /*<<op_set.ml 1077 4>>*/ var
+       _bx_=
         DiffMap[4];
-       /*<<op_set.ml 1053 5>>*/ return [0,
-               /*<<op_set.ml 1053 5>>*/ caml_call3
-               (_bi_,obj_id,patch_diffs$1,diffs$1),
+       /*<<op_set.ml 1077 5>>*/ return [0,
+               /*<<op_set.ml 1077 5>>*/ caml_call3
+               (_bx_,obj_id,patch_diffs$1,diffs$1),
               children$1]}
     function get_object_conflicts(t,obj_id,param)
      {var children=param[2],diffs=param[1];
-      function _aJ_(key,field)
-       { /*<<op_set.ml 1061 14>>*/  /*<<op_set.ml 1061 14>>*/ var
-         _a7_=
-           /*<<op_set.ml 1061 14>>*/ valid_field_name(key);
-         /*<<op_set.ml 1061 14>>*/ if(_a7_)
-          /*<<op_set.ml 1062 31>>*/ var
-           /*<<op_set.ml 1062 31>>*/ _a8_=
-            /*<<op_set.ml 1062 31>>*/ get_field_ops(t,obj_id,key),
-           /*<<op_set.ml 1062 31>>*/ _a9_=CCList[1],
-          _a__=1 <  /*<<op_set.ml 1062 17>>*/ caml_call1(_a9_,_a8_)?1:0;
+      function _aY_(key,field)
+       { /*<<op_set.ml 1085 14>>*/  /*<<op_set.ml 1085 14>>*/ var
+         _bk_=
+           /*<<op_set.ml 1085 14>>*/ valid_field_name(key);
+         /*<<op_set.ml 1085 14>>*/ if(_bk_)
+          /*<<op_set.ml 1086 31>>*/ var
+           /*<<op_set.ml 1086 31>>*/ _bl_=
+            /*<<op_set.ml 1086 31>>*/ get_field_ops(t,obj_id,key),
+           /*<<op_set.ml 1086 31>>*/ _bm_=CCList[1],
+          _bn_=1 <  /*<<op_set.ml 1086 17>>*/ caml_call1(_bm_,_bl_)?1:0;
         else
-         var _a__=_a7_;
-        return _a__ /*<<op_set.ml 1062 63>>*/ }
-       /*<<op_set.ml 1060 10>>*/ var
-       _aK_=KeyMap[14],
-        /*<<op_set.ml 1060 10>>*/ _aL_=
-         /*<<op_set.ml 1060 10>>*/ caml_call1(_aK_,_aJ_);
-       /*<<op_set.ml 1060 10>>*/ function _aM_(_a6_)
-       { /*<<?>>*/ return _a6_[1]}
-       /*<<op_set.ml 1060 10>>*/ var
-        /*<<op_set.ml 1060 10>>*/ _aN_=t[3],
-        /*<<op_set.ml 1060 10>>*/ _aO_=ObjectIdMap[27],
-        /*<<op_set.ml 1058 6>>*/ _aP_=
-         /*<<op_set.ml 1058 6>>*/ caml_call2(_aO_,obj_id,_aN_),
-        /*<<op_set.ml 1058 6>>*/ _aQ_=CCOpt[34][1],
-        /*<<op_set.ml 1058 6>>*/ _aR_=
-         /*<<op_set.ml 1058 6>>*/ caml_call2(_aQ_,_aP_,_aM_),
-        /*<<op_set.ml 1058 6>>*/ _aS_=CCOpt[34][1],
-        /*<<op_set.ml 1058 6>>*/ filtered=
-         /*<<op_set.ml 1058 6>>*/ caml_call2(_aS_,_aR_,_aL_);
-       /*<<op_set.ml 1058 6>>*/ if(filtered)
-       { /*<<op_set.ml 1067 10>>*/ var
+         var _bn_=_bk_;
+        return _bn_ /*<<op_set.ml 1086 63>>*/ }
+       /*<<op_set.ml 1084 10>>*/ var
+       _aZ_=KeyMap[14],
+        /*<<op_set.ml 1084 10>>*/ _a0_=
+         /*<<op_set.ml 1084 10>>*/ caml_call1(_aZ_,_aY_);
+       /*<<op_set.ml 1084 10>>*/ function _a1_(_bj_)
+       { /*<<?>>*/ return _bj_[1]}
+       /*<<op_set.ml 1084 10>>*/ var
+        /*<<op_set.ml 1084 10>>*/ _a2_=t[3],
+        /*<<op_set.ml 1084 10>>*/ _a3_=ObjectIdMap[27],
+        /*<<op_set.ml 1082 6>>*/ _a4_=
+         /*<<op_set.ml 1082 6>>*/ caml_call2(_a3_,obj_id,_a2_),
+        /*<<op_set.ml 1082 6>>*/ _a5_=CCOpt[34][1],
+        /*<<op_set.ml 1082 6>>*/ _a6_=
+         /*<<op_set.ml 1082 6>>*/ caml_call2(_a5_,_a4_,_a1_),
+        /*<<op_set.ml 1082 6>>*/ _a7_=CCOpt[34][1],
+        /*<<op_set.ml 1082 6>>*/ filtered=
+         /*<<op_set.ml 1082 6>>*/ caml_call2(_a7_,_a6_,_a0_);
+       /*<<op_set.ml 1082 6>>*/ if(filtered)
+       { /*<<op_set.ml 1091 10>>*/ var
          fil=filtered[1],
-         _aT_=[0,diffs,children,KeyMap[1]],
-         _aU_=
+         _a8_=[0,diffs,children,KeyMap[1]],
+         _a9_=
           function(key,field,param)
-           { /*<<op_set.ml 1068 12>>*/ var
-              /*<<op_set.ml 1068 12>>*/ res=param[3],
-              /*<<op_set.ml 1068 12>>*/ children=param[2],
-              /*<<op_set.ml 1068 12>>*/ diffs=param[1],
-              /*<<op_set.ml 1068 12>>*/ _aW_=1,
-              /*<<op_set.ml 1068 12>>*/ _aX_=CCList[78],
-              /*<<op_set.ml 1082 18>>*/ _aY_=
-               /*<<op_set.ml 1082 18>>*/ caml_call2(_aX_,_aW_,field),
-              /*<<op_set.ml 1082 18>>*/ _aZ_=[0,diffs,children,OpMap[1]];
-             /*<<op_set.ml 1082 18>>*/ function _a0_(param,op)
-             { /*<<op_set.ml 1071 18>>*/ var
-                /*<<op_set.ml 1071 18>>*/ conflicts=param[3],
-                /*<<op_set.ml 1071 18>>*/ children=param[2],
-                /*<<op_set.ml 1071 18>>*/ diffs=param[1],
-                /*<<op_set.ml 1071 18>>*/ _a3_=[0,diffs,children],
-                /*<<op_set.ml 1073 22>>*/ match=
-                 /*<<op_set.ml 1073 22>>*/ get_op_value(t,op,_a3_),
-                /*<<op_set.ml 1073 22>>*/ materialized=match[3],
-                /*<<op_set.ml 1073 22>>*/ children$0=match[2],
-                /*<<op_set.ml 1073 22>>*/ diffs$0=match[1];
-               /*<<op_set.ml 1073 22>>*/ if(materialized)
-                /*<<op_set.ml 1077 36>>*/ var
-                 /*<<op_set.ml 1077 36>>*/ mat=materialized[1],
-                 /*<<op_set.ml 1077 36>>*/ _a4_=op[3],
-                 /*<<op_set.ml 1077 36>>*/ _a5_=OpMap[4],
+           { /*<<op_set.ml 1092 12>>*/ var
+              /*<<op_set.ml 1092 12>>*/ res=param[3],
+              /*<<op_set.ml 1092 12>>*/ children=param[2],
+              /*<<op_set.ml 1092 12>>*/ diffs=param[1],
+              /*<<op_set.ml 1092 12>>*/ _a$_=1,
+              /*<<op_set.ml 1092 12>>*/ _ba_=CCList[78],
+              /*<<op_set.ml 1106 18>>*/ _bb_=
+               /*<<op_set.ml 1106 18>>*/ caml_call2(_ba_,_a$_,field),
+              /*<<op_set.ml 1106 18>>*/ _bc_=[0,diffs,children,OpMap[1]];
+             /*<<op_set.ml 1106 18>>*/ function _bd_(param,op)
+             { /*<<op_set.ml 1095 18>>*/ var
+                /*<<op_set.ml 1095 18>>*/ conflicts=param[3],
+                /*<<op_set.ml 1095 18>>*/ children=param[2],
+                /*<<op_set.ml 1095 18>>*/ diffs=param[1],
+                /*<<op_set.ml 1095 18>>*/ _bg_=[0,diffs,children],
+                /*<<op_set.ml 1097 22>>*/ match=
+                 /*<<op_set.ml 1097 22>>*/ get_op_value(t,op,_bg_),
+                /*<<op_set.ml 1097 22>>*/ materialized=match[3],
+                /*<<op_set.ml 1097 22>>*/ children$0=match[2],
+                /*<<op_set.ml 1097 22>>*/ diffs$0=match[1];
+               /*<<op_set.ml 1097 22>>*/ if(materialized)
+                /*<<op_set.ml 1101 36>>*/ var
+                 /*<<op_set.ml 1101 36>>*/ mat=materialized[1],
+                 /*<<op_set.ml 1101 36>>*/ _bh_=op[3],
+                 /*<<op_set.ml 1101 36>>*/ _bi_=OpMap[4],
                 conflicts$0=
-                  /*<<op_set.ml 1077 36>>*/ caml_call3
-                  (_a5_,_a4_,mat,conflicts);
+                  /*<<op_set.ml 1101 36>>*/ caml_call3
+                  (_bi_,_bh_,mat,conflicts);
               else
                var conflicts$0=conflicts;
-               /*<<op_set.ml 1080 20>>*/ return [0,
+               /*<<op_set.ml 1104 20>>*/ return [0,
                       diffs$0,
                       children$0,
-                      conflicts$0] /*<<op_set.ml 1080 50>>*/ }
-             /*<<op_set.ml 1082 18>>*/ var
-              /*<<op_set.ml 1082 18>>*/ _a1_=CCList[10],
-              /*<<op_set.ml 1070 16>>*/ match=
-               /*<<op_set.ml 1070 16>>*/ caml_call3(_a1_,_a0_,_aZ_,_aY_),
-              /*<<op_set.ml 1070 16>>*/ conflicts=match[3],
-              /*<<op_set.ml 1070 16>>*/ children$0=match[2],
-              /*<<op_set.ml 1070 16>>*/ diffs$0=match[1],
-              /*<<op_set.ml 1070 16>>*/ _a2_=KeyMap[4];
-             /*<<op_set.ml 1084 32>>*/ return [0,
+                      conflicts$0] /*<<op_set.ml 1104 50>>*/ }
+             /*<<op_set.ml 1106 18>>*/ var
+              /*<<op_set.ml 1106 18>>*/ _be_=CCList[10],
+              /*<<op_set.ml 1094 16>>*/ match=
+               /*<<op_set.ml 1094 16>>*/ caml_call3(_be_,_bd_,_bc_,_bb_),
+              /*<<op_set.ml 1094 16>>*/ conflicts=match[3],
+              /*<<op_set.ml 1094 16>>*/ children$0=match[2],
+              /*<<op_set.ml 1094 16>>*/ diffs$0=match[1],
+              /*<<op_set.ml 1094 16>>*/ _bf_=KeyMap[4];
+             /*<<op_set.ml 1108 32>>*/ return [0,
                     diffs$0,
                     children$0,
-                     /*<<op_set.ml 1084 32>>*/ caml_call3
-                     (_a2_,key,conflicts,res)] /*<<op_set.ml 1084 63>>*/ },
-         _aV_=KeyMap[11],
-          /*<<op_set.ml 1067 10>>*/ match=
-           /*<<op_set.ml 1067 10>>*/ caml_call3(_aV_,_aU_,fil,_aT_),
-          /*<<op_set.ml 1067 10>>*/ conflicts=match[3],
-          /*<<op_set.ml 1067 10>>*/ children$0=match[2],
-          /*<<op_set.ml 1067 10>>*/ diffs$0=match[1];
-         /*<<op_set.ml 1067 10>>*/ return [0,diffs$0,children$0,[0,conflicts]]}
-       /*<<op_set.ml 1089 14>>*/ return [0,diffs,children,0]}
+                     /*<<op_set.ml 1108 32>>*/ caml_call3
+                     (_bf_,key,conflicts,res)] /*<<op_set.ml 1108 63>>*/ },
+         _a__=KeyMap[11],
+          /*<<op_set.ml 1091 10>>*/ match=
+           /*<<op_set.ml 1091 10>>*/ caml_call3(_a__,_a9_,fil,_a8_),
+          /*<<op_set.ml 1091 10>>*/ conflicts=match[3],
+          /*<<op_set.ml 1091 10>>*/ children$0=match[2],
+          /*<<op_set.ml 1091 10>>*/ diffs$0=match[1];
+         /*<<op_set.ml 1091 10>>*/ return [0,diffs$0,children$0,[0,conflicts]]}
+       /*<<op_set.ml 1113 14>>*/ return [0,diffs,children,0]}
     function get_op_value(t,op,param)
-     {var children=param[2],diffs=param[1],_aD_=op[7];
-      function _aE_(value)
-       { /*<<op_set.ml 1095 10>>*/  /*<<op_set.ml 1095 10>>*/ var _aG_=op[2];
-         /*<<op_set.ml 1095 10>>*/ if(4 <= _aG_)
-         {var switcher=_aG_ - 4 | 0;
+     {var children=param[2],diffs=param[1],_aS_=op[7];
+      function _aT_(value)
+       { /*<<op_set.ml 1119 10>>*/  /*<<op_set.ml 1119 10>>*/ var _aV_=op[2];
+         /*<<op_set.ml 1119 10>>*/ if(4 <= _aV_)
+         {var switcher=_aV_ - 4 | 0;
           switch(switcher)
            {case 0:
-              /*<<op_set.ml 1096 19>>*/ return [0,
+              /*<<op_set.ml 1120 19>>*/ return [0,
                      [0,diffs,children,[0,value]]];
             case 1:break;
             default:
-              /*<<op_set.ml 1098 14>>*/ var
-               /*<<op_set.ml 1098 14>>*/ _aH_=[0,diffs,children],
-               /*<<op_set.ml 1100 19>>*/ _aI_=
-                /*<<op_set.ml 1100 19>>*/ get_op_value_as_string_exn(value);
-              /*<<op_set.ml 1099 16>>*/ return [0,
-                      /*<<op_set.ml 1099 16>>*/ instantiate_object(t,_aI_,_aH_)]}}
-         /*<<op_set.ml 1102 17>>*/ return 0 /*<<op_set.ml 1102 21>>*/ }
-       /*<<op_set.ml 1093 6>>*/ var
-       _aF_=CCOpt[11],
-        /*<<op_set.ml 1093 6>>*/ value=
-         /*<<op_set.ml 1093 6>>*/ caml_call2(_aF_,_aE_,_aD_);
-       /*<<op_set.ml 1093 6>>*/ if(value)
+              /*<<op_set.ml 1122 14>>*/ var
+               /*<<op_set.ml 1122 14>>*/ _aW_=[0,diffs,children],
+               /*<<op_set.ml 1124 19>>*/ _aX_=
+                /*<<op_set.ml 1124 19>>*/ get_op_value_as_string_exn(value);
+              /*<<op_set.ml 1123 16>>*/ return [0,
+                      /*<<op_set.ml 1123 16>>*/ instantiate_object(t,_aX_,_aW_)]}}
+         /*<<op_set.ml 1126 17>>*/ return 0 /*<<op_set.ml 1126 21>>*/ }
+       /*<<op_set.ml 1117 6>>*/ var
+       _aU_=CCOpt[11],
+        /*<<op_set.ml 1117 6>>*/ value=
+         /*<<op_set.ml 1117 6>>*/ caml_call2(_aU_,_aT_,_aS_);
+       /*<<op_set.ml 1117 6>>*/ if(value)
        {var
          match=value[1],
          value$0=match[3],
          children$0=match[2],
          diffs$0=match[1];
         return [0,diffs$0,children$0,[0,value$0]]}
-       /*<<op_set.ml 1107 14>>*/ return [0,diffs,children,0]}
+       /*<<op_set.ml 1131 14>>*/ return [0,diffs,children,0]}
     function get_object_field(t,obj_id,key,param)
      {var children=param[2],diffs=param[1];
-       /*<<op_set.ml 1110 11>>*/ if
-       ( /*<<op_set.ml 1110 11>>*/ valid_field_name(key))
-       { /*<<op_set.ml 1112 12>>*/  /*<<op_set.ml 1112 12>>*/ var
+       /*<<op_set.ml 1134 11>>*/ if
+       ( /*<<op_set.ml 1134 11>>*/ valid_field_name(key))
+       { /*<<op_set.ml 1136 12>>*/  /*<<op_set.ml 1136 12>>*/ var
          match=
-           /*<<op_set.ml 1112 12>>*/ get_field_ops(t,obj_id,key);
-         /*<<op_set.ml 1112 12>>*/ if(match)
-         { /*<<op_set.ml 1114 19>>*/  /*<<op_set.ml 1114 19>>*/ var
+           /*<<op_set.ml 1136 12>>*/ get_field_ops(t,obj_id,key);
+         /*<<op_set.ml 1136 12>>*/ if(match)
+         { /*<<op_set.ml 1138 19>>*/  /*<<op_set.ml 1138 19>>*/ var
            hd=
             match[1];
-           /*<<op_set.ml 1114 19>>*/ return  /*<<op_set.ml 1114 19>>*/ get_op_value
+           /*<<op_set.ml 1138 19>>*/ return  /*<<op_set.ml 1138 19>>*/ get_op_value
                   (t,hd,[0,diffs,children])}
-         /*<<op_set.ml 1113 14>>*/ return [0,diffs,children,0]}
-       /*<<op_set.ml 1110 39>>*/ return [0,diffs,children,0]}
+         /*<<op_set.ml 1137 14>>*/ return [0,diffs,children,0]}
+       /*<<op_set.ml 1134 39>>*/ return [0,diffs,children,0]}
+    function list_iterator(t,list_id,mode,context)
+     { /*<<op_set.ml 1141 4>>*/ var
+        /*<<op_set.ml 1141 4>>*/ elem=[0,_ag_],
+        /*<<op_set.ml 1141 4>>*/ index=[0,-1];
+       /*<<op_set.ml 1141 4>>*/ function next(param)
+       {var children=param[2],diffs=param[1];
+        function next(param)
+         { /*<<?>>*/ var param$0=param;
+          for(;;)
+           {var children=param$0[2],diffs=param$0[1];
+            if(elem[1])
+             { /*<<op_set.ml 1147 20>>*/  /*<<op_set.ml 1147 20>>*/ var
+               _aI_=
+                elem[1];
+               /*<<op_set.ml 1148 16>>*/ elem[1]
+              =
+               /*<<op_set.ml 1148 16>>*/ get_next(t,list_id,_aI_);
+               /*<<op_set.ml 1147 20>>*/  /*<<op_set.ml 1148 16>>*/ var
+               _aJ_=
+                elem[1];
+               /*<<op_set.ml 1148 16>>*/ if(_aJ_)
+               { /*<<op_set.ml 1151 24>>*/ var
+                  /*<<op_set.ml 1151 24>>*/ elem$0=_aJ_[1],
+                  /*<<op_set.ml 1152 16>>*/ ops=
+                   /*<<op_set.ml 1152 16>>*/ get_field_ops(t,list_id,elem$0);
+                 /*<<op_set.ml 1152 16>>*/ if(ops)
+                 { /*<<op_set.ml 1155 43>>*/ var
+                   tl=ops[2],
+                   hd=ops[1],
+                   _aK_=[0,diffs,children],
+                    /*<<op_set.ml 1155 43>>*/ match=
+                     /*<<op_set.ml 1155 43>>*/ get_op_value(t,hd,_aK_),
+                    /*<<op_set.ml 1155 43>>*/ value=match[3],
+                    /*<<op_set.ml 1155 43>>*/ children$0=match[2],
+                    /*<<op_set.ml 1155 43>>*/ diffs$0=match[1];
+                   /*<<op_set.ml 1155 43>>*/ index[1] = index[1] + 1 | 0;
+                   /*<<op_set.ml 1155 43>>*/ switch(mode)
+                   {case 0:var _aL_=[0,[0,0,[0,[0,index[1]]]]];break;
+                    case 1:var _aL_=[0,[0,0,[0,[1,value]]]];break;
+                    case 2:var _aL_=[0,[0,0,[0,[2,index[1],value]]]];break;
+                    case 3:var _aL_=[0,[0,0,[0,[3,index[1],elem$0]]]];break;
+                    default:
+                      /*<<op_set.ml 1165 18>>*/  /*<<op_set.ml 1165 18>>*/ var
+                      _aM_=
+                       CCList[1];
+                      /*<<op_set.ml 1166 23>>*/ if
+                      (1 <  /*<<op_set.ml 1166 23>>*/ caml_call1(_aM_,ops))
+                       /*<<op_set.ml 1167 22>>*/ var
+                        /*<<op_set.ml 1167 22>>*/ _aN_=OpMap[1],
+                        /*<<op_set.ml 1167 22>>*/ _aO_=
+                        function(op_map,op)
+                         { /*<<op_set.ml 1169 50>>*/ return  /*<<op_set.ml 1169 50>>*/ caml_call3
+                                  (OpMap[4],op[3],op,op_map) /*<<op_set.ml 1169 78>>*/ },
+                        /*<<op_set.ml 1167 22>>*/ _aP_=CCList[10],
+                       conflict=
+                        [0, /*<<op_set.ml 1168 24>>*/ caml_call3(_aP_,_aO_,_aN_,tl)];
+                     else
+                      var conflict=0;
+                      /*<<op_set.ml 1165 18>>*/ var
+                       /*<<op_set.ml 1173 18>>*/ _aQ_=
+                       function(c)
+                        { /*<<op_set.ml 1174 40>>*/ return [4,c] /*<<op_set.ml 1174 55>>*/ },
+                       /*<<op_set.ml 1173 18>>*/ _aR_=CCOpt[1],
+                       /*<<op_set.ml 1174 20>>*/ conflict$0=
+                        /*<<op_set.ml 1174 20>>*/ caml_call2(_aR_,_aQ_,conflict),
+                      _aL_=[0,[0,0,conflict$0]]}
+                  return [0,diffs$0,children$0,_aL_]}
+                 /*<<op_set.ml 1151 24>>*/ var
+                  /*<<op_set.ml 1153 18>>*/ param$1=[0,diffs,children],
+                 param$0=param$1;
+                continue}
+               /*<<op_set.ml 1150 18>>*/ return [0,diffs,children,_ah_]}
+             /*<<op_set.ml 1146 18>>*/ return [0,diffs,children,0]}}
+        return next([0,diffs,children])}
+       /*<<op_set.ml 1141 4>>*/ return [0,next] /*<<op_set.ml 1181 10>>*/ }
+    function get_next(t,obj_id,key)
+     { /*<<op_set.ml 1184 4>>*/ var
+        /*<<op_set.ml 1184 4>>*/ _aF_=0,
+        /*<<op_set.ml 1184 10>>*/ match=
+         /*<<op_set.ml 1184 10>>*/ insertions_after(t,obj_id,key,_aF_);
+       /*<<op_set.ml 1184 10>>*/ if(match)
+       { /*<<op_set.ml 1186 8>>*/  /*<<op_set.ml 1186 8>>*/ var hd=match[1];
+         /*<<op_set.ml 1186 8>>*/ return [0,hd]}
+       /*<<op_set.ml 1184 4>>*/  /*<<op_set.ml 1188 8>>*/ var
+       _aG_=
+        Pervasives[34];
+       /*<<op_set.ml 1188 8>>*/  /*<<op_set.ml 1188 8>>*/ caml_call1
+       (_aG_,cst_NO_HD);
+       /*<<op_set.ml 1188 8>>*/ function find_ancestor(key)
+       { /*<<?>>*/ var key$0=key;
+         /*<<op_set.ml 1190 10>>*/ for(;;)
+         { /*<<op_set.ml 1190 16>>*/  /*<<op_set.ml 1190 16>>*/ var
+           match=
+             /*<<op_set.ml 1190 16>>*/ get_parent(t,obj_id,key$0);
+           /*<<op_set.ml 1190 16>>*/ if(match)
+           { /*<<op_set.ml 1192 29>>*/ var
+              /*<<op_set.ml 1192 29>>*/ ancestor=match[1],
+              /*<<op_set.ml 1192 29>>*/ _aH_=[0,ancestor],
+              /*<<op_set.ml 1193 18>>*/ match$0=
+               /*<<op_set.ml 1193 18>>*/ insertions_after(t,obj_id,_aH_,key$0);
+             /*<<op_set.ml 1193 18>>*/ if(match$0)
+             { /*<<op_set.ml 1194 25>>*/  /*<<op_set.ml 1194 25>>*/ var
+               hd=
+                match$0[1];
+               /*<<op_set.ml 1194 25>>*/ return [0,hd]}
+             /*<<op_set.ml 1192 29>>*/ var
+              /*<<op_set.ml 1195 20>>*/ key$1=[0,ancestor],
+             key$0=key$1;
+            continue}
+           /*<<op_set.ml 1191 20>>*/ return 0} /*<<op_set.ml 1195 51>>*/ }
+       /*<<op_set.ml 1188 8>>*/ return  /*<<op_set.ml 1188 8>>*/ find_ancestor
+              (key) /*<<op_set.ml 1197 25>>*/ }
     function make_patch(t,obj_id,patch_diffs,param)
-     { /*<<op_set.ml 1133 8>>*/ var
+     { /*<<op_set.ml 1214 8>>*/ var
        children=param[2],
        diffs=param[1],
-       _av_=ChildMap[22],
-        /*<<op_set.ml 1133 8>>*/ _aw_=
-         /*<<op_set.ml 1133 8>>*/ caml_call2(_av_,obj_id,children),
-        /*<<op_set.ml 1133 8>>*/ _ax_=[0,diffs,patch_diffs];
-       /*<<op_set.ml 1133 8>>*/ function _ay_(param,child_id)
-       { /*<<op_set.ml 1130 8>>*/ var
-          /*<<op_set.ml 1130 8>>*/ patch_diffs=param[2],
-          /*<<op_set.ml 1130 8>>*/ diffs=param[1];
-         /*<<op_set.ml 1130 8>>*/ return  /*<<op_set.ml 1130 8>>*/ make_patch
-                (t,child_id,patch_diffs,[0,diffs,children]) /*<<op_set.ml 1131 63>>*/ }
-       /*<<op_set.ml 1133 8>>*/ var
-        /*<<op_set.ml 1133 8>>*/ _az_=CCList[10],
-        /*<<op_set.ml 1129 6>>*/ match=
-         /*<<op_set.ml 1129 6>>*/ caml_call3(_az_,_ay_,_ax_,_aw_),
-        /*<<op_set.ml 1129 6>>*/ patch_diffs$0=match[2],
-        /*<<op_set.ml 1129 6>>*/ diffs$0=match[1],
-        /*<<op_set.ml 1129 6>>*/ _aA_=DiffMap[22],
-        /*<<op_set.ml 1135 38>>*/ _aB_=
-         /*<<op_set.ml 1135 38>>*/ caml_call2(_aA_,obj_id,diffs$0),
-        /*<<op_set.ml 1135 38>>*/ _aC_=CCList[36];
-       /*<<op_set.ml 1135 12>>*/ return [0,
+       _ax_=ChildMap[22],
+        /*<<op_set.ml 1214 8>>*/ _ay_=
+         /*<<op_set.ml 1214 8>>*/ caml_call2(_ax_,obj_id,children),
+        /*<<op_set.ml 1214 8>>*/ _az_=[0,diffs,patch_diffs];
+       /*<<op_set.ml 1214 8>>*/ function _aA_(param,child_id)
+       { /*<<op_set.ml 1211 8>>*/ var
+          /*<<op_set.ml 1211 8>>*/ patch_diffs=param[2],
+          /*<<op_set.ml 1211 8>>*/ diffs=param[1];
+         /*<<op_set.ml 1211 8>>*/ return  /*<<op_set.ml 1211 8>>*/ make_patch
+                (t,child_id,patch_diffs,[0,diffs,children]) /*<<op_set.ml 1212 63>>*/ }
+       /*<<op_set.ml 1214 8>>*/ var
+        /*<<op_set.ml 1214 8>>*/ _aB_=CCList[10],
+        /*<<op_set.ml 1210 6>>*/ match=
+         /*<<op_set.ml 1210 6>>*/ caml_call3(_aB_,_aA_,_az_,_ay_),
+        /*<<op_set.ml 1210 6>>*/ patch_diffs$0=match[2],
+        /*<<op_set.ml 1210 6>>*/ diffs$0=match[1],
+        /*<<op_set.ml 1210 6>>*/ _aC_=DiffMap[22],
+        /*<<op_set.ml 1216 38>>*/ _aD_=
+         /*<<op_set.ml 1216 38>>*/ caml_call2(_aC_,obj_id,diffs$0),
+        /*<<op_set.ml 1216 38>>*/ _aE_=CCList[36];
+       /*<<op_set.ml 1216 12>>*/ return [0,
               diffs$0,
-               /*<<op_set.ml 1135 12>>*/ caml_call2(_aC_,patch_diffs$0,_aB_)]}
+               /*<<op_set.ml 1216 12>>*/ caml_call2(_aE_,patch_diffs$0,_aD_)]}
     function get_patch(t)
-     { /*<<op_set.ml 1138 4>>*/ var
-        /*<<op_set.ml 1138 4>>*/ _aj_=[0,DiffMap[1],ChildMap[1]],
-        /*<<op_set.ml 1139 6>>*/ match=
-         /*<<op_set.ml 1139 6>>*/ instantiate_object(t,root_id,_aj_),
-        /*<<op_set.ml 1139 6>>*/ children=match[2],
-        /*<<op_set.ml 1139 6>>*/ diffs=match[1],
-        /*<<op_set.ml 1139 6>>*/ _ak_=Sexplib_Conv[20],
-        /*<<op_set.ml 1141 39>>*/ _al_=
-         /*<<op_set.ml 1141 39>>*/ caml_call1(_ak_,sexp_of_diff),
-        /*<<op_set.ml 1141 39>>*/ _am_=DiffMap[47],
-        /*<<op_set.ml 1141 20>>*/ _an_=
-         /*<<op_set.ml 1141 20>>*/ caml_call1(_am_,_al_);
-       /*<<op_set.ml 1141 4>>*/  /*<<op_set.ml 1141 4>>*/ log
-       (cst_GET_PATCH,_an_,diffs);
-       /*<<op_set.ml 1138 4>>*/ var
-        /*<<op_set.ml 1141 4>>*/ _ao_=[0,diffs,children],
-        /*<<op_set.ml 1141 4>>*/ _ap_=0,
-        /*<<op_set.ml 1142 29>>*/ match$0=
-         /*<<op_set.ml 1142 29>>*/ make_patch(t,root_id,_ap_,_ao_),
-        /*<<op_set.ml 1142 29>>*/ patch_diffs=match$0[2],
-        /*<<op_set.ml 1142 29>>*/ _aq_=t[5],
-        /*<<op_set.ml 1142 29>>*/ _ar_=t[4],
-        /*<<op_set.ml 1142 29>>*/ _as_=t[8],
-        /*<<op_set.ml 1142 29>>*/ _at_=CCList[32],
-        /*<<op_set.ml 1145 20>>*/ _au_=
+     { /*<<op_set.ml 1219 4>>*/ var
+        /*<<op_set.ml 1219 4>>*/ _al_=[0,DiffMap[1],ChildMap[1]],
+        /*<<op_set.ml 1220 6>>*/ match=
+         /*<<op_set.ml 1220 6>>*/ instantiate_object(t,root_id,_al_),
+        /*<<op_set.ml 1220 6>>*/ children=match[2],
+        /*<<op_set.ml 1220 6>>*/ diffs=match[1],
+        /*<<op_set.ml 1220 6>>*/ _am_=Sexplib_Conv[20],
+        /*<<op_set.ml 1222 39>>*/ _an_=
+         /*<<op_set.ml 1222 39>>*/ caml_call1(_am_,sexp_of_diff),
+        /*<<op_set.ml 1222 39>>*/ _ao_=DiffMap[47],
+        /*<<op_set.ml 1222 20>>*/ _ap_=
+         /*<<op_set.ml 1222 20>>*/ caml_call1(_ao_,_an_);
+       /*<<op_set.ml 1222 4>>*/  /*<<op_set.ml 1222 4>>*/ log
+       (cst_GET_PATCH,_ap_,diffs);
+       /*<<op_set.ml 1219 4>>*/ var
+        /*<<op_set.ml 1222 4>>*/ _aq_=[0,diffs,children],
+        /*<<op_set.ml 1222 4>>*/ _ar_=0,
+        /*<<op_set.ml 1223 29>>*/ match$0=
+         /*<<op_set.ml 1223 29>>*/ make_patch(t,root_id,_ar_,_aq_),
+        /*<<op_set.ml 1223 29>>*/ patch_diffs=match$0[2],
+        /*<<op_set.ml 1223 29>>*/ _as_=t[5],
+        /*<<op_set.ml 1223 29>>*/ _at_=t[4],
+        /*<<op_set.ml 1223 29>>*/ _au_=t[8],
+        /*<<op_set.ml 1223 29>>*/ _av_=CCList[32],
+        /*<<op_set.ml 1226 20>>*/ _aw_=
         1
         -
-         /*<<op_set.ml 1145 20>>*/ caml_call1(_at_,_as_);
-       /*<<op_set.ml 1145 20>>*/ return [0,
+         /*<<op_set.ml 1226 20>>*/ caml_call1(_av_,_au_);
+       /*<<op_set.ml 1226 20>>*/ return [0,
               0 < t[6]?1:0,
-              _au_,
-              _ar_,
-              _aq_,
-              patch_diffs] /*<<op_set.ml 1149 5>>*/ }
+              _aw_,
+              _at_,
+              _as_,
+              patch_diffs] /*<<op_set.ml 1230 5>>*/ }
     function list_length(t,obj_id)
-     { /*<<op_set.ml 1153 4>>*/ function _ah_(obj_aux)
-       { /*<<op_set.ml 1153 44>>*/ return  /*<<op_set.ml 1153 44>>*/ caml_call2
-                (CCOpt[34][1],obj_aux[5],CCList[1]) /*<<op_set.ml 1153 79>>*/ }
-       /*<<op_set.ml 1153 4>>*/  /*<<op_set.ml 1153 4>>*/ var
-       _ai_=
-         /*<<op_set.ml 1153 4>>*/ get_obj_aux(t,obj_id);
-       /*<<op_set.ml 1153 4>>*/ return  /*<<op_set.ml 1153 4>>*/ caml_call2
-              (CCOpt[34][2],_ai_,_ah_) /*<<op_set.ml 1153 79>>*/ }
+     { /*<<op_set.ml 1234 4>>*/ function _aj_(obj_aux)
+       { /*<<op_set.ml 1234 44>>*/ return  /*<<op_set.ml 1234 44>>*/ caml_call2
+                (CCOpt[34][1],obj_aux[5],CCList[1]) /*<<op_set.ml 1234 79>>*/ }
+       /*<<op_set.ml 1234 4>>*/  /*<<op_set.ml 1234 4>>*/ var
+       _ak_=
+         /*<<op_set.ml 1234 4>>*/ get_obj_aux(t,obj_id);
+       /*<<op_set.ml 1234 4>>*/ return  /*<<op_set.ml 1234 4>>*/ caml_call2
+              (CCOpt[34][2],_ak_,_aj_) /*<<op_set.ml 1234 79>>*/ }
     function get_clock(param){ /*<<?>>*/ var clock=param[4];return clock}
     function get_deps(param){ /*<<?>>*/ var deps=param[5];return deps}
     function can_undo(param)
      { /*<<?>>*/ var undo_pos=param[6];return 0 < undo_pos?1:0}
     function can_redo(param)
-     {var redo_stack=param[8],_ag_=CCList[32];
-       /*<<op_set.ml 1228 34>>*/ return 1
+     {var redo_stack=param[8],_ai_=CCList[32];
+       /*<<op_set.ml 1242 34>>*/ return 1
              -
-              /*<<op_set.ml 1228 34>>*/ caml_call1(_ag_,redo_stack)}
+              /*<<op_set.ml 1242 34>>*/ caml_call1(_ai_,redo_stack)}
     var
      Op_set=
       [0,
@@ -67590,7 +67714,7 @@
         get_deps,
         can_undo,
         can_redo]];
-    runtime.caml_register_global(155,Op_set,"Op_set");
+    runtime.caml_register_global(167,Op_set,"Op_set");
     return /*<<?>>*/ }
   (function(){return this}()));
 

@@ -185,7 +185,7 @@ describe('Backend', () => {
       ]})
     })
 
-    it('should create nested maps', () => {
+    xit('should create nested maps', () => {
       const birds = uuid(), actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'makeMap', obj: birds},
@@ -208,7 +208,7 @@ describe('Backend', () => {
       })
     })
 
-    xit('should create lists', () => {
+    it('should create lists', () => {
       const birds = uuid(), actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'makeList', obj: birds},

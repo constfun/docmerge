@@ -49,6 +49,7 @@ module OpSetBackend = struct
   [@@deriving sexp_of]
 
   type materialized = TypedValue of op_val | LinkValue of {obj_id: string}
+    [@@deriving sexp_of]
 
   type value = Value of op_val | Link of {obj: value} [@@deriving sexp_of]
 
@@ -99,6 +100,7 @@ module OpSetBackend = struct
   [@@deriving sexp_of]
 
   type lamport_op = {actor: actor; elem: int}
+  [@@deriving sexp_of]
 
   let lamport_compare op1 op2 =
     if op1.elem < op2.elem then -1
@@ -356,7 +358,7 @@ module OpSetBackend = struct
               let _following =
                 KeyMap.update op.key
                   (function
-                    | Some l -> Some (List.append l [op]) | None -> Some [])
+                    | Some l -> Some (List.append l [op]) | None -> Some [op])
                   obj_aux._following
               in
               let _max_elem = max (get_op_elem op) obj_aux._max_elem in
@@ -446,8 +448,6 @@ module OpSetBackend = struct
           in
           (elem_ids, {edit with elem_id__key= Some elem_id__key; value})
       | Set ->
-          print_endline "GET" ;
-          log "SET" sexp_of_op (CCOpt.get_exn first_op) ;
           let elem_ids =
             SkipList.set_value (CCOpt.get_exn first_op).key value elem_ids
           in
@@ -511,10 +511,10 @@ module OpSetBackend = struct
       match child_id with
       | Some child_id ->
           (* Child id is of the format `actor:elem_digits` *)
-          let regx = Str.regexp "^\\(.*\\):\\(\\d+\\)$" in
-          if Str.string_match regx child_id 0 then
-            let actor = Str.matched_group 1 child_id in
-            let elem = int_of_string (Str.matched_group 2 child_id) in
+          if CCString.contains child_id ':' then
+            let parts = CCString.split_on_char ':' child_id in
+            let actor = CCList.nth parts 0 in
+            let elem = int_of_string (CCList.nth parts 1) in
             Some {actor; elem}
           else None
       | None -> None
@@ -759,7 +759,6 @@ module OpSetBackend = struct
 
   let apply_change t (change : change) =
     (* Prior state by sequence *)
-    (* log "apply_change" (CCFQueueWithSexp.sexp_of_t sexp_of_change) t.queue; *)
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
     if change.seq <= List.length prior then
       match List.nth_opt prior (change.seq - 1) with
@@ -817,12 +816,8 @@ module OpSetBackend = struct
         (fun (t, diffs, queue) change ->
           if causaly_ready t change then (
             let t, diff = apply_change t change in
-            log "causally ready"
-              (CCFQueueWithSexp.sexp_of_t sexp_of_change)
-              t.queue ;
             (t, CCList.concat [diffs; diff], queue) )
           else (
-            log "not causally ready" sexp_of_change change ;
             (t, diffs, CCFQueue.snoc t.queue change) ) )
         (t, diffs, CCFQueueWithSexp.empty)
         t.queue
@@ -974,6 +969,7 @@ module OpSetBackend = struct
     >|= KeySet.of_list
 
   type iterator_mode = Keys | Values | Entries | Elems | Conflicts
+    [@@deriving sexp_of]
 
   type iterator_val =
     | KeyValue of int
@@ -981,12 +977,11 @@ module OpSetBackend = struct
     | EntryValue of int * materialized option
     | ElemValue of int * string
     | ConflictValue of op OpMap.t
+    [@@deriving sexp_of]
 
-  type iterator_res = {done_: bool; value: iterator_val option}
+  type iterator_res = {done_: bool; value: iterator_val option} [@@deriving sexp_of]
 
-  type iterator = {next: unit -> iterator_res option}
-
-
+  type iterator = {next: context -> diff list DiffMap.t * child list ChildMap.t * iterator_res option} [@@deriving sexp_of]
 
   let rec instantiate_object t obj_id (diffs, children) =
     match DiffMap.find_opt obj_id diffs with
@@ -1019,8 +1014,14 @@ module OpSetBackend = struct
             ; action= DiffCreate
             ; key= None } ]
     in
-    (* let conflicts = list_iterator *)
-
+    let conflicts = list_iterator t obj_id Conflicts (diffs, children) in
+    let values = list_iterator t obj_id Values (diffs, children) in
+    let elems = list_iterator t obj_id Elems (diffs, children) in
+    (* let rec _loop (diffs, children) = *)
+      let diffs, children, el = elems.next (diffs, children) in
+      log "ITERATE" (sexp_of_option sexp_of_iterator_res) el;
+      let diffs, children, el = elems.next (diffs, children) in
+      log "ITERATE" (sexp_of_option sexp_of_iterator_res) el;
     (diffs, children)
 
   and instantiate_map t obj_id ((diffs, children) : context) =
@@ -1045,8 +1046,6 @@ module OpSetBackend = struct
       | Some fields ->
           KeySet.fold
             (fun key (diffs, children, patch_diffs) ->
-              log "INSTANTIATE_MAP ADIFFS" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs;
-              (* log "INSTANTIATE_MAP CHILDREN" (ChildMap.sexp_of_t (sexp_of_list sexp_of_string)) children; *)
               let patch_diff =
                 { conflicts= None
                 ; value= None
@@ -1066,12 +1065,10 @@ module OpSetBackend = struct
                     (diffs, children, patch_diff)
                 | _ -> raise (Invalid_argument "obj key")
               in
-              log "INSTANTIATE_MAP BDIFFS" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs;
               let patch_diff, children =
                 unpack_conflicts_for_key key obj_id patch_diff children
                   conflicts
               in
-              log "INSTANTIATE_MAP CDIFFS" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs;
               (diffs, children, CCList.append patch_diffs [patch_diff]) )
             fields
             (diffs, children, patch_diffs)
@@ -1143,18 +1140,21 @@ module OpSetBackend = struct
   and list_iterator t list_id mode context =
     let elem = ref (Some "_head") in
     let index = ref (-1) in
-    let next () =
-      let rec _next _ =
+    let next (diffs, children) =
+      let rec _next (diffs, children) =
+        match !elem with
+        | None -> (diffs, children, None)
+        | Some _ -> (
         elem := get_next t list_id !elem ;
         match !elem with
-        | None -> Some {done_= true; value= None}
+        | None -> (diffs, children, Some {done_= true; value= None})
         | Some elem' -> (
           match get_field_ops t list_id elem' with
-          | [] -> None
+          | [] -> _next (diffs, children)
           | hd :: tl as ops -> (
-              let diffs, children, value = get_op_value t hd context in
+              let diffs, children, value = get_op_value t hd (diffs, children) in
               index := !index + 1 ;
-              match mode with
+              (diffs, children, match mode with
               | Keys -> Some {done_= false; value= Some (KeyValue !index)}
               | Values -> Some {done_= false; value= Some (ValueValue value)}
               | Entries ->
@@ -1174,16 +1174,18 @@ module OpSetBackend = struct
                     CCOpt.map (fun c -> ConflictValue c) conflict
                   in
                   Some {done_= false; value= conflict} ) )
+        ))
       in
-      _next !elem
+      _next (diffs, children)
     in
-    (* TODO: Symbol.iterator *)
     {next}
 
   and get_next t obj_id key =
     match insertions_after t obj_id key None with
-    | hd :: _ -> Some hd
+    | hd :: _ ->
+        Some hd
     | [] ->
+        print_endline "NO HD";
         let rec find_ancestor (key : key option) =
           match get_parent t obj_id key with
           | None -> None
@@ -1204,8 +1206,6 @@ module OpSetBackend = struct
   } [@@deriving sexp_of]
 
   let rec make_patch t (obj_id : string) patch_diffs (diffs, children) =
-    (* print_endline ("OBJ_ID " ^ obj_id); *)
-    (* log "DIFFS" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs; *)
     let diffs, patch_diffs =
       CCList.fold_left
         (fun (diffs, patch_diffs) child_id ->

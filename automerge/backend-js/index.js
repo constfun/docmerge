@@ -52,14 +52,9 @@ class MaterializationContext {
     const conflicts = OpSet.getObjectConflicts(opSet, objectId, this)
 
     for (let key of OpSet.getObjectFields(opSet, objectId)) {
-        console.log("INSTANTIATE_MAP ADIFFS", this.diffs)
-        // console.log("INSTANTIATE_MAP CHILDREN", this.children)
       let diff = {obj: objectId, type: 'map', action: 'set', key}
       this.unpackValue(objectId, diff, OpSet.getObjectField(opSet, objectId, key, this))
-        console.log("INSTANTIATE_MAP BDIFFS", this.diffs)
-        // console.log("INSTANTIATE_MAP CHILDREN", this.children)
       this.unpackConflicts(objectId, diff, conflicts.get(key))
-        console.log("INSTANTIATE_MAP CDIFFS", this.diffs)
       diffs.push(diff)
     }
   }
@@ -76,6 +71,7 @@ class MaterializationContext {
     let values    = OpSet.listIterator(opSet, objectId, 'values',    this)
 
     for (let [index, elemId] of OpSet.listIterator(opSet, objectId, 'elems', this)) {
+      console.log('ITER', index, elemId)
       let diff = {obj: objectId, type, action: 'insert', index, elemId}
       this.unpackValue(objectId, diff, values.next().value)
       this.unpackConflicts(objectId, diff, conflicts.next().value)
