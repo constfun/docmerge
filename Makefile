@@ -8,13 +8,13 @@ build-native:
 	dune build @all
 
 test: automerge/node_modules build
-	time ./automerge/node_modules/mocha/bin/mocha ./automerge/test/backend_test.js
+	cd automerge && time ./node_modules/mocha/bin/mocha
 
-test-js: automerge/node_modules
-	time ./automerge/node_modules/mocha/bin/mocha ./automerge/test/backend_test_orig.js
+test-orig: automerge/node_modules
+	cd automerge && time ./node_modules/mocha/bin/mocha test-orig
 
 automerge/node_modules:
-	cd automerge && yarn install && cd -
+	cd automerge && yarn install
 
 _build/default/.op_set.eobjs/%.cmi: build-native
 	true
