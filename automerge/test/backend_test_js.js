@@ -153,7 +153,7 @@ describe('Backend', () => {
   })
 
   describe('getPatch()', () => {
-    it('should include the most recent value for a key', () => {
+    xit('should include the most recent value for a key', () => {
       const actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'set', obj: ROOT_ID, key: 'bird', value: 'magpie'}
@@ -185,7 +185,7 @@ describe('Backend', () => {
       ]})
     })
 
-    xit('should create nested maps', () => {
+    it('should create nested maps', () => {
       const birds = uuid(), actor = uuid()
       const change1 = {actor, seq: 1, deps: {}, ops: [
         {action: 'makeMap', obj: birds},

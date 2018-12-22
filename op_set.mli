@@ -96,7 +96,7 @@ module OpSetBackend : sig
     ; action: diff_action
     ; key: key option
     ; value: op_val option
-    ; link: bool
+    ; link: bool option
     ; conflicts: conflict list option }
 
   type patch = {

@@ -183,7 +183,7 @@ module OpSetBackend = struct
     ; action: diff_action
     ; key: key option
     ; value: op_val option
-    ; link: bool
+    ; link: bool option
     ; conflicts: conflict list option }
   [@@deriving sexp_of]
 
@@ -552,7 +552,6 @@ module OpSetBackend = struct
   let get_previous t obj_id key =
     let parent_id = get_parent t obj_id (Some key) in
     let children = insertions_after t obj_id parent_id None in
-    log "CHILDREN" (sexp_of_list sexp_of_string) children ;
     if CCList.length children > 0 && String.equal (CCList.hd children) key then
       match parent_id with Some "_head" -> None | _ -> parent_id
     else
@@ -919,7 +918,7 @@ module OpSetBackend = struct
     match value with
     | LinkValue l ->
         let patch_diff =
-          {patch_diff with link= true; value= Some (StrValue l.obj_id)}
+          {patch_diff with link= Some true; value= Some (StrValue l.obj_id)}
         in
         let children =
           ChildMap.update parent_id
@@ -1004,7 +1003,7 @@ module OpSetBackend = struct
         CCList.append patch_diffs
           [ { conflicts= None
             ; value= None
-            ; link= false
+            ; link= None
             ; obj= obj_id
             ; type_= DiffMap
             ; action= DiffCreate
@@ -1019,29 +1018,33 @@ module OpSetBackend = struct
       | Some fields ->
           KeySet.fold
             (fun key (diffs, children, patch_diffs) ->
+              log "INSTANTIATE_MAP ADIFFS" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs;
+              (* log "INSTANTIATE_MAP CHILDREN" (ChildMap.sexp_of_t (sexp_of_list sexp_of_string)) children; *)
               let patch_diff =
                 { conflicts= None
                 ; value= None
-                ; link= false
+                ; link= None
                 ; obj= obj_id
                 ; type_= DiffMap
                 ; action= DiffSet
                 ; key= Some key }
               in
               (* unpack value *)
-              let patch_diff, children =
+              let diffs, children, patch_diff =
                 match get_object_field t obj_id key (diffs, children) with
-                | _, children, Some mat_value ->
+                | diffs, children, Some mat_value ->
                     let patch_diff, children =
                       unpack_value obj_id patch_diff children mat_value
                     in
-                    (patch_diff, children)
+                    (diffs, children, patch_diff)
                 | _ -> raise (Invalid_argument "obj key")
               in
+              log "INSTANTIATE_MAP BDIFFS" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs;
               let patch_diff, children =
                 unpack_conflicts_for_key key obj_id patch_diff children
                   conflicts
               in
+              log "INSTANTIATE_MAP CDIFFS" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs;
               (diffs, children, CCList.append patch_diffs [patch_diff]) )
             fields
             (diffs, children, patch_diffs)
@@ -1120,23 +1123,23 @@ module OpSetBackend = struct
   } [@@deriving sexp_of]
 
   let rec make_patch t (obj_id : string) patch_diffs (diffs, children) =
-    print_endline ("OBJ_ID " ^ obj_id);
-    log "CHILDREN" (ChildMap.sexp_of_t (sexp_of_list sexp_of_string)) children;
-    let patch_diffs =
+    (* print_endline ("OBJ_ID " ^ obj_id); *)
+    (* log "DIFFS" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs; *)
+    let diffs, patch_diffs =
       CCList.fold_left
-        (fun patch_diffs child_id ->
+        (fun (diffs, patch_diffs) child_id ->
           make_patch t child_id patch_diffs (diffs, children) )
-        patch_diffs
+        (diffs, patch_diffs)
         (ChildMap.find obj_id children)
     in
-    log "DIFFS" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs;
-    CCList.append patch_diffs (DiffMap.find obj_id diffs)
+    (diffs, CCList.append patch_diffs (DiffMap.find obj_id diffs))
 
   let get_patch t =
     let diffs, children, _ =
       instantiate_object t root_id (DiffMap.empty, ChildMap.empty)
     in
-    let patch_diffs = make_patch t root_id [] (diffs, children) in
+    log "GET_PATCH" (DiffMap.sexp_of_t (sexp_of_list sexp_of_diff)) diffs;
+    let diffs, patch_diffs = make_patch t root_id [] (diffs, children) in
     {
       can_undo= t.undo_pos > 0;
       can_redo= not (CCList.is_empty t.redo_stack);

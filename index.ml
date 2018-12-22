@@ -224,6 +224,7 @@ let diff_to_js_diff (diff:OpSetBackend.diff) =
   |> obj_set_optdef Js.string "key" diff.key
   |> obj_set ~conv:Js.string "obj" diff.obj
   |> obj_set "type" type_
+  |> obj_set_optdef Js.bool "link" diff.link
   |> obj_set_optdef op_val_to_js_value "value" diff.value
   |> obj_set_optdef conflicts_to_js_conflicts "conflicts" diff.conflicts
   |> Js.Unsafe.obj

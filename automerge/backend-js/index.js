@@ -52,9 +52,14 @@ class MaterializationContext {
     const conflicts = OpSet.getObjectConflicts(opSet, objectId, this)
 
     for (let key of OpSet.getObjectFields(opSet, objectId)) {
+        console.log("INSTANTIATE_MAP ADIFFS", this.diffs)
+        // console.log("INSTANTIATE_MAP CHILDREN", this.children)
       let diff = {obj: objectId, type: 'map', action: 'set', key}
       this.unpackValue(objectId, diff, OpSet.getObjectField(opSet, objectId, key, this))
+        console.log("INSTANTIATE_MAP BDIFFS", this.diffs)
+        // console.log("INSTANTIATE_MAP CHILDREN", this.children)
       this.unpackConflicts(objectId, diff, conflicts.get(key))
+        console.log("INSTANTIATE_MAP CDIFFS", this.diffs)
       diffs.push(diff)
     }
   }
@@ -109,6 +114,7 @@ class MaterializationContext {
    * whose root is the object with ID `objectId`.
    */
   makePatch(objectId, diffs) {
+    // console.log('DIFFS', objectId, diffs)
     for (let childId of this.children[objectId]) {
       this.makePatch(childId, diffs)
     }
@@ -194,6 +200,7 @@ function getPatch(state) {
   let diffs = [], opSet = state.get('opSet')
   let context = new MaterializationContext(opSet)
   context.instantiateObject(opSet, OpSet.ROOT_ID)
+  console.log('GET_PATCH', context.diffs)
   context.makePatch(OpSet.ROOT_ID, diffs)
   // let diffs = OpSet.makePatch(state.get('opSet'), OpSet.ROOT_ID)
   return makePatch(state, diffs)
