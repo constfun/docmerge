@@ -13,7 +13,7 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceFolder}/automerge/test/backend_test.js"
+                "${workspaceFolder}/automerge/test"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
