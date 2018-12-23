@@ -878,6 +878,7 @@ module OpSetBackend = struct
   (* The following form the public API *)
 
   let get_missing_changes t have_deps =
+    log "MISSING" (ActorMap.sexp_of_t sexp_of_int) have_deps ;
     let all_deps = transitive_deps t have_deps in
     ActorMap.mapi
       (fun actor states ->

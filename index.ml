@@ -58,6 +58,7 @@ let js_action_to_action : Js.js_string Js.t -> OpSetBackend.action =
   else if String.equal s "del" then OpSetBackend.Del
   else if String.equal s "makeMap" then OpSetBackend.MakeMap
   else if String.equal s "makeList" then OpSetBackend.MakeList
+  else if String.equal s "makeText" then OpSetBackend.MakeText
   else if String.equal s "link" then OpSetBackend.Link
   else if String.equal s "ins" then OpSetBackend.Ins
   else raise Not_supported
@@ -332,6 +333,47 @@ let get_changes old_state new_state =
   |> CCList.map change_to_js_change
   |> list_to_js_array
 
+module ToJs = struct
+  let number = Js.number_of_float $ float_of_int
+
+  let clock (clock : BE.seq ActorMap.t) = js_obj_of_actor_map number clock
+
+  let change_list lis = CCList.map change_to_js_change lis |> list_to_js_array
+end
+
+module FromJs = struct
+  let from_imm imm_obj = Js.Unsafe.(meth_call (inject imm_obj) "toJS" [||])
+
+  let clock _clock =
+    let _simple = from_imm _clock in
+    let _actors = Js.object_keys _simple |> Js.to_array in
+    CCArray.fold
+      (fun clock _actor ->
+        let _seq = Js.Unsafe.(get (inject _simple) _actor) in
+        let seq : BE.seq = int_of_float (Js.float_of_number _seq) in
+        ActorMap.add (Js.to_string _actor) seq clock )
+      ActorMap.empty _actors
+end
+
+let require_module s =
+  Js.Unsafe.fun_call
+    (Js.Unsafe.js_expr "require")
+    [|Js.Unsafe.inject (Js.string s)|]
+
+let get_missing_changes t _clock =
+  let immutable = require_module "immutable" in
+  let map = (Js.Unsafe.coerce immutable) ##. Map in
+  let clock = FromJs.clock _clock in
+  let changes = BE.get_missing_changes t.op_set clock in
+  let _changes = ToJs.change_list changes in
+  Js.Unsafe.fun_call (Js.Unsafe.inject map) [|Js.Unsafe.inject _changes|]
+
+let get_clock t =
+  let immutable = require_module "immutable" in
+  let map = (Js.Unsafe.coerce immutable) ##. Map in
+  let clock = ToJs.clock (OpSetBackend.get_clock t.op_set) in
+  Js.Unsafe.fun_call (Js.Unsafe.inject map) [|Js.Unsafe.inject clock|]
+
 let _ =
   Js.export "init" init ;
   Js.export "applyChanges" _apply_changes ;
@@ -339,4 +381,6 @@ let _ =
   Js.export "getPatch" get_patch ;
   Js.export "merge" merge ;
   Js.export "getChangesForActor" get_changes_for_actor ;
-  Js.export "getChanges" get_changes
+  Js.export "getChanges" get_changes ;
+  Js.export "getMissingChanges" get_missing_changes ;
+  Js.export "getClock" get_clock
