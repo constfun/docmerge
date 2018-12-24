@@ -10,107 +10,9 @@ let freeze (o : 'a) : 'a =
 
 type t = {op_set: OpSetBackend.t}
 
-let actor_map_of_js_obj js_obj =
-  Js.to_array (Js.object_keys js_obj)
-  |> CCArray.fold
-       (fun amap js_actor ->
-         let value = Js.Unsafe.get js_obj js_actor in
-         ActorMap.add (Js.to_string js_actor) value amap )
-       ActorMap.empty
+module BE = OpSetBackend
 
-let js_obj_of_actor_map conv m =
-  (* string, any array *)
-  let kv =
-    CCArray.of_list (ActorMap.to_list m)
-    |> CCArray.map (fun (k, v) -> (k, Js.Unsafe.inject (conv v)))
-  in
-  Js.Unsafe.obj kv
-
-let js_number_of_int i = Js.number_of_float (float_of_int i)
-
-(* Constructs a patch object from the current node state `state` and the list *)
-(* of object modifications `diffs`. *)
-let make_patch t diffs =
-  let clock = OpSetBackend.get_clock t.op_set in
-  object%js
-    val clock = js_obj_of_actor_map js_number_of_int clock
-
-    val deps =
-      js_obj_of_actor_map js_number_of_int (OpSetBackend.get_deps t.op_set)
-
-    val canUndo = Js.bool (OpSetBackend.can_undo t.op_set)
-
-    val canRedo = Js.bool (OpSetBackend.can_redo t.op_set)
-
-    val diffs = diffs
-  end
-
-let init () = {op_set= OpSetBackend.init ()}
-
-let int_of_js_number n = int_of_float (Js.float_of_number n)
-
-let array_to_list arr = CCArray.to_list (Js.to_array arr)
-
-let js_action_to_action : Js.js_string Js.t -> OpSetBackend.action =
- fun js_s ->
-  let s = Js.to_string js_s in
-  if String.equal s "set" then OpSetBackend.Set
-  else if String.equal s "del" then OpSetBackend.Del
-  else if String.equal s "makeMap" then OpSetBackend.MakeMap
-  else if String.equal s "makeList" then OpSetBackend.MakeList
-  else if String.equal s "makeText" then OpSetBackend.MakeText
-  else if String.equal s "link" then OpSetBackend.Link
-  else if String.equal s "ins" then OpSetBackend.Ins
-  else raise Not_supported
-
-let action_to_js_action =
-  OpSetBackend.(
-    function
-    | MakeMap -> "makeMap"
-    | MakeText -> "makeText"
-    | MakeList -> "makeList"
-    | Link -> "link"
-    | Ins -> "ins"
-    | Del -> "del"
-    | Set -> "set")
-
-let op_val_to_js_value = function
-  | OpSetBackend.BoolValue b -> Js.Unsafe.inject (Js.bool b)
-  | OpSetBackend.StrValue s -> Js.Unsafe.inject (Js.string s)
-  | OpSetBackend.NumberValue n -> Js.Unsafe.inject (Js.number_of_float n)
-
-let rec value_to_js_value (value : OpSetBackend.value) =
-  match value with
-  | Value s -> op_val_to_js_value s
-  | Link l ->
-      Js.Unsafe.inject
-        (object%js
-           val obj = value_to_js_value l.obj
-        end)
-
-let rec js_value_to_op_val js_value =
-  let typ = Js.to_string (Js.typeof js_value) in
-  match typ with
-  | "string" ->
-      OpSetBackend.StrValue (Js.to_string (Js.Unsafe.coerce js_value))
-  | "boolean" ->
-      OpSetBackend.BoolValue (Js.to_bool (Js.Unsafe.coerce js_value))
-  | "number" ->
-      OpSetBackend.NumberValue (Js.float_of_number (Js.Unsafe.coerce js_value))
-  | _ -> raise Not_supported
-
-let to_op_list arr =
-  array_to_list arr
-  |> CCList.map (fun js_op ->
-         ( { action= js_action_to_action js_op##.action
-           ; key= Js.Optdef.(to_option (map js_op##.key Js.to_string))
-           ; elem=
-               Js.Optdef.(
-                 to_option (map js_op##.elem (int_of_float $ Js.to_float)))
-           ; value=
-               Js.Optdef.(to_option (map js_op##.value js_value_to_op_val))
-           ; obj= Js.to_string js_op##.obj }
-           : OpSetBackend.change_op ) )
+let clock t = OpSetBackend.get_clock t.op_set
 
 let list_to_js_array lis =
   let arr = new%js Js.array_length (List.length lis) in
@@ -157,6 +59,70 @@ let path_to_js_path v =
 
 let actor_to_js_actor actor = Js.Unsafe.inject (Js.string actor)
 
+let array_to_list arr = CCArray.to_list (Js.to_array arr)
+
+let js_action_to_action : Js.js_string Js.t -> OpSetBackend.action =
+ fun js_s ->
+  let s = Js.to_string js_s in
+  if String.equal s "set" then OpSetBackend.Set
+  else if String.equal s "del" then OpSetBackend.Del
+  else if String.equal s "makeMap" then OpSetBackend.MakeMap
+  else if String.equal s "makeList" then OpSetBackend.MakeList
+  else if String.equal s "makeText" then OpSetBackend.MakeText
+  else if String.equal s "link" then OpSetBackend.Link
+  else if String.equal s "ins" then OpSetBackend.Ins
+  else raise Not_supported
+
+let action_to_js_action a =
+  Js.string
+    OpSetBackend.(
+      match a with
+      | MakeMap -> "makeMap"
+      | MakeText -> "makeText"
+      | MakeList -> "makeList"
+      | Link -> "link"
+      | Ins -> "ins"
+      | Del -> "del"
+      | Set -> "set")
+
+let op_val_to_js_value = function
+  | OpSetBackend.BoolValue b -> Js.Unsafe.inject (Js.bool b)
+  | OpSetBackend.StrValue s -> Js.Unsafe.inject (Js.string s)
+  | OpSetBackend.NumberValue n -> Js.Unsafe.inject (Js.number_of_float n)
+
+let rec value_to_js_value (value : OpSetBackend.value) =
+  match value with
+  | Value s -> op_val_to_js_value s
+  | Link l ->
+      Js.Unsafe.inject
+        (object%js
+           val obj = value_to_js_value l.obj
+        end)
+
+let rec js_value_to_op_val js_value =
+  let typ = Js.to_string (Js.typeof js_value) in
+  match typ with
+  | "string" ->
+      OpSetBackend.StrValue (Js.to_string (Js.Unsafe.coerce js_value))
+  | "boolean" ->
+      OpSetBackend.BoolValue (Js.to_bool (Js.Unsafe.coerce js_value))
+  | "number" ->
+      OpSetBackend.NumberValue (Js.float_of_number (Js.Unsafe.coerce js_value))
+  | _ -> raise Not_supported
+
+let to_op_list arr =
+  array_to_list arr
+  |> CCList.map (fun js_op ->
+         ( { action= js_action_to_action js_op##.action
+           ; key= Js.Optdef.(to_option (map js_op##.key Js.to_string))
+           ; elem=
+               Js.Optdef.(
+                 to_option (map js_op##.elem (int_of_float $ Js.to_float)))
+           ; value=
+               Js.Optdef.(to_option (map js_op##.value js_value_to_op_val))
+           ; obj= Js.to_string js_op##.obj }
+           : OpSetBackend.change_op ) )
+
 let conflicts_to_js_conflicts (v : OpSetBackend.conflict list) =
   list_to_js_array
     (CCList.map
@@ -201,11 +167,31 @@ let change_op_to_js_change_op (op : OpSetBackend.change_op) =
   |> obj_set "obj" (Js.string op.obj)
   |> Js.Unsafe.obj
 
+let actor_map_of_js_obj js_obj =
+  Js.to_array (Js.object_keys js_obj)
+  |> CCArray.fold
+       (fun amap js_actor ->
+         let value = Js.Unsafe.get js_obj js_actor in
+         ActorMap.add (Js.to_string js_actor) value amap )
+       ActorMap.empty
+
+let js_obj_of_actor_map conv m =
+  (* string, any array *)
+  let kv =
+    CCArray.of_list (ActorMap.to_list m)
+    |> CCArray.map (fun (k, v) -> (k, Js.Unsafe.inject (conv v)))
+  in
+  Js.Unsafe.obj kv
+
+let int_of_js_number n = int_of_float (Js.float_of_number n)
+
 let js_change_to_change js_change : OpSetBackend.change =
   { actor= Js.to_string js_change##.actor
   ; seq= int_of_js_number js_change##.seq
   ; deps= actor_map_of_js_obj js_change##.deps
   ; ops= to_op_list js_change##.ops }
+
+let js_number_of_int i = Js.number_of_float (float_of_int i)
 
 let change_to_js_change (change : OpSetBackend.change) =
   CCArray.empty
@@ -216,6 +202,63 @@ let change_to_js_change (change : OpSetBackend.change) =
        ~conv:(Js.array $ CCArray.of_list $ CCList.map change_op_to_js_change_op)
        "ops" change.ops
   |> Js.Unsafe.obj
+
+module ToJs = struct
+  let require_module s =
+    Js.Unsafe.fun_call
+      (Js.Unsafe.js_expr "require")
+      [|Js.Unsafe.inject (Js.string s)|]
+
+  let number = Js.number_of_float $ float_of_int
+
+  let clock (clock : BE.seq ActorMap.t) = js_obj_of_actor_map number clock
+
+  let change_list lis = CCList.map change_to_js_change lis |> list_to_js_array
+
+  let imm_Map _kv =
+    let immutable = require_module "immutable" in
+    let _Map = (Js.Unsafe.coerce immutable) ##. Map in
+    Js.Unsafe.(fun_call (inject _Map) [|inject _kv|])
+
+  let imm o =
+    let is_imm = (Js.Unsafe.coerce o)##.toJS in
+    Js.Optdef.case is_imm
+      (fun () -> o)
+      (fun _ -> Js.Unsafe.(meth_call (inject o) "toJS" [||]))
+end
+
+module FromJs = struct
+  let from_imm imm_obj = Js.Unsafe.(meth_call (inject imm_obj) "toJS" [||])
+
+  let clock _clock =
+    let _simple = from_imm _clock in
+    let _actors = Js.object_keys _simple |> Js.to_array in
+    CCArray.fold
+      (fun clock _actor ->
+        let _seq = Js.Unsafe.(get (inject _simple) _actor) in
+        let seq : BE.seq = int_of_float (Js.float_of_number _seq) in
+        ActorMap.add (Js.to_string _actor) seq clock )
+      ActorMap.empty _actors
+end
+
+(* Constructs a patch object from the current node state `state` and the list *)
+(* of object modifications `diffs`. *)
+let make_patch t diffs =
+  let clock = OpSetBackend.get_clock t.op_set in
+  object%js
+    val clock = js_obj_of_actor_map js_number_of_int clock
+
+    val deps =
+      js_obj_of_actor_map js_number_of_int (OpSetBackend.get_deps t.op_set)
+
+    val canUndo = Js.bool (OpSetBackend.can_undo t.op_set)
+
+    val canRedo = Js.bool (OpSetBackend.can_redo t.op_set)
+
+    val diffs = diffs
+  end
+
+let init () = {op_set= OpSetBackend.init ()}
 
 let apply t changes undoable =
   let t, diffs =
@@ -232,6 +275,7 @@ let apply t changes undoable =
 let apply_changes t changes = apply t changes false
 
 let _apply_changes t js_changes =
+  let js_changes = ToJs.imm js_changes in
   let changes =
     CCArray.to_list (Js.to_array js_changes) |> CCList.map js_change_to_change
   in
@@ -318,10 +362,6 @@ let get_changes_for_actor t js_actor_id =
   |> CCList.map change_to_js_change
   |> CCArray.of_list |> Js.array
 
-module BE = OpSetBackend
-
-let clock t = OpSetBackend.get_clock t.op_set
-
 let get_changes old_state new_state =
   let old_clock = clock old_state in
   (* function lessOrEqual(clock1, clock2) { *)
@@ -333,43 +373,13 @@ let get_changes old_state new_state =
   |> CCList.map change_to_js_change
   |> list_to_js_array
 
-module ToJs = struct
-  let number = Js.number_of_float $ float_of_int
-
-  let clock (clock : BE.seq ActorMap.t) = js_obj_of_actor_map number clock
-
-  let change_list lis = CCList.map change_to_js_change lis |> list_to_js_array
-end
-
-module FromJs = struct
-  let from_imm imm_obj = Js.Unsafe.(meth_call (inject imm_obj) "toJS" [||])
-
-  let clock _clock =
-    let _simple = from_imm _clock in
-    let _actors = Js.object_keys _simple |> Js.to_array in
-    CCArray.fold
-      (fun clock _actor ->
-        let _seq = Js.Unsafe.(get (inject _simple) _actor) in
-        let seq : BE.seq = int_of_float (Js.float_of_number _seq) in
-        ActorMap.add (Js.to_string _actor) seq clock )
-      ActorMap.empty _actors
-end
-
-let require_module s =
-  Js.Unsafe.fun_call
-    (Js.Unsafe.js_expr "require")
-    [|Js.Unsafe.inject (Js.string s)|]
-
 let get_missing_changes t _clock =
-  let immutable = require_module "immutable" in
-  let map = (Js.Unsafe.coerce immutable) ##. Map in
   let clock = FromJs.clock _clock in
   let changes = BE.get_missing_changes t.op_set clock in
-  let _changes = ToJs.change_list changes in
-  Js.Unsafe.fun_call (Js.Unsafe.inject map) [|Js.Unsafe.inject _changes|]
+  ToJs.change_list changes
 
 let get_clock t =
-  let immutable = require_module "immutable" in
+  let immutable = ToJs.require_module "immutable" in
   let map = (Js.Unsafe.coerce immutable) ##. Map in
   let clock = ToJs.clock (OpSetBackend.get_clock t.op_set) in
   Js.Unsafe.fun_call (Js.Unsafe.inject map) [|Js.Unsafe.inject clock|]
