@@ -9,13 +9,13 @@ describe('Automerge.Text', () => {
     s2 = Automerge.merge(Automerge.init(), s1)
   })
 
-  it('should support insertion', () => {
+  xit('should support insertion', () => {
     s1 = Automerge.change(s1, doc => doc.text.insertAt(0, 'a'))
     assert.strictEqual(s1.text.length, 1)
     assert.strictEqual(s1.text.get(0), 'a')
   })
 
-  it('should support deletion', () => {
+  xit('should support deletion', () => {
     s1 = Automerge.change(s1, doc => doc.text.insertAt(0, 'a', 'b', 'c'))
     s1 = Automerge.change(s1, doc => doc.text.deleteAt(1, 1))
     assert.strictEqual(s1.text.length, 2)

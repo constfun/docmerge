@@ -142,9 +142,9 @@ module OpSetBackend = struct
 
   type state = {change: change; allDeps: seq ActorMap.t} [@@deriving sexp_of]
 
-  type edit_action = Create | Insert | Remove | Set
+  type edit_action = Create | Insert | Remove | Set [@@deriving sexp_of]
 
-  type edit_type = Map | Text | List
+  type edit_type = Map | Text | List [@@deriving sexp_of]
 
   type conflict = {actor: actor; value: op_val option; link: bool option}
   [@@deriving sexp_of]
@@ -160,6 +160,7 @@ module OpSetBackend = struct
     ; index: int option
     ; conflicts: conflict list option
     ; path: [`IntPath of int | `StrPath of key] list option }
+  [@@deriving sexp_of]
 
   type ref = {action: action; obj: obj_id; key: key; value: value option}
 
@@ -258,15 +259,15 @@ module OpSetBackend = struct
                 ActorMap.merge
                   (fun _ l r ->
                     match (l, r) with
-                    | Some l, Some r -> Some (max l r)
+                    | Some l, Some r -> Some (CCInt.max l r)
                     | Some l, None -> Some l
                     | None, Some r -> Some r
-                    | None, None -> None )
+                    | None, None -> raise (Invalid_argument "key") )
                   deps state.allDeps
-                |> ActorMap.update depActor (fun _ -> Some depSeq)
+                |> ActorMap.add depActor depSeq
             | None -> deps )
           | None -> deps )
-      baseDeps ActorMap.empty
+      ActorMap.empty baseDeps
 
   let apply_make t (op : op) =
     let edit, obj_aux =

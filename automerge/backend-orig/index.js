@@ -2,6 +2,10 @@ const { Map, List, fromJS } = require('immutable')
 const { isObject, lessOrEqual } = require('../src/common')
 const OpSet = require('./op_set')
 
+function log (s, o) {
+    console.log(s, ' ', JSON.stringify(o, null, 2));
+}
+
 class MaterializationContext {
   constructor () {
     this.diffs = {}
@@ -231,6 +235,7 @@ function getMissingDeps(state) {
  */
 function merge(local, remote) {
   const changes = OpSet.getMissingChanges(remote.get('opSet'), local.getIn(['opSet', 'clock']))
+  log('changes', changes)
   return applyChanges(local, changes)
 }
 

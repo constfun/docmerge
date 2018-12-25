@@ -2,6 +2,10 @@ const { Map, List, Set } = require('immutable')
 const { SkipList } = require('./skip_list')
 const ROOT_ID = '00000000-0000-0000-0000-000000000000'
 
+function log (s, o) {
+    console.log(s, ' ', JSON.stringify(o, null, 2));
+}
+
 // Returns true if the two operations are concurrent, that is, they happened without being aware of
 // each other (neither happened before the other). Returns false if one supersedes the other.
 function isConcurrent(opSet, op1, op2) {
