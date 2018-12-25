@@ -2,6 +2,9 @@
 
 build: autoformat
 	dune build index.bc.js
+	cd _build/default && tail -1 index.bc.js | cut -c 51- | base64 -D | sed 's/sourceRoot..../sourceMap="\/Users\/nick\/projects\/docmerge\/"/' > index.bc.source-map
+	cd _build/default && cat index.bc.js | awk 'NR>2 {print last} {last=$$0}' > index.bc.js
+	# cd _build/default && cat index.bc.source-map >> index.bc.js
 	cp _build/default/index.bc.js automerge/backend.js
 
 autoformat:
@@ -11,10 +14,10 @@ build-native:
 	dune build @all
 
 test: automerge/node_modules build
-	cd automerge && time ./node_modules/mocha/bin/mocha
+	cd automerge && time ./node_modules/mocha/bin/mocha test/connection_test
 
 test-orig: automerge/node_modules
-	cd automerge && time ./node_modules/mocha/bin/mocha test-orig
+	cd automerge && time ./node_modules/mocha/bin/mocha test-orig/connection_test
 
 automerge/node_modules:
 	cd automerge && yarn install

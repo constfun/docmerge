@@ -242,6 +242,7 @@ function applyOps(opSet, ops) {
 }
 
 function applyChange(opSet, change) {
+  log("states",  opSet.get('states'))
   const actor = change.get('actor'), seq = change.get('seq')
   const prior = opSet.getIn(['states', actor], List())
   if (seq <= prior.size) {
@@ -261,6 +262,7 @@ function applyChange(opSet, change) {
     .filter((depSeq, depActor) => depSeq > allDeps.get(depActor, 0))
     .set(actor, seq)
 
+    log("actor_map", remainingDeps)
   opSet = opSet
     .set('deps', remainingDeps)
     .setIn(['clock', actor], seq)

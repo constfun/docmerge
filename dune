@@ -1,7 +1,7 @@
 (executable
     (name index)
     (flags -w -33 -g)
-    (js_of_ocaml (flags --no-inline --source-map --source-map-inline))
+    (js_of_ocaml (flags --no-inline --source-map --source-map-inline --source-map-root=/Users/nick/projects/docmerge --pretty --debug-info))
     (libraries str containers containers.data js_of_ocaml sexplib)
     (preprocess (pps ppx_sexp_conv js_of_ocaml-ppx))
     )

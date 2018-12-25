@@ -214,6 +214,15 @@ module OpSetBackend = struct
     ; undo_local: ref list option sexp_opaque }
   [@@deriving sexp_of]
 
+  (* Debug logggers *)
+
+  module LLog = struct
+    let states (t : t) =
+      log "states" (ActorMap.sexp_of_t (sexp_of_list sexp_of_state)) t.states
+
+    let seq_actor_map m = log "actor_map" (ActorMap.sexp_of_t sexp_of_int) m
+  end
+
   (* Helpers not found in original *)
   let get_obj_aux t obj_id = CCOpt.map snd (ObjectIdMap.get obj_id t.by_object)
 
@@ -230,7 +239,6 @@ module OpSetBackend = struct
   (* All changes are causally (and totally) ordered using lamport timestamps *)
   (* When a new op lands in the op set, check if all preceeding ops have been applied *)
   (* If we store ops in Irmin, causality is enforced by history, aka the Merkle DAG. *)
-  (* TODO: rename change to op? *)
   let causaly_ready t (change : change) =
     change.deps
     |> ActorMap.update change.actor (function
@@ -267,7 +275,7 @@ module OpSetBackend = struct
                 |> ActorMap.add depActor depSeq
             | None -> deps )
           | None -> deps )
-      ActorMap.empty baseDeps
+      baseDeps ActorMap.empty
 
   let apply_make t (op : op) =
     let edit, obj_aux =
@@ -763,10 +771,15 @@ module OpSetBackend = struct
 
   let apply_change t (change : change) =
     (* Prior state by sequence *)
+    LLog.states t ;
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
     if change.seq <= List.length prior then
       match List.nth_opt prior (change.seq - 1) with
+      (* TODO: NOT A SAFE COMPARE *)
       | Some state when state.change = change ->
+          (* log "CH1" sexp_of_change state.change ; *)
+          (* log "CH2" sexp_of_change change ; *)
+          Js.debugger () ;
           raise Inconsistent_reuse_of_sequence
       | _ -> (t, [])
     else
@@ -798,6 +811,7 @@ module OpSetBackend = struct
           t.deps
         |> ActorMap.add change.actor change.seq
       in
+      LLog.seq_actor_map remaining_deps ;
       let clock = ActorMap.add change.actor change.seq t.clock in
       let history = List.append t.history [change] in
       ({t with deps= remaining_deps; clock; history}, diffs)
