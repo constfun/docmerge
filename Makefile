@@ -2,9 +2,13 @@
 
 build: autoformat
 	dune build index.bc.js
-	cd _build/default && tail -1 index.bc.js | cut -c 51- | base64 -D | sed 's/sourceRoot..../sourceMap="\/Users\/nick\/projects\/docmerge\/"/' > index.bc.source-map
-	cd _build/default && cat index.bc.js | awk 'NR>2 {print last} {last=$$0}' > index.bc.js
-	# cd _build/default && cat index.bc.source-map >> index.bc.js
+	cd _build/default && \
+		tail -1 index.bc.js | cut -c 51- | base64 -D > index.source.map && \
+		cat index.source.map | sed 's/sourceRoot..../sourceRoot":"\/Users\/nick\/projects\/docmerge\/"/' > index.source.map.fixed && \
+		cat index.bc.js | awk 'NR>2 {print last} {last=$$0}' > index.without.source.map.js && \
+		printf "//# sourceMappingURL=data:application/json;base64," > index.source.map.fixed.encoded && \
+		cat index.source.map.fixed | base64 >> index.source.map.fixed.encoded && \
+		cat index.without.source.map.js index.source.map.fixed.encoded > index.js
 	cp _build/default/index.bc.js automerge/backend.js
 
 autoformat:
