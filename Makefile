@@ -5,7 +5,7 @@ build: autoformat
 	cd _build/default && \
 		tail -1 index.bc.js | cut -c 51- | base64 -D > index.source.map && \
 		cat index.source.map | sed 's/sourceRoot..../sourceRoot":"\/Users\/nick\/projects\/docmerge\/"/' > index.source.map.fixed && \
-		cat index.bc.js | awk 'NR>2 {print last} {last=$$0}' > index.without.source.map.js && \
+		sed "$d" index.bc.js > index.without.source.map.js && \
 		printf "//# sourceMappingURL=data:application/json;base64," > index.source.map.fixed.encoded && \
 		cat index.source.map.fixed | base64 >> index.source.map.fixed.encoded && \
 		cat index.without.source.map.js index.source.map.fixed.encoded > index.js
