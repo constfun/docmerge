@@ -19,6 +19,12 @@ type exn +=
 let log msg conv sexp =
   Format.printf "DEBUG: %s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp)
 
+let _trace_counter = ref 1
+
+let trace s =
+  Format.printf "%i %s\n%!" !_trace_counter s ;
+  _trace_counter := !_trace_counter + 1
+
 module ActorMap = CCMapMake (CCString)
 module SeqMap = CCMapMake (CCInt)
 module ObjectIdMap = CCMapMake (CCString)
@@ -217,10 +223,12 @@ module OpSetBackend = struct
   (* Debug logggers *)
 
   module LLog = struct
-    let states (t : t) =
-      log "states" (ActorMap.sexp_of_t (sexp_of_list sexp_of_state)) t.states
+    let t_states s =
+      log "states" (ActorMap.sexp_of_t (sexp_of_list sexp_of_state)) s
 
     let seq_actor_map m = log "actor_map" (ActorMap.sexp_of_t sexp_of_int) m
+
+    let t_queue q = log "queue" (CCFQueueWithSexp.sexp_of_t sexp_of_change) q
   end
 
   (* Helpers not found in original *)
@@ -770,13 +778,14 @@ module OpSetBackend = struct
     (t, all_diffs)
 
   let apply_change t (change : change) =
+    trace "apply_change" ;
     (* Prior state by sequence *)
-    LLog.states t ;
+    (* LLog.t_states t.states ; *)
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
     if change.seq <= List.length prior then
       match List.nth_opt prior (change.seq - 1) with
       (* TODO: NOT A SAFE COMPARE *)
-      | Some state when state.change = change ->
+      | Some state when not (state.change = change) ->
           (* log "CH1" sexp_of_change state.change ; *)
           (* log "CH2" sexp_of_change change ; *)
           Js.debugger () ;
@@ -811,7 +820,7 @@ module OpSetBackend = struct
           t.deps
         |> ActorMap.add change.actor change.seq
       in
-      LLog.seq_actor_map remaining_deps ;
+      (* LLog.seq_actor_map remaining_deps ; *)
       let clock = ActorMap.add change.actor change.seq t.clock in
       let history = List.append t.history [change] in
       ({t with deps= remaining_deps; clock; history}, diffs)
@@ -829,18 +838,25 @@ module OpSetBackend = struct
 
   *)
   let rec apply_queued_ops t diffs =
+    (* trace "apply_queued_ops" ; *)
     let t, diffs, queue =
       CCFQueue.fold
         (fun (t, diffs, queue) change ->
-          if causaly_ready t change then
+          if causaly_ready t change then (
+            trace "ready" ;
             let t, diff = apply_change t change in
-            (t, CCList.concat [diffs; diff], queue)
-          else (t, diffs, CCFQueue.snoc t.queue change) )
+            (t, CCList.concat [diffs; diff], queue) )
+          else (
+            trace "not ready" ;
+            (t, diffs, CCFQueue.snoc t.queue change) ) )
         (t, diffs, CCFQueueWithSexp.empty)
         t.queue
     in
-    if CCInt.equal (CCFQueue.size queue) (CCFQueue.size t.queue) then (t, diffs)
-    else apply_queued_ops {t with queue} diffs
+    if CCInt.equal (CCFQueue.size queue) (CCFQueue.size t.queue) then (
+      trace "equal" ; (t, diffs) )
+    else (
+      trace "not equal" ;
+      apply_queued_ops {t with queue} diffs )
 
   let push_undo_history t =
     let undo_stack =
@@ -852,6 +868,8 @@ module OpSetBackend = struct
       undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
 
   let add_change t change isUndoable =
+    trace "add_change" ;
+    (* LLog.t_queue (CCFQueue.snoc t.queue change) ; *)
     let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then
       let t = {t with undo_local= Some []} in

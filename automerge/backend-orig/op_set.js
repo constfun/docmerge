@@ -6,6 +6,11 @@ function log (s, o) {
     console.log(s, ' ', JSON.stringify(o, null, 2));
 }
 
+let _trace_counter = 1
+function trace(s) {
+    console.log(_trace_counter++, s)
+}
+
 // Returns true if the two operations are concurrent, that is, they happened without being aware of
 // each other (neither happened before the other). Returns false if one supersedes the other.
 function isConcurrent(opSet, op1, op2) {
@@ -242,7 +247,8 @@ function applyOps(opSet, ops) {
 }
 
 function applyChange(opSet, change) {
-  log("states",  opSet.get('states'))
+  trace("apply_change")
+  // log("states",  opSet.get('states'))
   const actor = change.get('actor'), seq = change.get('seq')
   const prior = opSet.getIn(['states', actor], List())
   if (seq <= prior.size) {
@@ -262,7 +268,7 @@ function applyChange(opSet, change) {
     .filter((depSeq, depActor) => depSeq > allDeps.get(depActor, 0))
     .set(actor, seq)
 
-    log("actor_map", remainingDeps)
+    // log("actor_map", remainingDeps)
   opSet = opSet
     .set('deps', remainingDeps)
     .setIn(['clock', actor], seq)
@@ -271,18 +277,25 @@ function applyChange(opSet, change) {
 }
 
 function applyQueuedOps(opSet) {
+    // trace("apply_queued_ops")
   let queue = List(), diff, diffs = []
   while (true) {
     for (let change of opSet.get('queue')) {
       if (causallyReady(opSet, change)) {
+        trace("ready")
         ;[opSet, diff] = applyChange(opSet, change)
         diffs.push(...diff)
       } else {
+        trace("not ready")
         queue = queue.push(change)
       }
     }
 
-    if (queue.count() === opSet.get('queue').count()) return [opSet, diffs]
+    if (queue.count() === opSet.get('queue').count()) {
+        trace("equal")
+        return [opSet, diffs]
+        }
+      trace("not equal")
     opSet = opSet.set('queue', queue)
     queue = List()
   }
@@ -316,7 +329,9 @@ function init() {
 }
 
 function addChange(opSet, change, isUndoable) {
+    trace("add_change")
   opSet = opSet.update('queue', queue => queue.push(change))
+  // log("queue", opSet.get('queue'))
 
   if (isUndoable) {
     // setting the undoLocal key enables undo history capture

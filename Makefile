@@ -9,7 +9,7 @@ build: autoformat
 		printf "//# sourceMappingURL=data:application/json;base64," > index.source.map.fixed.encoded && \
 		cat index.source.map.fixed | base64 >> index.source.map.fixed.encoded && \
 		cat index.without.source.map.js index.source.map.fixed.encoded > index.js
-	cp _build/default/index.bc.js automerge/backend.js
+	cp _build/default/index.js automerge/backend.js
 
 autoformat:
 	dune build @fmt index.bc.js --auto-promote
@@ -18,10 +18,10 @@ build-native:
 	dune build @all
 
 test: automerge/node_modules build
-	cd automerge && time ./node_modules/mocha/bin/mocha test/connection_test
+	cd automerge && time ./node_modules/mocha/bin/mocha
 
 test-orig: automerge/node_modules
-	cd automerge && time ./node_modules/mocha/bin/mocha test-orig/connection_test
+	cd automerge && time ./node_modules/mocha/bin/mocha test-orig
 
 automerge/node_modules:
 	cd automerge && yarn install
