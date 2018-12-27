@@ -1,5 +1,6 @@
 open Sexplib.Conv
 open Datastructures
+open Ppx_compare_lib.Builtin
 
 (* TODO: Can we cross-compile this file and use it instead of the op_set.js file in automerge to run tests? *)
 (* TODO: How does automerge persist data? *)
@@ -39,20 +40,20 @@ module ChildMap = CCMapMake (CCString)
 module OpSetBackend = struct
   let root_id = "00000000-0000-0000-0000-000000000000"
 
-  type actor = string [@@deriving sexp_of]
+  type actor = string [@@deriving sexp_of, compare]
 
   (* GUID *)
-  type seq = int [@@deriving sexp_of]
+  type seq = int [@@deriving sexp_of, compare]
 
-  type obj_id = string [@@deriving sexp_of]
+  type obj_id = string [@@deriving sexp_of, compare]
 
-  type key = string [@@deriving sexp_of]
+  type key = string [@@deriving sexp_of, compare]
 
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
-  [@@deriving sexp]
+  [@@deriving sexp, compare]
 
   type op_val = BoolValue of bool | StrValue of string | NumberValue of float
-  [@@deriving sexp_of]
+  [@@deriving sexp_of, compare]
 
   type materialized = TypedValue of op_val | LinkValue of {obj_id: string}
   [@@deriving sexp_of]
@@ -103,7 +104,7 @@ module OpSetBackend = struct
     ; obj: obj_id
     ; elem: int option
     ; value: op_val option }
-  [@@deriving sexp_of]
+  [@@deriving sexp_of, compare]
 
   type lamport_op = {actor: actor; elem: int} [@@deriving sexp_of]
 
@@ -144,7 +145,7 @@ module OpSetBackend = struct
     ; (* List of depended op sequences by actor. *)
       deps: seq ActorMap.t
     ; ops: change_op list }
-  [@@deriving sexp_of]
+  [@@deriving sexp_of, compare]
 
   type state = {change: change; allDeps: seq ActorMap.t} [@@deriving sexp_of]
 
@@ -784,11 +785,9 @@ module OpSetBackend = struct
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
     if change.seq <= List.length prior then
       match List.nth_opt prior (change.seq - 1) with
-      (* TODO: NOT A SAFE COMPARE *)
-      | Some state when not (state.change = change) ->
+      | Some state when compare_change state.change change != 0 ->
           (* log "CH1" sexp_of_change state.change ; *)
           (* log "CH2" sexp_of_change change ; *)
-          Js.debugger () ;
           raise Inconsistent_reuse_of_sequence
       | _ -> (t, [])
     else
