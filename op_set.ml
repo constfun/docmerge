@@ -779,7 +779,7 @@ module OpSetBackend = struct
     (t, all_diffs)
 
   let apply_change t (change : change) =
-    trace "apply_change" ;
+    (* trace "apply_change" ; *)
     (* Prior state by sequence *)
     (* LLog.t_states t.states ; *)
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
@@ -841,21 +841,15 @@ module OpSetBackend = struct
     let t, diffs, queue =
       CCFQueue.fold
         (fun (t, diffs, queue) change ->
-          if causaly_ready t change then (
-            trace "ready" ;
+          if causaly_ready t change then
             let t, diff = apply_change t change in
-            (t, CCList.concat [diffs; diff], queue) )
-          else (
-            trace "not ready" ;
-            (t, diffs, CCFQueue.snoc t.queue change) ) )
+            (t, CCList.concat [diffs; diff], queue)
+          else (t, diffs, CCFQueue.snoc t.queue change) )
         (t, diffs, CCFQueueWithSexp.empty)
         t.queue
     in
-    if CCInt.equal (CCFQueue.size queue) (CCFQueue.size t.queue) then (
-      trace "equal" ; (t, diffs) )
-    else (
-      trace "not equal" ;
-      apply_queued_ops {t with queue} diffs )
+    if CCInt.equal (CCFQueue.size queue) (CCFQueue.size t.queue) then (t, diffs)
+    else apply_queued_ops {t with queue} diffs
 
   let push_undo_history t =
     let undo_stack =
@@ -867,7 +861,7 @@ module OpSetBackend = struct
       undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
 
   let add_change t change isUndoable =
-    trace "add_change" ;
+    (* trace "add_change" ; *)
     (* LLog.t_queue (CCFQueue.snoc t.queue change) ; *)
     let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then

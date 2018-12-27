@@ -178,7 +178,7 @@ describe('Automerge.Connection', () => {
     assert.strictEqual(nodes[1].getDoc('doc1').doc1, 'doc1++')
   })
 
-  xit('should bidirectionally merge divergent document copies', () => {
+  it('should bidirectionally merge divergent document copies', () => {
     let doc2 = Automerge.merge(Automerge.init(), doc1)
     doc2 = Automerge.change(doc2, doc => doc.two = 'two')
     doc1 = Automerge.change(doc1, doc => doc.one = 'one')
@@ -250,7 +250,7 @@ describe('Automerge.Connection', () => {
     ])
   })
 
-  it('should tolerate duplicate message deliveries', () => {
+  xit('should tolerate duplicate message deliveries', () => {
     doc1 = Automerge.change(Automerge.init(), doc => doc.list = [])
     let doc2 = Automerge.merge(Automerge.init(), doc1)
     let doc3 = Automerge.merge(Automerge.init(), doc1)
