@@ -1,5 +1,5 @@
 const { Map, fromJS } = require('immutable')
-const { lessOrEqual } = require('./common')
+const { lessOrEqual, log } = require('./common')
 const Frontend = require('../frontend')
 const Backend = require('../backend')
 
@@ -61,7 +61,9 @@ class Connection {
     const clock = Backend.getClock(state)
 
     if (this._theirClock.has(docId)) {
+      log('clock', this._theirClock.get(docId))
       const changes = Backend.getMissingChanges(state, this._theirClock.get(docId))
+      log('missing', changes)
       if (changes.length > 0) {
         this._theirClock = clockUnion(this._theirClock, docId, clock)
         this.sendMsg(docId, clock, changes)
@@ -97,6 +99,7 @@ class Connection {
     }
 
     if (this._docSet.getDoc(msg.docId)) {
+      console.log("maybe_send")
       this.maybeSendChanges(msg.docId)
     } else if (!this._ourClock.has(msg.docId)) {
       // If the remote node has data that we don't, immediately ask for it.

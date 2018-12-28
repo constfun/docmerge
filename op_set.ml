@@ -18,7 +18,7 @@ type exn +=
   | Accessing_unefined_element_index
 
 let log msg conv sexp =
-  Format.printf "DEBUG: %s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp)
+  Format.printf "%s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp)
 
 let _trace_counter = ref 1
 
@@ -224,10 +224,15 @@ module OpSetBackend = struct
   (* Debug logggers *)
 
   module LLog = struct
-    let t_states s =
-      log "states" (ActorMap.sexp_of_t (sexp_of_list sexp_of_state)) s
+    let log_msg ~m d f a = log (match m with Some m -> m | None -> d) f a
 
-    let seq_actor_map m = log "actor_map" (ActorMap.sexp_of_t sexp_of_int) m
+    let state ?m = log_msg ~m "state" sexp_of_state
+
+    let t_states s =
+      log "t_states" (ActorMap.sexp_of_t (sexp_of_list sexp_of_state)) s
+
+    let seq_actor_map ?m map =
+      log_msg ~m "actor_map" (ActorMap.sexp_of_t sexp_of_int) map
 
     let t_queue q = log "queue" (CCFQueueWithSexp.sexp_of_t sexp_of_change) q
   end
@@ -267,12 +272,13 @@ module OpSetBackend = struct
   let transitive_deps t baseDeps =
     ActorMap.fold
       (fun depActor depSeq deps ->
-        if depSeq <= 0 then deps
+        if depSeq <= 0 then ( trace "lt" ; deps )
         else
           match ActorMap.find_opt depActor t.states with
           | Some states -> (
             match List.nth_opt states (depSeq - 1) with
             | Some state ->
+                LLog.state ~m:"transitive" state ;
                 ActorMap.merge
                   (fun _ l r ->
                     match (l, r) with
@@ -779,7 +785,7 @@ module OpSetBackend = struct
     (t, all_diffs)
 
   let apply_change t (change : change) =
-    (* trace "apply_change" ; *)
+    trace "apply_change" ;
     (* Prior state by sequence *)
     (* LLog.t_states t.states ; *)
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
@@ -904,7 +910,10 @@ module OpSetBackend = struct
   (* The following form the public API *)
 
   let get_missing_changes t have_deps =
+    LLog.t_states t.states ;
+    LLog.seq_actor_map ~m:"have_deps" have_deps ;
     let all_deps = transitive_deps t have_deps in
+    LLog.seq_actor_map ~m:"all_deps" all_deps ;
     ActorMap.mapi
       (fun actor states ->
         CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states )

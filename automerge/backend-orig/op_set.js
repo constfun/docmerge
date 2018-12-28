@@ -1,10 +1,7 @@
 const { Map, List, Set } = require('immutable')
 const { SkipList } = require('./skip_list')
 const ROOT_ID = '00000000-0000-0000-0000-000000000000'
-
-function log (s, o) {
-    console.log(s, ' ', JSON.stringify(o, null, 2));
-}
+const {log} = require('../src/common')
 
 let _trace_counter = 1
 function trace(s) {
@@ -37,8 +34,12 @@ function causallyReady(opSet, change) {
 
 function transitiveDeps(opSet, baseDeps) {
   return baseDeps.reduce((deps, depSeq, depActor) => {
-    if (depSeq <= 0) return deps
+    if (depSeq <= 0) {
+        trace("lt")
+        return deps
+    }
     const transitive = opSet.getIn(['states', depActor, depSeq - 1, 'allDeps'])
+      log('transitive', transitive)
     return deps
       .mergeWith((a, b) => Math.max(a, b), transitive)
       .set(depActor, depSeq)
@@ -282,20 +283,16 @@ function applyQueuedOps(opSet) {
   while (true) {
     for (let change of opSet.get('queue')) {
       if (causallyReady(opSet, change)) {
-        trace("ready")
         ;[opSet, diff] = applyChange(opSet, change)
         diffs.push(...diff)
       } else {
-        trace("not ready")
         queue = queue.push(change)
       }
     }
 
     if (queue.count() === opSet.get('queue').count()) {
-        trace("equal")
         return [opSet, diffs]
         }
-      trace("not equal")
     opSet = opSet.set('queue', queue)
     queue = List()
   }
@@ -329,7 +326,7 @@ function init() {
 }
 
 function addChange(opSet, change, isUndoable) {
-    trace("add_change")
+    // trace("add_change")
   opSet = opSet.update('queue', queue => queue.push(change))
   // log("queue", opSet.get('queue'))
 
@@ -346,7 +343,10 @@ function addChange(opSet, change, isUndoable) {
 }
 
 function getMissingChanges(opSet, haveDeps) {
+  log('t_states', opSet.get('states'))
+  log('have_deps', haveDeps)
   const allDeps = transitiveDeps(opSet, haveDeps)
+  log('all_deps', allDeps)
   return opSet.get('states')
     .map((states, actor) => states.skip(allDeps.get(actor, 0)))
     .valueSeq()

@@ -3,6 +3,7 @@ const sinon = require('sinon')
 const Automerge = process.env.TEST_DIST === '1' ? require('../dist/automerge') : require('../src/automerge')
 const Connection = Automerge.Connection
 const DocSet = Automerge.DocSet
+const {log} = require('../src/common')
 
 describe('Automerge.Connection', () => {
   var doc1, nodes

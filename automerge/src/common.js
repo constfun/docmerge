@@ -17,6 +17,10 @@ function lessOrEqual(clock1, clock2) {
     true)
 }
 
+function log (s, o) {
+    console.log(s, ' ', JSON.stringify(o, null, 2));
+}
+
 module.exports = {
-  ROOT_ID, isObject, lessOrEqual
+  ROOT_ID, isObject, lessOrEqual, log
 }
