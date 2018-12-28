@@ -276,10 +276,15 @@ module OpSetBackend = struct
       (fun depActor depSeq deps ->
         if depSeq <= 0 then deps
         else
-          match ActorMap.find_opt depActor t.states with
-          | Some states -> (
-            match List.nth_opt states (depSeq - 1) with
-            | Some state ->
+          let transitive =
+            ActorMap.find_opt depActor t.states
+            |> CCOpt.flat_map (fun state_list ->
+                   List.nth_opt state_list (depSeq - 1)
+                   |> CCOpt.map (fun state -> state.allDeps) )
+          in
+          let deps =
+            match transitive with
+            | Some tr ->
                 ActorMap.merge
                   (fun _ l r ->
                     match (l, r) with
@@ -287,10 +292,10 @@ module OpSetBackend = struct
                     | Some l, None -> Some l
                     | None, Some r -> Some r
                     | None, None -> raise (Invalid_argument "key") )
-                  deps state.allDeps
-                |> ActorMap.add depActor depSeq
-            | None -> deps )
-          | None -> deps )
+                  deps tr
+            | None -> deps
+          in
+          ActorMap.add depActor depSeq deps )
       baseDeps ActorMap.empty
 
   let apply_make t (op : op) =
@@ -905,9 +910,10 @@ module OpSetBackend = struct
   (* The following form the public API *)
 
   let get_missing_changes t have_deps =
-    LLog.t "t" t ;
+    LLog.t_states "states" t.states ;
     LLog.seq_actor_map "have_deps" have_deps ;
     let all_deps = transitive_deps t have_deps in
+    LLog.seq_actor_map "all_deps" all_deps ;
     ActorMap.mapi
       (fun actor states ->
         CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states )

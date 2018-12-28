@@ -3,11 +3,25 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [
+    "configurations": [ 
         {
             "type": "node",
             "request": "launch",
-            "name": "Mocha Tests",
+            "name": "Original Tests",
+            "program": "${workspaceFolder}/automerge/node_modules/mocha/bin/_mocha",
+            "args": [
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceFolder}/automerge/test-orig/connection_test"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Tests",
             "program": "${workspaceFolder}/automerge/node_modules/mocha/bin/_mocha",
             "args": [
                 "--timeout",
