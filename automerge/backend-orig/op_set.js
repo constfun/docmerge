@@ -260,6 +260,7 @@ function applyChange(opSet, change) {
   }
 
   const allDeps = transitiveDeps(opSet, change.get('deps').set(actor, seq - 1))
+  log("all_deps", allDeps)
   opSet = opSet.setIn(['states', actor], prior.push(Map({change, allDeps})))
 
   let diffs, ops = change.get('ops').map(op => op.merge({actor, seq}))
@@ -344,9 +345,9 @@ function addChange(opSet, change, isUndoable) {
 
 function getMissingChanges(opSet, haveDeps) {
   log('t_states', opSet.get('states'))
-  log('have_deps', haveDeps)
+  log('missing have_deps', haveDeps)
   const allDeps = transitiveDeps(opSet, haveDeps)
-  log('all_deps', allDeps)
+  log('missing all_deps', allDeps)
   return opSet.get('states')
     .map((states, actor) => states.skip(allDeps.get(actor, 0)))
     .valueSeq()

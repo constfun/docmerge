@@ -801,6 +801,7 @@ module OpSetBackend = struct
         ActorMap.add change.actor (change.seq - 1) change.deps
         |> transitive_deps t
       in
+      LLog.seq_actor_map ~m:"all_deps" allDeps ;
       let new_prior = List.append prior [{change; allDeps}] in
       let t = {t with states= ActorMap.add change.actor new_prior t.states} in
       (* NOTE: The original code sets actor and sequence equal to change actor and seq, for each op.
@@ -911,9 +912,9 @@ module OpSetBackend = struct
 
   let get_missing_changes t have_deps =
     LLog.t_states t.states ;
-    LLog.seq_actor_map ~m:"have_deps" have_deps ;
+    LLog.seq_actor_map ~m:"missing have_deps" have_deps ;
     let all_deps = transitive_deps t have_deps in
-    LLog.seq_actor_map ~m:"all_deps" all_deps ;
+    LLog.seq_actor_map ~m:"missing all_deps" all_deps ;
     ActorMap.mapi
       (fun actor states ->
         CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states )
