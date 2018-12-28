@@ -15,7 +15,7 @@ type exn +=
   | Unknown_object_type
   | Unknown_action_type
   | Missing_index_for_list_element
-  | Accessing_unefined_element_index
+  | Accessing_undefined_element_index
 
 let log ~msg conv sexp =
   Format.printf "%s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp)
@@ -96,7 +96,7 @@ module OpSetBackend = struct
     ; obj: obj_id
     ; elem: int option
     ; value: op_val option }
-  [@@deriving sexp_of]
+  [@@deriving sexp_of, compare]
 
   type change_op =
     { key: key option
@@ -123,19 +123,11 @@ module OpSetBackend = struct
   let get_op_elem (op : op) =
     match op.elem with
     | Some idx -> idx
-    | None -> raise Accessing_unefined_element_index
+    | None -> raise Accessing_undefined_element_index
 
   module OpSet = struct
     include CCSetMake (struct
-      type t = op
-
-      (* TODO: Is this the right compare fun? Should we be comparing seq instead of elem? *)
-      let compare (op1 : op) (op2 : op) =
-        let lop1 = {actor= op1.actor; elem= get_op_elem op1} in
-        let lop2 = {actor= op1.actor; elem= get_op_elem op2} in
-        lamport_compare lop1 lop2
-
-      let sexp_of_t = sexp_of_op
+      type t = op [@@deriving sexp_of, compare]
     end)
   end
 
@@ -910,10 +902,7 @@ module OpSetBackend = struct
   (* The following form the public API *)
 
   let get_missing_changes t have_deps =
-    LLog.t_states "states" t.states ;
-    LLog.seq_actor_map "have_deps" have_deps ;
     let all_deps = transitive_deps t have_deps in
-    LLog.seq_actor_map "all_deps" all_deps ;
     ActorMap.mapi
       (fun actor states ->
         CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states )

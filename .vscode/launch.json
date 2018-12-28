@@ -13,7 +13,7 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceFolder}/automerge/test-orig/connection_test"
+                "${workspaceFolder}/automerge/test-orig/test"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
@@ -27,7 +27,7 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceFolder}/automerge/test/connection_test"
+                "${workspaceFolder}/automerge/test/test"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"

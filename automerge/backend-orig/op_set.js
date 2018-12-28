@@ -335,7 +335,7 @@ function addChange(opSet, change, isUndoable) {
 }
 
 function getMissingChanges(opSet, haveDeps) {
-    log('states', opSet.get('states'))
+    log('states', opSet)
     log('have_deps', haveDeps)
   const allDeps = transitiveDeps(opSet, haveDeps)
     console.log('all_deps', allDeps)

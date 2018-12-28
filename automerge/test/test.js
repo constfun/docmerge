@@ -166,6 +166,7 @@ describe('Automerge', () => {
         })
         s1 = Automerge.change(s1, doc1 => {
           doc1.stuff = Object.assign({}, doc1.stuff, {baz: 'updated!'})
+          console.log(JSON.stringify(doc1))
         })
         assert.deepEqual(s1, {stuff: {foo: 'bar', baz: 'updated!'}})
       })
