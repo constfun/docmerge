@@ -17,7 +17,7 @@ type exn +=
   | Missing_index_for_list_element
   | Accessing_unefined_element_index
 
-let log msg conv sexp =
+let log ~msg conv sexp =
   Format.printf "%s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp)
 
 let _trace_counter = ref 1
@@ -224,17 +224,19 @@ module OpSetBackend = struct
   (* Debug logggers *)
 
   module LLog = struct
-    let log_msg ~m d f a = log (match m with Some m -> m | None -> d) f a
+    let t = log sexp_of_t
 
-    let state ?m = log_msg ~m "state" sexp_of_state
+    let state = log sexp_of_state
 
-    let t_states s =
-      log "t_states" (ActorMap.sexp_of_t (sexp_of_list sexp_of_state)) s
+    let t_states = log (ActorMap.sexp_of_t (sexp_of_list sexp_of_state))
 
-    let seq_actor_map ?m map =
-      log_msg ~m "actor_map" (ActorMap.sexp_of_t sexp_of_int) map
+    let seq_actor_map = log (ActorMap.sexp_of_t sexp_of_int)
 
-    let t_queue q = log "queue" (CCFQueueWithSexp.sexp_of_t sexp_of_change) q
+    let t_queue = log (CCFQueueWithSexp.sexp_of_t sexp_of_change)
+
+    let actor = log sexp_of_string
+
+    let seq = log sexp_of_int
   end
 
   (* Helpers not found in original *)
@@ -272,13 +274,12 @@ module OpSetBackend = struct
   let transitive_deps t baseDeps =
     ActorMap.fold
       (fun depActor depSeq deps ->
-        if depSeq <= 0 then ( trace "lt" ; deps )
+        if depSeq <= 0 then deps
         else
           match ActorMap.find_opt depActor t.states with
           | Some states -> (
             match List.nth_opt states (depSeq - 1) with
             | Some state ->
-                LLog.state ~m:"transitive" state ;
                 ActorMap.merge
                   (fun _ l r ->
                     match (l, r) with
@@ -785,9 +786,6 @@ module OpSetBackend = struct
     (t, all_diffs)
 
   let apply_change t (change : change) =
-    trace "apply_change" ;
-    (* Prior state by sequence *)
-    (* LLog.t_states t.states ; *)
     let prior = ActorMap.get_or ~default:[] change.actor t.states in
     if change.seq <= List.length prior then
       match List.nth_opt prior (change.seq - 1) with
@@ -801,7 +799,6 @@ module OpSetBackend = struct
         ActorMap.add change.actor (change.seq - 1) change.deps
         |> transitive_deps t
       in
-      LLog.seq_actor_map ~m:"all_deps" allDeps ;
       let new_prior = List.append prior [{change; allDeps}] in
       let t = {t with states= ActorMap.add change.actor new_prior t.states} in
       (* NOTE: The original code sets actor and sequence equal to change actor and seq, for each op.
@@ -826,7 +823,6 @@ module OpSetBackend = struct
           t.deps
         |> ActorMap.add change.actor change.seq
       in
-      (* LLog.seq_actor_map remaining_deps ; *)
       let clock = ActorMap.add change.actor change.seq t.clock in
       let history = List.append t.history [change] in
       ({t with deps= remaining_deps; clock; history}, diffs)
@@ -844,7 +840,7 @@ module OpSetBackend = struct
 
   *)
   let rec apply_queued_ops t diffs =
-    (* trace "apply_queued_ops" ; *)
+    (* rrace "apply_queued_ops" ; *)
     let t, diffs, queue =
       CCFQueue.fold
         (fun (t, diffs, queue) change ->
@@ -868,8 +864,6 @@ module OpSetBackend = struct
       undo_stack; undo_pos= t.undo_pos + 1; redo_stack= []; undo_local= None }
 
   let add_change t change isUndoable =
-    (* trace "add_change" ; *)
-    (* LLog.t_queue (CCFQueue.snoc t.queue change) ; *)
     let t = {t with queue= CCFQueue.snoc t.queue change} in
     if isUndoable then
       let t = {t with undo_local= Some []} in
@@ -911,10 +905,9 @@ module OpSetBackend = struct
   (* The following form the public API *)
 
   let get_missing_changes t have_deps =
-    LLog.t_states t.states ;
-    LLog.seq_actor_map ~m:"missing have_deps" have_deps ;
+    LLog.t "t" t ;
+    LLog.seq_actor_map "have_deps" have_deps ;
     let all_deps = transitive_deps t have_deps in
-    LLog.seq_actor_map ~m:"missing all_deps" all_deps ;
     ActorMap.mapi
       (fun actor states ->
         CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states )

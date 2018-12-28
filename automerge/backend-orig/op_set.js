@@ -35,11 +35,9 @@ function causallyReady(opSet, change) {
 function transitiveDeps(opSet, baseDeps) {
   return baseDeps.reduce((deps, depSeq, depActor) => {
     if (depSeq <= 0) {
-        trace("lt")
         return deps
     }
     const transitive = opSet.getIn(['states', depActor, depSeq - 1, 'allDeps'])
-      log('transitive', transitive)
     return deps
       .mergeWith((a, b) => Math.max(a, b), transitive)
       .set(depActor, depSeq)
@@ -248,8 +246,6 @@ function applyOps(opSet, ops) {
 }
 
 function applyChange(opSet, change) {
-  trace("apply_change")
-  // log("states",  opSet.get('states'))
   const actor = change.get('actor'), seq = change.get('seq')
   const prior = opSet.getIn(['states', actor], List())
   if (seq <= prior.size) {
@@ -260,7 +256,6 @@ function applyChange(opSet, change) {
   }
 
   const allDeps = transitiveDeps(opSet, change.get('deps').set(actor, seq - 1))
-  log("all_deps", allDeps)
   opSet = opSet.setIn(['states', actor], prior.push(Map({change, allDeps})))
 
   let diffs, ops = change.get('ops').map(op => op.merge({actor, seq}))
@@ -270,7 +265,6 @@ function applyChange(opSet, change) {
     .filter((depSeq, depActor) => depSeq > allDeps.get(depActor, 0))
     .set(actor, seq)
 
-    // log("actor_map", remainingDeps)
   opSet = opSet
     .set('deps', remainingDeps)
     .setIn(['clock', actor], seq)
@@ -279,7 +273,6 @@ function applyChange(opSet, change) {
 }
 
 function applyQueuedOps(opSet) {
-    // trace("apply_queued_ops")
   let queue = List(), diff, diffs = []
   while (true) {
     for (let change of opSet.get('queue')) {
@@ -327,9 +320,7 @@ function init() {
 }
 
 function addChange(opSet, change, isUndoable) {
-    // trace("add_change")
   opSet = opSet.update('queue', queue => queue.push(change))
-  // log("queue", opSet.get('queue'))
 
   if (isUndoable) {
     // setting the undoLocal key enables undo history capture
@@ -344,10 +335,9 @@ function addChange(opSet, change, isUndoable) {
 }
 
 function getMissingChanges(opSet, haveDeps) {
-  log('t_states', opSet.get('states'))
-  log('missing have_deps', haveDeps)
+    log('t', opSet)
+    log('have_deps', haveDeps)
   const allDeps = transitiveDeps(opSet, haveDeps)
-  log('missing all_deps', allDeps)
   return opSet.get('states')
     .map((states, actor) => states.skip(allDeps.get(actor, 0)))
     .valueSeq()

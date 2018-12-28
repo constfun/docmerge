@@ -18,10 +18,10 @@ build-native:
 	dune build @all
 
 test: automerge/node_modules build
-	cd automerge && time ./node_modules/mocha/bin/mocha test/connection_test
+	cd automerge && ./node_modules/mocha/bin/mocha test/connection_test
 
 test-orig: automerge/node_modules
-	cd automerge && time ./node_modules/mocha/bin/mocha test-orig/connection_test
+	cd automerge && ./node_modules/mocha/bin/mocha test-orig/connection_test
 
 automerge/node_modules:
 	cd automerge && yarn install
