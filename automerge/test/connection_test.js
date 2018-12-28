@@ -3,7 +3,6 @@ const sinon = require('sinon')
 const Automerge = process.env.TEST_DIST === '1' ? require('../dist/automerge') : require('../src/automerge')
 const Connection = Automerge.Connection
 const DocSet = Automerge.DocSet
-const {log} = require('../src/common')
 
 describe('Automerge.Connection', () => {
   var doc1, nodes
@@ -64,11 +63,11 @@ describe('Automerge.Connection', () => {
     }
   }
 
-  xit('should not send messages if there are no documents', () => {
+  it('should not send messages if there are no documents', () => {
     execution([[1, 2]], [])
   })
 
-  xit('should advertise locally available documents', () => {
+  it('should advertise locally available documents', () => {
     nodes[1].setDoc('doc1', doc1)
 
     execution([[1, 2]], [
@@ -78,7 +77,7 @@ describe('Automerge.Connection', () => {
     ])
   })
 
-  xit('should send any document that does not exist remotely', () => {
+  it('should send any document that does not exist remotely', () => {
     nodes[1].setDoc('doc1', doc1)
 
     execution([[1, 2]], [
@@ -107,7 +106,7 @@ describe('Automerge.Connection', () => {
     ])
   })
 
-  xit('should concurrently exchange any missing documents', () => {
+  it('should concurrently exchange any missing documents', () => {
     let doc2 = Automerge.change(Automerge.init(), doc => doc.doc2 = 'doc2')
     nodes[1].setDoc('doc1', doc1)
     nodes[2].setDoc('doc2', doc2)
@@ -147,7 +146,7 @@ describe('Automerge.Connection', () => {
     ])
   })
 
-  xit('should bring an older copy up-to-date with a newer one', () => {
+  it('should bring an older copy up-to-date with a newer one', () => {
     let doc2 = Automerge.merge(Automerge.init(), doc1)
     doc2 = Automerge.change(doc2, doc => doc.doc1 = 'doc1++')
     nodes[1].setDoc('doc1', doc1)
@@ -169,7 +168,7 @@ describe('Automerge.Connection', () => {
         assert.strictEqual(msg.changes.length, 1)
       }},
 
-      // Node 1 acknowledges the change, and that's xit
+      // Node 1 acknowledges the change, and that's it
       {from: 1, to: 2, deliver: true, match(msg) {
         assert.deepEqual(msg, {docId: 'doc1', clock: {[doc1._actorId]: 1, [doc2._actorId]: 1}})
       }}
@@ -217,7 +216,7 @@ describe('Automerge.Connection', () => {
                      {doc1: 'doc1', one: 'one', two: 'two'})
   })
 
-  xit('should forward incoming changes to other connections', () => {
+  it('should forward incoming changes to other connections', () => {
     nodes[2].setDoc('doc1', doc1)
 
     execution([[1, 2], [1, 3]], [
@@ -251,7 +250,7 @@ describe('Automerge.Connection', () => {
     ])
   })
 
-  xit('should tolerate duplicate message deliveries', () => {
+  it('should tolerate duplicate message deliveries', () => {
     doc1 = Automerge.change(Automerge.init(), doc => doc.list = [])
     let doc2 = Automerge.merge(Automerge.init(), doc1)
     let doc3 = Automerge.merge(Automerge.init(), doc1)
