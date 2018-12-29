@@ -52,7 +52,11 @@ module OpSetBackend = struct
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
   [@@deriving sexp, compare]
 
-  type op_val = BoolValue of bool | StrValue of string | NumberValue of float
+  type op_val =
+    | BoolValue of bool
+    | StrValue of string
+    | NumberValue of float
+    | Null
   [@@deriving sexp_of, compare]
 
   type materialized = TypedValue of op_val | LinkValue of {obj_id: string}
@@ -241,7 +245,7 @@ module OpSetBackend = struct
 
   let get_op_value_as_string_exn = function
     | StrValue s -> s
-    | BoolValue _ | NumberValue _ -> raise (Invalid_argument "op.value")
+    | BoolValue _ | NumberValue _ | Null -> raise (Invalid_argument "op.value")
 
   let get_obj_action t obj_id = (get_obj_aux_exn t obj_id)._init.action
 

@@ -87,9 +87,10 @@ let action_to_js_action a =
       | Set -> "set")
 
 let op_val_to_js_value = function
-  | OpSetBackend.BoolValue b -> Js.Unsafe.inject (Js.bool b)
-  | OpSetBackend.StrValue s -> Js.Unsafe.inject (Js.string s)
-  | OpSetBackend.NumberValue n -> Js.Unsafe.inject (Js.number_of_float n)
+  | BE.BoolValue b -> Js.Unsafe.inject (Js.bool b)
+  | BE.StrValue s -> Js.Unsafe.inject (Js.string s)
+  | BE.NumberValue n -> Js.Unsafe.inject (Js.number_of_float n)
+  | BE.Null -> Js.Unsafe.inject Js.null
 
 let rec value_to_js_value (value : OpSetBackend.value) =
   match value with
@@ -101,15 +102,16 @@ let rec value_to_js_value (value : OpSetBackend.value) =
         end)
 
 let rec js_value_to_op_val js_value =
-  let typ = Js.to_string (Js.typeof js_value) in
-  match typ with
-  | "string" ->
-      OpSetBackend.StrValue (Js.to_string (Js.Unsafe.coerce js_value))
-  | "boolean" ->
-      OpSetBackend.BoolValue (Js.to_bool (Js.Unsafe.coerce js_value))
-  | "number" ->
-      OpSetBackend.NumberValue (Js.float_of_number (Js.Unsafe.coerce js_value))
-  | _ -> raise Not_supported
+  Js.Opt.case js_value
+    (fun () -> OpSetBackend.Null)
+    (fun js_value ->
+      let typ = Js.to_string (Js.typeof js_value) in
+      match typ with
+      | "string" -> BE.StrValue (Js.to_string (Js.Unsafe.coerce js_value))
+      | "boolean" -> BE.BoolValue (Js.to_bool (Js.Unsafe.coerce js_value))
+      | "number" ->
+          BE.NumberValue (Js.float_of_number (Js.Unsafe.coerce js_value))
+      | _ -> raise Not_supported )
 
 let to_op_list arr =
   array_to_list arr
