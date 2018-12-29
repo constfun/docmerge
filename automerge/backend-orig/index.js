@@ -303,7 +303,11 @@ function getClock(state) {
   return state.getIn(['opSet', 'clock'])
 }
 
+function getHistory(state) {
+  return state.getIn(['opSet', 'history'])
+}
+
 module.exports = {
   init, applyChanges, applyLocalChange, getPatch,
-  getChanges, getChangesForActor, getMissingChanges, getMissingDeps, merge, getClock
+  getChanges, getChangesForActor, getMissingChanges, getMissingDeps, merge, getClock, getHistory
 }

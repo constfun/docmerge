@@ -335,10 +335,7 @@ function addChange(opSet, change, isUndoable) {
 }
 
 function getMissingChanges(opSet, haveDeps) {
-    log('states', opSet)
-    log('have_deps', haveDeps)
   const allDeps = transitiveDeps(opSet, haveDeps)
-    console.log('all_deps', allDeps)
   return opSet.get('states')
     .map((states, actor) => states.skip(allDeps.get(actor, 0)))
     .valueSeq()

@@ -190,7 +190,11 @@ let js_change_to_change js_change : OpSetBackend.change =
   { actor= Js.to_string js_change##.actor
   ; seq= int_of_js_number js_change##.seq
   ; deps= actor_map_of_js_obj js_change##.deps
-  ; ops= to_op_list js_change##.ops }
+  ; ops= to_op_list js_change##.ops
+  ; message=
+      Js.Optdef.case js_change##.message
+        (fun () -> None)
+        (fun msg -> Some (Js.to_string msg)) }
 
 let js_number_of_int i = Js.number_of_float (float_of_int i)
 
@@ -199,6 +203,7 @@ let change_to_js_change (change : OpSetBackend.change) =
   |> obj_set ~conv:Js.string "actor" change.actor
   |> obj_set ~conv:(Js.number_of_float $ float_of_int) "seq" change.seq
   |> obj_set ~conv:(js_obj_of_actor_map js_number_of_int) "deps" change.deps
+  |> obj_set_optdef Js.string "message" change.message
   |> obj_set
        ~conv:(Js.array $ CCArray.of_list $ CCList.map change_op_to_js_change_op)
        "ops" change.ops
@@ -385,6 +390,11 @@ let get_clock t =
   let clock = ToJs.clock (OpSetBackend.get_clock t.op_set) in
   Js.Unsafe.fun_call (Js.Unsafe.inject map) [|Js.Unsafe.inject clock|]
 
+let get_history t =
+  let h = BE.get_history t.op_set in
+  (* BE.LLog.change_list "h" h ; *)
+  h |> CCList.map change_to_js_change |> list_to_js_array
+
 let _ =
   Js.export "init" init ;
   Js.export "applyChanges" _apply_changes ;
@@ -394,4 +404,5 @@ let _ =
   Js.export "getChangesForActor" get_changes_for_actor ;
   Js.export "getChanges" get_changes ;
   Js.export "getMissingChanges" get_missing_changes ;
-  Js.export "getClock" get_clock
+  Js.export "getClock" get_clock ;
+  Js.export "getHistory" get_history

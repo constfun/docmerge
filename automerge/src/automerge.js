@@ -86,17 +86,16 @@ function inspect(doc) {
 function getHistory(doc) {
   const state = Frontend.getBackendState(doc)
   const actor = Frontend.getActorId(doc)
-  const history = state.getIn(['opSet', 'history'])
+
+  const history = Backend.getHistory(state)
   return history.map((change, index) => {
     return {
-      get change () {
-        return change.toJS()
-      },
+      change,
       get snapshot () {
         return docFromChanges(actor, history.slice(0, index + 1))
       }
     }
-  }).toArray()
+  })
 }
 
 module.exports = {

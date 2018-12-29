@@ -136,7 +136,8 @@ module OpSetBackend = struct
     ; seq: seq
     ; (* List of depended op sequences by actor. *)
       deps: seq ActorMap.t
-    ; ops: change_op list }
+    ; ops: change_op list
+    ; message: string option }
   [@@deriving sexp_of, compare]
 
   type state = {change: change; allDeps: seq ActorMap.t} [@@deriving sexp_of]
@@ -229,6 +230,8 @@ module OpSetBackend = struct
     let actor = log sexp_of_string
 
     let seq = log sexp_of_int
+
+    let change_list = log (sexp_of_list sexp_of_change)
   end
 
   (* Helpers not found in original *)
@@ -1330,6 +1333,10 @@ module OpSetBackend = struct
     get_obj_aux t obj_id >>= fun obj_aux -> obj_aux._elem_ids >|= CCList.length
 
   let get_clock ({clock} : t) = clock
+
+  let get_history (t : t) =
+    LLog.change_list "hist t" t.history ;
+    t.history
 
   let get_deps ({deps} : t) = deps
 
