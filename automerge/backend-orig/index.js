@@ -149,7 +149,6 @@ function apply(state, changes, undoable) {
   }
 
   state = state.set('opSet', opSet)
-  log("js diffs", diffs)
   return [state, makePatch(state, diffs)]
 }
 

@@ -1340,9 +1340,7 @@ module OpSetBackend = struct
 
   let get_clock ({clock} : t) = clock
 
-  let get_history (t : t) =
-    LLog.change_list "hist t" t.history ;
-    t.history
+  let get_history (t : t) = t.history
 
   let get_deps ({deps} : t) = deps
 

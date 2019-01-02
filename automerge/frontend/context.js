@@ -49,7 +49,6 @@ class Context {
    */
   getObjectField(objectId, key) {
     const object = this.getObject(objectId)
-    console.log('conflicts', JSON.stringify(object._conflicts))
     if (isObject(object[key])) {
       // The instantiateObject function is added to the context object by rootObjectProxy()
       return this.instantiateObject(object[key][OBJECT_ID])

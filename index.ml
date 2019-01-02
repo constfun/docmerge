@@ -95,11 +95,7 @@ let op_val_to_js_value = function
 let rec value_to_js_value (value : OpSetBackend.value) =
   match value with
   | Value s -> op_val_to_js_value s
-  | Link l ->
-      Js.Unsafe.inject
-        (object%js
-           val obj = value_to_js_value l.obj
-        end)
+  | Link l -> Js.Unsafe.inject (value_to_js_value l.obj)
 
 let rec js_value_to_op_val js_value =
   Js.Opt.case js_value
@@ -305,8 +301,6 @@ let apply_local_change t js_change =
     else raise Unknown_request_type
   in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
-  BE.LLog.edit_list "diffs" diffs ;
-  Log.log "js diffs" js_diffs ;
   let js_patch = make_patch t js_diffs in
   (Js.Unsafe.coerce js_patch)##.actor := js_change##.actor ;
   (Js.Unsafe.coerce js_patch)##.seq := js_change##.seq ;
