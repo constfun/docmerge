@@ -241,6 +241,7 @@ function change(doc, message, callback) {
   if (!actorId) {
     throw new Error('Actor ID must be initialized with setActorId() before making a change')
   }
+  console.log('NOODLES', JSON.stringify(doc.noodles))
   const context = new Context(doc, actorId)
   callback(rootObjectProxy(context))
 

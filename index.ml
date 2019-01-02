@@ -269,6 +269,7 @@ let make_patch t diffs =
 let init () = {op_set= OpSetBackend.init ()}
 
 let apply t changes undoable =
+  (* BE.LLog.change_list "apply changes" changes ; *)
   let t, diffs =
     CCList.fold_left
       (fun (t, diffs) change ->
@@ -278,6 +279,7 @@ let apply t changes undoable =
         ({op_set}, CCList.concat [diffs; new_diffs]) )
       (t, []) changes
   in
+  (* BE.LLog.edit_list "apply diffs" diffs ; *)
   (t, diffs)
 
 let apply_changes t changes = apply t changes false
@@ -303,6 +305,8 @@ let apply_local_change t js_change =
     else raise Unknown_request_type
   in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
+  BE.LLog.edit_list "diffs" diffs ;
+  Log.log "js diffs" js_diffs ;
   let js_patch = make_patch t js_diffs in
   (Js.Unsafe.coerce js_patch)##.actor := js_change##.actor ;
   (Js.Unsafe.coerce js_patch)##.seq := js_change##.seq ;
