@@ -95,7 +95,7 @@ let op_val_to_js_value = function
 let rec value_to_js_value (value : OpSetBackend.value) =
   match value with
   | Value s -> op_val_to_js_value s
-  | Link l -> Js.Unsafe.inject (value_to_js_value l.obj)
+  | Link l -> Js.Unsafe.inject (Js.string l.obj)
 
 let rec js_value_to_op_val js_value =
   Js.Opt.case js_value
@@ -126,9 +126,17 @@ let conflicts_to_js_conflicts (v : OpSetBackend.conflict list) =
   list_to_js_array
     (CCList.map
        (fun (confl : OpSetBackend.conflict) ->
-         CCArray.empty
-         |> obj_set ~conv:actor_to_js_actor "actor" confl.actor
-         |> obj_set_optdef op_val_to_js_value "value" confl.value
+         let arr =
+           CCArray.empty |> obj_set ~conv:actor_to_js_actor "actor" confl.actor
+         in
+         let arr =
+           match confl.value with
+           | Some (BE.Link _) ->
+               CCArray.append arr [|("link", Js.Unsafe.inject (Js.bool true))|]
+           | _ -> arr
+         in
+         arr
+         |> obj_set_optdef value_to_js_value "value" confl.value
          |> Js.Unsafe.obj )
        v)
 
@@ -329,7 +337,7 @@ let diff_to_js_diff (diff : OpSetBackend.diff) =
   |> obj_set ~conv:Js.string "obj" diff.obj
   |> obj_set "type" type_
   |> obj_set_optdef Js.bool "link" diff.link
-  |> obj_set_optdef op_val_to_js_value "value" diff.value
+  |> obj_set_optdef value_to_js_value "value" diff.value
   |> obj_set_optdef (Js.number_of_float $ float_of_int) "index" diff.index
   |> obj_set_optdef Js.string "elemId" diff.elem_id
   |> obj_set_optdef conflicts_to_js_conflicts "conflicts" diff.conflicts

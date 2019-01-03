@@ -59,10 +59,7 @@ module OpSetBackend = struct
     | Null
   [@@deriving sexp_of, compare]
 
-  type materialized = TypedValue of op_val | LinkValue of {obj_id: string}
-  [@@deriving sexp_of]
-
-  type value = Value of op_val | Link of {obj: value} [@@deriving sexp_of]
+  type value = Value of op_val | Link of {obj: string} [@@deriving sexp_of]
 
   type elem_id = key * value option [@@deriving sexp_of]
 
@@ -150,7 +147,7 @@ module OpSetBackend = struct
 
   type edit_type = Map | Text | List [@@deriving sexp_of]
 
-  type conflict = {actor: actor; value: op_val option; link: bool option}
+  type conflict = {actor: actor; value: value option; link: bool option}
   [@@deriving sexp_of]
 
   type edit =
@@ -188,7 +185,7 @@ module OpSetBackend = struct
     ; type_: diff_type
     ; action: diff_action
     ; key: key option
-    ; value: op_val option
+    ; value: value option
     ; link: bool option
     ; index: int option
     ; elem_id: string option
@@ -409,7 +406,9 @@ module OpSetBackend = struct
           (fun conflicts (op : op) ->
             let link = match op.action with Link -> true | _ -> false in
             let conf : conflict =
-              {actor= op.actor; value= op.value; link= Some link}
+              { actor= op.actor
+              ; value= CCOpt.map (fun x -> Value x) op.value
+              ; link= Some link }
             in
             CCOpt.map (fun cs -> cs @ [conf]) conflicts )
           (Some []) ops_rest
@@ -470,7 +469,9 @@ module OpSetBackend = struct
       match first_op with
       | Some fop when fop.action = Link ->
           ( {edit with link= true}
-          , Some (Link {obj= Value (CCOpt.get_exn fop.value)}) )
+          , Some
+              (Link {obj= get_op_value_as_string_exn (CCOpt.get_exn fop.value)})
+          )
       | _ -> (edit, value)
     in
     let elem_ids, edit =
@@ -946,35 +947,31 @@ module OpSetBackend = struct
 
   let unpack_value parent_id patch_diff children value =
     match value with
-    | LinkValue l ->
-        let patch_diff =
-          {patch_diff with link= Some true; value= Some (StrValue l.obj_id)}
-        in
+    | Link l as ll ->
+        let patch_diff = {patch_diff with link= Some true; value= Some ll} in
         let children =
           ChildMap.update parent_id
             (function
-              | Some childs -> Some (CCList.append childs [l.obj_id])
+              | Some childs -> Some (CCList.append childs [l.obj])
               | None -> raise (Invalid_argument "child id"))
             children
         in
         (patch_diff, children)
-    | TypedValue v -> ({patch_diff with value= Some v}, children)
+    | Value v -> ({patch_diff with value= Some (Value v)}, children)
 
   let unpack_conflict_value parent_id (conflict : conflict) children value =
     match value with
-    | LinkValue l ->
-        let patch_diff =
-          {conflict with link= Some true; value= Some (StrValue l.obj_id)}
-        in
+    | Link l as ll ->
+        let patch_diff = {conflict with link= Some true; value= Some ll} in
         let children =
           ChildMap.update parent_id
             (function
-              | Some childs -> Some (CCList.append childs [l.obj_id])
+              | Some childs -> Some (CCList.append childs [l.obj])
               | None -> raise (Invalid_argument "child id"))
             children
         in
         (patch_diff, children)
-    | TypedValue v -> ({conflict with value= Some v}, children)
+    | Value _ as v -> ({conflict with value= Some v}, children)
 
   let unpack_conflicts parent_id (patch_diff : diff) children conflicts =
     let conflicts, children =
@@ -1001,10 +998,10 @@ module OpSetBackend = struct
 
   type iterator_val =
     | KeyValue of int
-    | ValueValue of materialized option
-    | EntryValue of int * materialized option
+    | ValueValue of value option
+    | EntryValue of int * value option
     | ElemValue of int * string
-    | ConflictValue of materialized OpMap.t
+    | ConflictValue of value OpMap.t
   [@@deriving sexp_of]
 
   type iterator_res = {done_: bool; value: iterator_val option}
@@ -1018,7 +1015,7 @@ module OpSetBackend = struct
 
   let rec instantiate_object t obj_id (diffs, children) =
     match DiffMap.find_opt obj_id diffs with
-    | Some _ -> (diffs, children, LinkValue {obj_id})
+    | Some _ -> (diffs, children, Link {obj= obj_id})
     | None ->
         let is_root = String.equal obj_id root_id in
         let obj_typ = get_obj_action t obj_id in
@@ -1034,7 +1031,7 @@ module OpSetBackend = struct
             | MakeText -> instantiate_list t obj_id DiffText context
             | _ -> raise Unknown_object_type
         in
-        (diffs, children, LinkValue {obj_id})
+        (diffs, children, Link {obj= obj_id})
 
   and instantiate_list t obj_id typ ((diffs, children) : context) =
     let patch_diffs = DiffMap.find obj_id diffs in
@@ -1178,7 +1175,7 @@ module OpSetBackend = struct
               let diffs, children, conflicts =
                 CCList.fold_left
                   (fun (diffs, children, conflicts) (op : op) ->
-                    let diffs, children, (materialized : materialized option) =
+                    let diffs, children, (materialized : value option) =
                       get_op_value t op (diffs, children)
                     in
                     let conflicts =
@@ -1202,7 +1199,7 @@ module OpSetBackend = struct
       CCOpt.flat_map
         (fun value ->
           match op.action with
-          | Set -> Some (diffs, children, TypedValue value)
+          | Set -> Some (diffs, children, Value value)
           | Link ->
               Some
                 (instantiate_object t

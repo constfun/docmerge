@@ -13,11 +13,13 @@ class MaterializationContext {
    * `diff` to link to that objectId. Otherwise uses `value` as a primitive.
    */
   unpackValue(parentId, diff, value) {
+      console.log('IV', value)
     if (isObject(value)) {
       diff.value = value.objectId
       diff.link = true
       this.children[parentId].push(value.objectId)
     } else {
+      console.log('V', value)
       diff.value = value
     }
   }
@@ -28,6 +30,7 @@ class MaterializationContext {
    * describe the conflicts.
    */
   unpackConflicts(parentId, diff, conflicts) {
+      console.log('CONFL', conflicts)
     if (conflicts) {
       diff.conflicts = []
 
