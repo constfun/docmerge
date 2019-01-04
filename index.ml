@@ -126,18 +126,9 @@ let conflicts_to_js_conflicts (v : OpSetBackend.conflict list) =
   list_to_js_array
     (CCList.map
        (fun (confl : OpSetBackend.conflict) ->
-         let arr =
-           CCArray.empty |> obj_set ~conv:actor_to_js_actor "actor" confl.actor
-         in
-         BE.LLog.value "confl.value" (CCOpt.get_exn confl.value) ;
-         let arr =
-           match confl.value with
-           | Some (BE.Link _) ->
-               print_endline "link" ;
-               CCArray.append arr [|("link", Js.Unsafe.inject (Js.bool true))|]
-           | _ -> print_endline "no link" ; arr
-         in
-         arr
+         CCArray.empty
+         |> obj_set ~conv:actor_to_js_actor "actor" confl.actor
+         |> obj_set_opt (fun x -> x) "link" confl.link
          |> obj_set_optdef value_to_js_value "value" confl.value
          |> Js.Unsafe.obj )
        v)
