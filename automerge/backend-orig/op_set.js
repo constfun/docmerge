@@ -321,6 +321,7 @@ function init() {
 
 function addChange(opSet, change, isUndoable) {
   opSet = opSet.update('queue', queue => queue.push(change))
+    log("t.queue", opSet.get('queue'))
 
   if (isUndoable) {
     // setting the undoLocal key enables undo history capture
@@ -336,6 +337,7 @@ function addChange(opSet, change, isUndoable) {
 
 function getMissingChanges(opSet, haveDeps) {
   const allDeps = transitiveDeps(opSet, haveDeps)
+    log("missing", opSet.get('states'))
   return opSet.get('states')
     .map((states, actor) => states.skip(allDeps.get(actor, 0)))
     .valueSeq()

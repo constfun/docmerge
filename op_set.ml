@@ -237,6 +237,8 @@ module OpSetBackend = struct
     let edit_list = log (sexp_of_list sexp_of_edit)
 
     let value = log sexp_of_value
+
+    let change = log sexp_of_change
   end
 
   (* Helpers not found in original *)
@@ -256,12 +258,12 @@ module OpSetBackend = struct
   (* When a new op lands in the op set, check if all preceeding ops have been applied *)
   (* If we store ops in Irmin, causality is enforced by history, aka the Merkle DAG. *)
   let causaly_ready t (change : change) =
+    (* LLog.change "causally change" change ; *)
     change.deps
     |> ActorMap.add change.actor (change.seq - 1)
     |> ActorMap.for_all (fun depActor depSeq ->
-           match ActorMap.find_opt depActor t.clock with
-           | Some depClock -> depClock >= depSeq
-           | None -> depSeq >= 0 )
+           let actseq = ActorMap.get_or ~default:0 depActor t.clock in
+           if actseq < depSeq then false else true )
 
   (*
      All change ops + allDeps of every actor state at current seq?
@@ -847,7 +849,6 @@ module OpSetBackend = struct
 
   *)
   let rec apply_queued_ops t diffs =
-    (* rrace "apply_queued_ops" ; *)
     let t, diffs, queue =
       CCFQueue.fold
         (fun (t, diffs, queue) change ->
@@ -872,6 +873,7 @@ module OpSetBackend = struct
 
   let add_change t change isUndoable =
     let t = {t with queue= CCFQueue.snoc t.queue change} in
+    (* LLog.t_queue "t.queue" t.queue ; *)
     if isUndoable then
       let t = {t with undo_local= Some []} in
       let t, diffs = apply_queued_ops t [] in
@@ -913,12 +915,13 @@ module OpSetBackend = struct
 
   let get_missing_changes t have_deps =
     let all_deps = transitive_deps t have_deps in
+    LLog.t_states "missing" t.states ;
     ActorMap.mapi
       (fun actor states ->
         CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states )
       t.states
     |> ActorMap.values |> CCList.of_seq |> CCList.flatten
-    |> CCList.map (fun state -> state.change)
+    |> CCList.rev_map (fun state -> state.change)
 
   let get_changes_for_actor t ?(after_seq = 0) for_actor =
     ActorMap.filter (fun actor states -> String.equal actor for_actor) t.states

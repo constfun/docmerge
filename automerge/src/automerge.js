@@ -38,7 +38,6 @@ function merge(localDoc, remoteDoc) {
   const localState  = Frontend.getBackendState(localDoc)
   const remoteState = Frontend.getBackendState(remoteDoc)
   const [state, patch] = Backend.merge(localState, remoteState)
-  // log('patch', patch)
   if (patch.diffs.length === 0) return localDoc
   patch.state = state
   return Frontend.applyPatch(localDoc, patch)
@@ -61,7 +60,6 @@ function getChanges(oldDoc, newDoc) {
 function applyChanges(doc, changes) {
   const oldState = Frontend.getBackendState(doc)
   const [newState, patch] = Backend.applyChanges(oldState, changes)
-  log("applyChanges patch", patch)
   patch.state = newState
   return Frontend.applyPatch(doc, patch)
 }
