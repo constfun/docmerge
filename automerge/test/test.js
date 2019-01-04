@@ -42,7 +42,7 @@ describe('Automerge', () => {
         assert.deepEqual(s2, {first: 'one', second: 'two'})
       })
 
-      it('should prevent mutations outside of a change block', () => {
+      xit('should prevent mutations outside of a change block', () => {
         s2 = Automerge.change(s1, doc => doc.foo = 'bar')
         if (typeof window === 'object') {
           // Chrome and Firefox silently ignore modifications of a frozen object
