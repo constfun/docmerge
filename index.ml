@@ -266,7 +266,7 @@ let make_patch t diffs =
 let init () = {op_set= OpSetBackend.init ()}
 
 let apply t changes undoable =
-  (* BE.LLog.change_list "apply changes" changes ; *)
+  BE.LLog.change_list "apply changes" changes ;
   let t, diffs =
     CCList.fold_left
       (fun (t, diffs) change ->

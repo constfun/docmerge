@@ -61,6 +61,7 @@ function getChanges(oldDoc, newDoc) {
 function applyChanges(doc, changes) {
   const oldState = Frontend.getBackendState(doc)
   const [newState, patch] = Backend.applyChanges(oldState, changes)
+  log("applyChanges patch", patch)
   patch.state = newState
   return Frontend.applyPatch(doc, patch)
 }

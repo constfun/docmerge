@@ -257,9 +257,7 @@ module OpSetBackend = struct
   (* If we store ops in Irmin, causality is enforced by history, aka the Merkle DAG. *)
   let causaly_ready t (change : change) =
     change.deps
-    |> ActorMap.update change.actor (function
-         | Some seq -> Some (seq - 1)
-         | None -> None )
+    |> ActorMap.add change.actor (change.seq - 1)
     |> ActorMap.for_all (fun depActor depSeq ->
            match ActorMap.find_opt depActor t.clock with
            | Some depClock -> depClock >= depSeq
