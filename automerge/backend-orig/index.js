@@ -234,7 +234,9 @@ function getMissingDeps(state) {
  */
 function merge(local, remote) {
   const changes = OpSet.getMissingChanges(remote.get('opSet'), local.getIn(['opSet', 'clock']))
-  return applyChanges(local, changes)
+  const ret =  applyChanges(local, changes)
+  // log("diffs", ret)
+    return ret
 }
 
 /**

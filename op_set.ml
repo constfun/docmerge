@@ -235,6 +235,8 @@ module OpSetBackend = struct
     let change_list = log (sexp_of_list sexp_of_change)
 
     let edit_list = log (sexp_of_list sexp_of_edit)
+
+    let value = log sexp_of_value
   end
 
   (* Helpers not found in original *)

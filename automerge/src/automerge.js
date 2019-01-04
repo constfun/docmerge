@@ -2,7 +2,7 @@ const transit = require('transit-immutable-js')
 const uuid = require('./uuid')
 const Frontend = require('../frontend')
 const Backend = require('../backend')
-const { isObject } = require('./common')
+const { isObject, log } = require('./common')
 
 /**
  * Constructs a new frontend document that reflects the given list of changes.
@@ -38,6 +38,7 @@ function merge(localDoc, remoteDoc) {
   const localState  = Frontend.getBackendState(localDoc)
   const remoteState = Frontend.getBackendState(remoteDoc)
   const [state, patch] = Backend.merge(localState, remoteState)
+  log('patch', patch)
   if (patch.diffs.length === 0) return localDoc
   patch.state = state
   return Frontend.applyPatch(localDoc, patch)

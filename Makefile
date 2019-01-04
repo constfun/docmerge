@@ -1,7 +1,7 @@
 .PHONY: build build-native test
 
-build: autoformat
-	dune build index.bc.js
+build:
+	time dune build index.bc.js
 	cd _build/default && \
 		tail -1 index.bc.js | cut -c 51- | base64 -D > index.source.map && \
 		cat index.source.map | sed 's/sourceRoot..../sourceRoot":"\/Users\/nick\/projects\/docmerge\/"/' > index.source.map.fixed && \
@@ -18,10 +18,10 @@ build-native:
 	dune build @all
 
 test: automerge/node_modules build
-	cd automerge && ./node_modules/mocha/bin/mocha test
+	cd automerge && ./node_modules/mocha/bin/mocha test/test
 
 test-orig: automerge/node_modules
-	cd automerge && ./node_modules/mocha/bin/mocha test-orig
+	cd automerge && ./node_modules/mocha/bin/mocha test-orig/test
 
 automerge/node_modules:
 	cd automerge && yarn install
