@@ -1,5 +1,5 @@
 const { Map, List, fromJS } = require('immutable')
-const { isObject, lessOrEqual, log } = require('../src/common')
+const { isObject, lessOrEqual } = require('../src/common')
 const OpSet = require('./op_set')
 
 class MaterializationContext {
@@ -13,13 +13,11 @@ class MaterializationContext {
    * `diff` to link to that objectId. Otherwise uses `value` as a primitive.
    */
   unpackValue(parentId, diff, value) {
-      console.log('IV', value)
     if (isObject(value)) {
       diff.value = value.objectId
       diff.link = true
       this.children[parentId].push(value.objectId)
     } else {
-      console.log('V', value)
       diff.value = value
     }
   }
@@ -30,7 +28,6 @@ class MaterializationContext {
    * describe the conflicts.
    */
   unpackConflicts(parentId, diff, conflicts) {
-      console.log('CONFL', conflicts)
     if (conflicts) {
       diff.conflicts = []
 
@@ -234,9 +231,7 @@ function getMissingDeps(state) {
  */
 function merge(local, remote) {
   const changes = OpSet.getMissingChanges(remote.get('opSet'), local.getIn(['opSet', 'clock']))
-  const ret =  applyChanges(local, changes)
-  // log("diffs", ret)
-    return ret
+  return applyChanges(local, changes)
 }
 
 /**
@@ -309,7 +304,7 @@ function getClock(state) {
 }
 
 function getHistory(state) {
-  return state.getIn(['opSet', 'history'])
+  return state.getIn(['opSet', 'history']).toArray().map(ch => ch.toJS())
 }
 
 module.exports = {

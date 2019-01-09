@@ -1,12 +1,6 @@
 const { Map, List, Set } = require('immutable')
 const { SkipList } = require('./skip_list')
 const ROOT_ID = '00000000-0000-0000-0000-000000000000'
-const {log} = require('../src/common')
-
-let _trace_counter = 1
-function trace(s) {
-    console.log(_trace_counter++, s)
-}
 
 // Returns true if the two operations are concurrent, that is, they happened without being aware of
 // each other (neither happened before the other). Returns false if one supersedes the other.
@@ -34,9 +28,7 @@ function causallyReady(opSet, change) {
 
 function transitiveDeps(opSet, baseDeps) {
   return baseDeps.reduce((deps, depSeq, depActor) => {
-    if (depSeq <= 0) {
-        return deps
-    }
+    if (depSeq <= 0) return deps
     const transitive = opSet.getIn(['states', depActor, depSeq - 1, 'allDeps'])
     return deps
       .mergeWith((a, b) => Math.max(a, b), transitive)
@@ -284,9 +276,7 @@ function applyQueuedOps(opSet) {
       }
     }
 
-    if (queue.count() === opSet.get('queue').count()) {
-        return [opSet, diffs]
-        }
+    if (queue.count() === opSet.get('queue').count()) return [opSet, diffs]
     opSet = opSet.set('queue', queue)
     queue = List()
   }
@@ -321,7 +311,6 @@ function init() {
 
 function addChange(opSet, change, isUndoable) {
   opSet = opSet.update('queue', queue => queue.push(change))
-    // log("t.queue", opSet.get('queue'))
 
   if (isUndoable) {
     // setting the undoLocal key enables undo history capture
