@@ -1302,6 +1302,7 @@ xit('should refuse to diff diverged documents', () => {
       let s2 = Automerge.merge(Automerge.init(), s1)
       s2 = Automerge.change(s2, doc => doc.birds.push('Bullfinch'))
       let changes = Automerge.getChanges(Automerge.init(), s2)
+      log('ch', changes)
       let s3 = Automerge.applyChanges(Automerge.init(), [changes[1]])
       assert.deepEqual(s3, {})
       assert.deepEqual(Automerge.getMissingDeps(s3), {[s1._actorId]: 1})

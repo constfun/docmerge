@@ -931,7 +931,7 @@ module OpSetBackend = struct
     ActorMap.filter (fun actor states -> String.equal actor for_actor) t.states
     |> ActorMap.map (fun states -> CCList.drop after_seq states)
     |> ActorMap.values |> CCList.of_seq |> CCList.flatten
-    |> CCList.map (fun state -> state.change)
+    |> CCList.rev_map (fun state -> state.change)
 
   let get_missing_deps t =
     (* LLog.t_queue "gmd t.queue" t.queue ; *)
