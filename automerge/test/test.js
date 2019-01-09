@@ -2,6 +2,7 @@ const assert = require('assert')
 const Automerge = process.env.TEST_DIST === '1' ? require('../dist/automerge') : require('../src/automerge')
 const { equalsOneOf } = require('./helpers')
 const ROOT_ID = '00000000-0000-0000-0000-000000000000'
+const { log } = require('../src/common')
 
 describe('Automerge', () => {
   describe('sequential use:', () => {

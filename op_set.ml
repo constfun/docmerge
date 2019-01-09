@@ -258,7 +258,6 @@ module OpSetBackend = struct
   (* When a new op lands in the op set, check if all preceeding ops have been applied *)
   (* If we store ops in Irmin, causality is enforced by history, aka the Merkle DAG. *)
   let causaly_ready t (change : change) =
-    (* LLog.change "causally change" change ; *)
     change.deps
     |> ActorMap.add change.actor (change.seq - 1)
     |> ActorMap.for_all (fun depActor depSeq ->
@@ -808,6 +807,7 @@ module OpSetBackend = struct
         ActorMap.add change.actor (change.seq - 1) change.deps
         |> transitive_deps t
       in
+      (* LLog.seq_actor_map "all deps" allDeps ; *)
       let new_prior = List.append prior [{change; allDeps}] in
       let t = {t with states= ActorMap.add change.actor new_prior t.states} in
       (* NOTE: The original code sets actor and sequence equal to change actor and seq, for each op.
@@ -852,13 +852,18 @@ module OpSetBackend = struct
     let t, diffs, queue =
       CCFQueue.fold
         (fun (t, diffs, queue) change ->
-          if causaly_ready t change then
+          (* LLog.change "is change ready?" change ; *)
+          let ready = causaly_ready t change in
+          (* print_endline (if ready then "yes" else "no") ; *)
+          if ready then
             let t, diff = apply_change t change in
             (t, CCList.concat [diffs; diff], queue)
-          else (t, diffs, CCFQueue.snoc t.queue change) )
+          else (t, diffs, CCFQueue.snoc queue change) )
         (t, diffs, CCFQueueWithSexp.empty)
         t.queue
     in
+    (* print_int (CCFQueue.size queue) ; *)
+    (* print_int (CCFQueue.size t.queue) ; *)
     if CCInt.equal (CCFQueue.size queue) (CCFQueue.size t.queue) then (t, diffs)
     else apply_queued_ops {t with queue} diffs
 
@@ -915,13 +920,12 @@ module OpSetBackend = struct
 
   let get_missing_changes t have_deps =
     let all_deps = transitive_deps t have_deps in
-    LLog.t_states "missing" t.states ;
     ActorMap.mapi
       (fun actor states ->
         CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states )
       t.states
     |> ActorMap.values |> CCList.of_seq |> CCList.flatten
-    |> CCList.rev_map (fun state -> state.change)
+    |> CCList.map (fun state -> state.change)
 
   let get_changes_for_actor t ?(after_seq = 0) for_actor =
     ActorMap.filter (fun actor states -> String.equal actor for_actor) t.states
@@ -930,6 +934,7 @@ module OpSetBackend = struct
     |> CCList.map (fun state -> state.change)
 
   let get_missing_deps t =
+    (* LLog.t_queue "gmd t.queue" t.queue ; *)
     CCFQueue.fold
       (fun missing (change : change) ->
         let deps = ActorMap.add change.actor (change.seq - 1) change.deps in

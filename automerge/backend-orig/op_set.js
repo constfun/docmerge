@@ -276,7 +276,10 @@ function applyQueuedOps(opSet) {
   let queue = List(), diff, diffs = []
   while (true) {
     for (let change of opSet.get('queue')) {
-      if (causallyReady(opSet, change)) {
+        log("ready ch?", change)
+        let ready = causallyReady(opSet, change)
+        console.log('ready', ready)
+      if (ready) {
         ;[opSet, diff] = applyChange(opSet, change)
         diffs.push(...diff)
       } else {
@@ -321,7 +324,7 @@ function init() {
 
 function addChange(opSet, change, isUndoable) {
   opSet = opSet.update('queue', queue => queue.push(change))
-    log("t.queue", opSet.get('queue'))
+    // log("t.queue", opSet.get('queue'))
 
   if (isUndoable) {
     // setting the undoLocal key enables undo history capture
@@ -337,7 +340,6 @@ function addChange(opSet, change, isUndoable) {
 
 function getMissingChanges(opSet, haveDeps) {
   const allDeps = transitiveDeps(opSet, haveDeps)
-    log("missing", opSet.get('states'))
   return opSet.get('states')
     .map((states, actor) => states.skip(allDeps.get(actor, 0)))
     .valueSeq()

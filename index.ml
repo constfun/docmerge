@@ -220,6 +220,13 @@ module ToJs = struct
 
   let change_list lis = CCList.map change_to_js_change lis |> list_to_js_array
 
+  let missing_deps deps =
+    ActorMap.fold
+      (fun k v acc ->
+        (k, Js.Unsafe.inject (Js.number_of_float (float_of_int v))) :: acc )
+      deps []
+    |> CCArray.of_list |> Js.Unsafe.obj
+
   let imm_Map _kv =
     let immutable = require_module "immutable" in
     let _Map = (Js.Unsafe.coerce immutable) ##. Map in
@@ -276,6 +283,7 @@ let apply t changes undoable =
         ({op_set}, CCList.concat [diffs; new_diffs]) )
       (t, []) changes
   in
+  (* BE.LLog.t_states "apply" t.op_set.states ; *)
   (* BE.LLog.edit_list "apply diffs" diffs ; *)
   (t, diffs)
 
@@ -386,6 +394,10 @@ let get_missing_changes t _clock =
   let changes = BE.get_missing_changes t.op_set clock in
   ToJs.change_list changes
 
+let get_missing_deps t =
+  let deps = BE.get_missing_deps t.op_set in
+  ToJs.missing_deps deps
+
 let get_clock t =
   let immutable = ToJs.require_module "immutable" in
   let map = (Js.Unsafe.coerce immutable) ##. Map in
@@ -406,5 +418,6 @@ let _ =
   Js.export "getChangesForActor" get_changes_for_actor ;
   Js.export "getChanges" get_changes ;
   Js.export "getMissingChanges" get_missing_changes ;
+  Js.export "getMissingDeps" get_missing_deps ;
   Js.export "getClock" get_clock ;
   Js.export "getHistory" get_history
