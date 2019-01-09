@@ -128,7 +128,8 @@ let conflicts_to_js_conflicts (v : OpSetBackend.conflict list) =
        (fun (confl : OpSetBackend.conflict) ->
          CCArray.empty
          |> obj_set ~conv:actor_to_js_actor "actor" confl.actor
-         |> obj_set_opt (fun x -> x) "link" confl.link
+         |> obj_set_optdef Js.bool "link"
+              (match confl.link with Some true -> confl.link | _ -> None)
          |> obj_set_optdef value_to_js_value "value" confl.value
          |> Js.Unsafe.obj )
        v)
@@ -294,7 +295,6 @@ let _apply_changes t js_changes =
   let changes =
     CCArray.to_list (Js.to_array js_changes) |> CCList.map js_change_to_change
   in
-  (* BE.LLog.change_list "ochanges" changes ; *)
   let t, diffs = apply_changes t changes in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
   let js_patch = make_patch t js_diffs in
@@ -366,7 +366,6 @@ let merge local remote =
       (OpSetBackend.get_clock local.op_set)
   in
   let t, diffs = apply_changes local changes in
-  (* BE.LLog.edit_list "diffs" diffs ; *)
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
   let js_patch = make_patch t js_diffs in
   let ret = new%js Js.array_length 2 in
