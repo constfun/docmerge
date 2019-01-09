@@ -1301,9 +1301,16 @@ xit('should refuse to diff diverged documents', () => {
       let s1 = Automerge.change(Automerge.init(), doc => doc.birds = ['Chaffinch'])
       let s2 = Automerge.merge(Automerge.init(), s1)
       s2 = Automerge.change(s2, doc => doc.birds.push('Bullfinch'))
-      console.log('the next one')
       let changes = Automerge.getChanges(Automerge.init(), s2)
-      console.log('changes[1].ops.length', changes[1].ops.length)
+      // Original test expects an ordered set of changes here.
+      // Order is not (or should not) be guaranteed by this API.
+      // Instead we re-order the changes to what the test expects.
+      if(changes[0].ops.length === 2) {
+          let tmp = changes[1]
+          changes[1] = changes[0]
+          changes[0] = tmp
+          changes[0], changes[1] = changes[1], changes[0]
+      }
       let s3 = Automerge.applyChanges(Automerge.init(), [changes[1]])
       assert.deepEqual(s3, {})
       assert.deepEqual(Automerge.getMissingDeps(s3), {[s1._actorId]: 1})

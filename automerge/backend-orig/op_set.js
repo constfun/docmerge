@@ -276,10 +276,7 @@ function applyQueuedOps(opSet) {
   let queue = List(), diff, diffs = []
   while (true) {
     for (let change of opSet.get('queue')) {
-        log("ready ch?", change)
-        let ready = causallyReady(opSet, change)
-        console.log('ready', ready)
-      if (ready) {
+      if (causallyReady(opSet, change)) {
         ;[opSet, diff] = applyChange(opSet, change)
         diffs.push(...diff)
       } else {

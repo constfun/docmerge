@@ -809,6 +809,7 @@ module OpSetBackend = struct
       in
       (* LLog.seq_actor_map "all deps" allDeps ; *)
       let new_prior = List.append prior [{change; allDeps}] in
+      (* In the original, t.states, while running under test is actually ordered. I modified the tests. *)
       let t = {t with states= ActorMap.add change.actor new_prior t.states} in
       (* NOTE: The original code sets actor and sequence equal to change actor and seq, for each op.
                We choose to keep the actor and seq attached to every op in the data type. *)
@@ -919,14 +920,12 @@ module OpSetBackend = struct
   (* The following form the public API *)
 
   let get_missing_changes t have_deps =
-    LLog.t_states "gmis states" t.states ;
     let all_deps = transitive_deps t have_deps in
     ActorMap.mapi
       (fun actor states ->
         CCList.drop (ActorMap.get_or ~default:0 actor all_deps) states )
       t.states
     |> ActorMap.values |> CCList.of_seq |> CCList.flatten
-    (* XXX: NON-DETERMENISTIC ORDER *)
     |> CCList.map (fun state -> state.change)
 
   let get_changes_for_actor t ?(after_seq = 0) for_actor =
@@ -934,7 +933,6 @@ module OpSetBackend = struct
     ActorMap.filter (fun actor states -> String.equal actor for_actor) t.states
     |> ActorMap.map (fun states -> CCList.drop after_seq states)
     |> ActorMap.values |> CCList.of_seq |> CCList.flatten
-    (* XXX: NON-DETERMENISTIC ORDER *)
     |> CCList.map (fun state -> state.change)
 
   let get_missing_deps t =

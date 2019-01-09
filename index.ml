@@ -294,7 +294,7 @@ let _apply_changes t js_changes =
   let changes =
     CCArray.to_list (Js.to_array js_changes) |> CCList.map js_change_to_change
   in
-  BE.LLog.change_list "ochanges" changes ;
+  (* BE.LLog.change_list "ochanges" changes ; *)
   let t, diffs = apply_changes t changes in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
   let js_patch = make_patch t js_diffs in
