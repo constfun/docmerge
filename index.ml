@@ -4,7 +4,7 @@ open Datastructures
 
 let ( $ ) f g x = f (g x)
 
-type exn += Not_supported | Unknown_request_type
+type exn += Not_supported | Unknown_request_type | Nothing_to_be_undone
 
 let freeze (o : 'a) : 'a =
   Js.Unsafe.fun_call (Js.Unsafe.js_expr "Object.freeze") [|Js.Unsafe.inject o|]
@@ -190,7 +190,10 @@ let js_change_to_change js_change : OpSetBackend.change =
   { actor= Js.to_string js_change##.actor
   ; seq= int_of_js_number js_change##.seq
   ; deps= actor_map_of_js_obj js_change##.deps
-  ; ops= to_op_list js_change##.ops
+  ; ops=
+      Js.Optdef.case js_change##.ops
+        (fun () -> None)
+        (fun ops -> Some (to_op_list ops))
   ; message=
       Js.Optdef.case js_change##.message
         (fun () -> None)
@@ -204,8 +207,8 @@ let change_to_js_change (change : OpSetBackend.change) =
   |> obj_set ~conv:(Js.number_of_float $ float_of_int) "seq" change.seq
   |> obj_set ~conv:(js_obj_of_actor_map js_number_of_int) "deps" change.deps
   |> obj_set_optdef Js.string "message" change.message
-  |> obj_set
-       ~conv:(Js.array $ CCArray.of_list $ CCList.map change_op_to_js_change_op)
+  |> obj_set_optdef
+       (Js.array $ CCArray.of_list $ CCList.map change_op_to_js_change_op)
        "ops" change.ops
   |> Js.Unsafe.obj
 
@@ -303,11 +306,38 @@ let _apply_changes t js_changes =
   Js.array_set ret 1 (Js.Unsafe.inject js_patch) ;
   ret
 
+let undo t change =
+  let undo_pos = t.op_set.undo_pos in
+  if undo_pos < 1 then raise Nothing_to_be_undone
+  else
+    match CCList.nth_opt t.op_set.undo_stack (undo_pos - 1) with
+    | None -> raise Nothing_to_be_undone
+    | Some undo_ops ->
+        let change_ops =
+          CCList.map
+            (fun (un_op : BE.ref) ->
+              ( { action= un_op.action
+                ; key= Some un_op.key
+                ; obj= un_op.obj
+                ; elem= None
+                ; value= un_op.value }
+                : BE.change_op ) )
+            undo_ops
+        in
+        let change : BE.change = {change with ops= Some change_ops} in
+        ()
+
+let _undo t js_change =
+  let request = js_change_to_change js_change in
+  let resp = undo t request in
+  resp
+
 let apply_local_change t js_change =
   let change = js_change_to_change js_change in
   let request_type = Js.to_string js_change##.requestType in
   let t, diffs =
     if CCString.equal request_type "change" then apply t [change] true
+    else if CCString.equal request_type "undo" then undo t change
     else raise Unknown_request_type
   in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in

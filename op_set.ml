@@ -137,7 +137,7 @@ module OpSetBackend = struct
     ; seq: seq
     ; (* List of depended op sequences by actor. *)
       deps: seq ActorMap.t
-    ; ops: change_op list
+    ; ops: change_op list option
     ; message: string option }
   [@@deriving sexp_of, compare]
 
@@ -163,7 +163,7 @@ module OpSetBackend = struct
     ; path: [`IntPath of int | `StrPath of key] list option }
   [@@deriving sexp_of]
 
-  type ref = {action: action; obj: obj_id; key: key; value: value option}
+  type ref = {action: action; obj: obj_id; key: key; value: op_val option}
 
   type obj_aux =
     { _max_elem: int
@@ -683,7 +683,7 @@ module OpSetBackend = struct
                      { action= op.action
                      ; obj= op.obj
                      ; key= op.key
-                     ; value= CCOpt.map (fun v -> Value v) op.value } )
+                     ; value= op.value } )
             in
             let undo_ops =
               if CCList.is_empty undo_ops then
@@ -823,7 +823,7 @@ module OpSetBackend = struct
             ; obj= ch_op.obj
             ; elem= ch_op.elem
             ; value= ch_op.value } )
-          change.ops
+          (CCOpt.get_exn change.ops)
       in
       let t, diffs = apply_ops t ops in
       let remaining_deps =
