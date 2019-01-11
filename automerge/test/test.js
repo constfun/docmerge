@@ -929,7 +929,7 @@ xit('should prevent mutations outside of a change block', () => {
 
   describe('Automerge.redo()', () => {
     function getRedoStack(doc) {
-      return Automerge.Frontend.getBackendState(doc).getIn(['opSet', 'redoStack'])
+      return Automerge.Backend.getRedoStack(Automerge.Frontend.getBackendState(doc))
     }
 
     it('should allow redo if the last change was an undo', () => {

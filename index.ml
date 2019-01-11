@@ -505,8 +505,17 @@ let get_undo_stack t =
   in
   lis_of_arrs
 
-(* BE.LLog.change_list "h" h ; *)
-(* h |> CCList.map change_to_js_change |> list_to_js_array *)
+let get_redo_stack t =
+  let redo_stack = BE.get_redo_stack t.op_set in
+  let lis_of_arrs =
+    ToJs.imm_List
+      (list_to_js_array
+         (CCList.map
+            (fun un ->
+              ToJs.imm_List (list_to_js_array (CCList.map ToJs.ref un)) )
+            redo_stack))
+  in
+  lis_of_arrs
 
 let _ =
   Js.export "init" init ;
@@ -520,4 +529,5 @@ let _ =
   Js.export "getMissingDeps" get_missing_deps ;
   Js.export "getClock" get_clock ;
   Js.export "getHistory" get_history ;
-  Js.export "getUndoStack" get_undo_stack
+  Js.export "getUndoStack" get_undo_stack ;
+  Js.export "getRedoStack" get_redo_stack
