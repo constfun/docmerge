@@ -28,7 +28,7 @@ function load(string, actorId) {
 
 function save(doc) {
   const state = Frontend.getBackendState(doc)
-  return transit.toJSON(state.getIn(['opSet', 'history']))
+  return transit.toJSON(Backend.getHistory(state))
 }
 
 function merge(localDoc, remoteDoc) {
