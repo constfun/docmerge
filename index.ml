@@ -235,10 +235,24 @@ module ToJs = struct
       deps []
     |> CCArray.of_list |> Js.Unsafe.obj
 
+  let ref (ref : BE.ref) =
+    CCArray.empty
+    |> obj_set "action" (action_to_js_action ref.action)
+    |> obj_set ~conv:Js.string "key" ref.key
+    |> obj_set_optdef (Js.number_of_float $ float_of_int) "elem" ref.elem
+    |> obj_set_optdef op_val_to_js_value "value" ref.value
+    |> obj_set "obj" (Js.string ref.obj)
+    |> Js.Unsafe.obj
+
   let imm_Map _kv =
     let immutable = require_module "immutable" in
     let _Map = (Js.Unsafe.coerce immutable) ##. Map in
     Js.Unsafe.(fun_call (inject _Map) [|inject _kv|])
+
+  let imm_List _arr =
+    let immutable = require_module "immutable" in
+    let _List = (Js.Unsafe.coerce immutable) ##. List in
+    Js.Unsafe.(fun_call (inject _List) [|inject _arr|])
 
   let imm o =
     let is_imm = (Js.Unsafe.coerce o)##.toJS in
@@ -479,6 +493,21 @@ let get_history t =
   (* BE.LLog.change_list "h" h ; *)
   h |> CCList.map change_to_js_change |> list_to_js_array
 
+let get_undo_stack t =
+  let undo_stack = BE.get_undo_stack t.op_set in
+  let lis_of_arrs =
+    ToJs.imm_List
+      (list_to_js_array
+         (CCList.map
+            (fun un ->
+              ToJs.imm_List (list_to_js_array (CCList.map ToJs.ref un)) )
+            undo_stack))
+  in
+  lis_of_arrs
+
+(* BE.LLog.change_list "h" h ; *)
+(* h |> CCList.map change_to_js_change |> list_to_js_array *)
+
 let _ =
   Js.export "init" init ;
   Js.export "applyChanges" _apply_changes ;
@@ -490,4 +519,5 @@ let _ =
   Js.export "getMissingChanges" get_missing_changes ;
   Js.export "getMissingDeps" get_missing_deps ;
   Js.export "getClock" get_clock ;
-  Js.export "getHistory" get_history
+  Js.export "getHistory" get_history ;
+  Js.export "getUndoStack" get_undo_stack

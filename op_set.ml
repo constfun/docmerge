@@ -1361,6 +1361,8 @@ module OpSetBackend = struct
 
   let get_history (t : t) = t.history
 
+  let get_undo_stack {undo_stack} = undo_stack
+
   let get_deps ({deps} : t) = deps
 
   let can_undo {undo_pos} = undo_pos > 0

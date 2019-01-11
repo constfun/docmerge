@@ -790,7 +790,7 @@ xit('should prevent mutations outside of a change block', () => {
 
   describe('Automerge.undo()', () => {
     function getUndoStack(doc) {
-      return Automerge.Frontend.getBackendState(doc).getIn(['opSet', 'undoStack'])
+      return Automerge.Backend.getUndoStack(Automerge.Frontend.getBackendState(doc))
     }
 
     it('should allow undo if there have been local changes', () => {
