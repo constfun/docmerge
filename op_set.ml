@@ -163,7 +163,12 @@ module OpSetBackend = struct
     ; path: [`IntPath of int | `StrPath of key] list option }
   [@@deriving sexp_of]
 
-  type ref = {action: action; obj: obj_id; key: key; value: op_val option}
+  type ref =
+    { action: action
+    ; obj: obj_id
+    ; key: key
+    ; value: op_val option
+    ; elem: int option }
 
   type obj_aux =
     { _max_elem: int
@@ -680,14 +685,21 @@ module OpSetBackend = struct
             let undo_ops =
               KeyMap.get_or op.key ~default:[] obj_map
               |> CCList.map (fun (op : op) ->
-                     { action= op.action
-                     ; obj= op.obj
-                     ; key= op.key
-                     ; value= op.value } )
+                     ( { action= op.action
+                       ; obj= op.obj
+                       ; elem= None
+                       ; key= op.key
+                       ; value= op.value }
+                       : ref ) )
             in
             let undo_ops =
               if CCList.is_empty undo_ops then
-                [{action= Del; obj= op.obj; key= op.key; value= None}]
+                [ ( { elem= None
+                    ; action= Del
+                    ; obj= op.obj
+                    ; key= op.key
+                    ; value= None }
+                    : ref ) ]
               else undo_ops
             in
             let uloc = CCList.concat [uloc; undo_ops] in

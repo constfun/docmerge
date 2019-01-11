@@ -4,7 +4,11 @@ open Datastructures
 
 let ( $ ) f g x = f (g x)
 
-type exn += Not_supported | Unknown_request_type | Nothing_to_be_undone
+type exn +=
+  | Not_supported
+  | Unknown_request_type
+  | Nothing_to_be_undone
+  | Unexpected_operation_type_in_undo_history
 
 let freeze (o : 'a) : 'a =
   Js.Unsafe.fun_call (Js.Unsafe.js_expr "Object.freeze") [|Js.Unsafe.inject o|]
@@ -325,7 +329,43 @@ let undo t change =
             undo_ops
         in
         let change : BE.change = {change with ops= Some change_ops} in
-        ()
+        let op_set = t.op_set in
+        let redo_ops =
+          CCList.fold_left
+            (fun redo_ops (op : BE.ref) ->
+              match op.action with
+              | BE.Del | BE.Set | BE.Link ->
+                  let field_ops = BE.get_field_ops op_set op.obj op.key in
+                  if CCList.is_empty field_ops then
+                    CCList.append redo_ops
+                      [ ( { action= BE.Del
+                          ; obj= op.obj
+                          ; key= op.key
+                          ; value= None
+                          ; elem= None }
+                          : BE.ref ) ]
+                  else
+                    CCList.fold_left
+                      (fun redo_ops (field_op : BE.op) ->
+                        CCList.append redo_ops
+                          [ ( { action= field_op.action
+                              ; key= field_op.key
+                              ; obj= field_op.obj
+                              ; elem= field_op.elem
+                              ; value= field_op.value }
+                              : BE.ref ) ] )
+                      redo_ops field_ops
+              | _ -> raise Unexpected_operation_type_in_undo_history )
+            [] undo_ops
+        in
+        let op_set =
+          { op_set with
+            undo_pos= undo_pos - 1
+          ; redo_stack= CCList.append op_set.redo_stack [redo_ops] }
+        in
+        let new_op_set, diffs = BE.add_change op_set change false in
+        let t = {op_set= new_op_set} in
+        (t, diffs)
 
 let _undo t js_change =
   let request = js_change_to_change js_change in
