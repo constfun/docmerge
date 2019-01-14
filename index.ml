@@ -9,6 +9,7 @@ type exn +=
   | Unknown_request_type
   | Nothing_to_be_undone
   | Unexpected_operation_type_in_undo_history
+  | Last_change_was_not_an_undo
 
 let freeze (o : 'a) : 'a =
   Js.Unsafe.fun_call (Js.Unsafe.js_expr "Object.freeze") [|Js.Unsafe.inject o|]
@@ -381,10 +382,31 @@ let undo t change =
         let t = {op_set= new_op_set} in
         (t, diffs)
 
-let _undo t js_change =
-  let request = js_change_to_change js_change in
-  let resp = undo t request in
-  resp
+let redo t (change : BE.change) =
+  let redo_ops = CCList.last_opt t.op_set.redo_stack in
+  match redo_ops with
+  | None -> raise Last_change_was_not_an_undo
+  | Some redo_ops ->
+      let change_ops =
+        CCList.map
+          (fun (un_op : BE.ref) ->
+            ( { action= un_op.action
+              ; key= Some un_op.key
+              ; obj= un_op.obj
+              ; elem= None
+              ; value= un_op.value }
+              : BE.change_op ) )
+          redo_ops
+      in
+      let change = {change with ops= Some change_ops} in
+      let op_set = t.op_set in
+      let op_set =
+        { op_set with
+          undo_pos= op_set.undo_pos + 1
+        ; redo_stack= CCList.drop 1 op_set.redo_stack }
+      in
+      let new_op_set, diffs = BE.add_change op_set change false in
+      ({op_set= new_op_set}, diffs)
 
 let apply_local_change t js_change =
   let change = js_change_to_change js_change in
@@ -392,6 +414,7 @@ let apply_local_change t js_change =
   let t, diffs =
     if CCString.equal request_type "change" then apply t [change] true
     else if CCString.equal request_type "undo" then undo t change
+    else if CCString.equal request_type "redo" then redo t change
     else raise Unknown_request_type
   in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
