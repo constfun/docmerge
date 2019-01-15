@@ -1,3 +1,5 @@
+open Datastructures
+
 module ActorMap : CCMap.S with type key = string
 
 module SeqMap : CCMap.S
@@ -15,8 +17,6 @@ module KeySet : CCSet.S
 module OpMap : CCMap.S
 
 module OpSetBackend : sig
-  type t
-
   type actor = string
 
   type seq = int
@@ -27,9 +27,13 @@ module OpSetBackend : sig
 
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
 
-  type op_val = BoolValue of bool | StrValue of string | NumberValue of float
+  type op_val =
+    | BoolValue of bool
+    | StrValue of string
+    | NumberValue of float
+    | Null
 
-  type value = Value of op_val | Link of {obj: value}
+  type value = Value of op_val | Link of {obj: string}
 
   type op =
     { key: key
@@ -48,7 +52,11 @@ module OpSetBackend : sig
     ; value: op_val option }
 
   type change =
-    {actor: actor; seq: seq; deps: seq ActorMap.t; ops: change_op list}
+    { actor: actor
+    ; seq: seq
+    ; deps: seq ActorMap.t
+    ; ops: change_op list option
+    ; message: string option }
 
   type state = {change: change; allDeps: seq ActorMap.t}
 
@@ -56,7 +64,7 @@ module OpSetBackend : sig
 
   type edit_type = Map | Text | List
 
-  type conflict = {actor: actor; value: op_val option; link: bool option}
+  type conflict = {actor: actor; value: value option; link: bool option}
 
   type edit =
     { _type: edit_type
@@ -69,6 +77,49 @@ module OpSetBackend : sig
     ; index: int option
     ; conflicts: conflict list option
     ; path: [`IntPath of int | `StrPath of key] list option }
+
+  type diff_type = DiffMap | DiffList | DiffText
+
+  type diff_action = DiffCreate | DiffSet | DiffInsert
+
+  type diff =
+    { obj: string
+    ; type_: diff_type
+    ; action: diff_action
+    ; key: key option
+    ; value: value option
+    ; link: bool option
+    ; index: int option
+    ; elem_id: string option
+    ; conflicts: conflict list option }
+
+  type patch =
+    { can_undo: bool
+    ; can_redo: bool
+    ; clock: seq ActorMap.t
+    ; deps: seq ActorMap.t
+    ; diffs: diff list }
+
+  type ref =
+    { action: action
+    ; obj: obj_id
+    ; key: key
+    ; value: op_val option
+    ; elem: int option }
+
+  type obj
+
+  type t =
+    { states: state list ActorMap.t
+    ; history: change list
+    ; by_object: obj ObjectIdMap.t
+    ; clock: seq ActorMap.t
+    ; deps: seq ActorMap.t
+    ; undo_pos: int
+    ; undo_stack: ref list list
+    ; redo_stack: ref list list
+    ; queue: change CCFQueueWithSexp.t
+    ; undo_local: ref list option }
 
   val init : unit -> t
 
@@ -86,28 +137,6 @@ module OpSetBackend : sig
 
   val root_id : string
 
-  type diff_type = DiffMap | DiffList | DiffText
-
-  type diff_action = DiffCreate | DiffSet | DiffInsert
-
-  type diff =
-    { obj: string
-    ; type_: diff_type
-    ; action: diff_action
-    ; key: key option
-    ; value: op_val option
-    ; link: bool option
-    ; index: int option
-    ; elem_id: string option
-    ; conflicts: conflict list option }
-
-  type patch =
-    { can_undo: bool
-    ; can_redo: bool
-    ; clock: seq ActorMap.t
-    ; deps: seq ActorMap.t
-    ; diffs: diff list }
-
   val get_patch : t -> patch
 
   (* Auxulary funs required to not break encapsulation between index.js and op_set.js *)
@@ -119,4 +148,10 @@ module OpSetBackend : sig
   val can_undo : t -> bool
 
   val can_redo : t -> bool
+
+  val get_history : t -> change list
+
+  val get_undo_stack : t -> ref list list
+
+  val get_redo_stack : t -> ref list list
 end

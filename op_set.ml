@@ -2,11 +2,6 @@ open Sexplib.Conv
 open Datastructures
 open Ppx_compare_lib.Builtin
 
-(* TODO: Can we cross-compile this file and use it instead of the op_set.js file in automerge to run tests? *)
-(* TODO: How does automerge persist data? *)
-
-(* let ( $ ) f g x = f (g x) *)
-
 type exn +=
   | Inconsistent_reuse_of_sequence
   | Not_supported
@@ -16,15 +11,6 @@ type exn +=
   | Unknown_action_type
   | Missing_index_for_list_element
   | Accessing_undefined_element_index
-
-let log ~msg conv sexp =
-  Format.printf "%s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp)
-
-let _trace_counter = ref 1
-
-let trace s =
-  Format.printf "%i %s\n%!" !_trace_counter s ;
-  _trace_counter := !_trace_counter + 1
 
 module ActorMap = CCMapMake (CCString)
 module SeqMap = CCMapMake (CCInt)
@@ -135,8 +121,7 @@ module OpSetBackend = struct
   type change =
     { actor: actor
     ; seq: seq
-    ; (* List of depended op sequences by actor. *)
-      deps: seq ActorMap.t
+    ; deps: seq ActorMap.t
     ; ops: change_op list option
     ; message: string option }
   [@@deriving sexp_of, compare]
@@ -224,6 +209,9 @@ module OpSetBackend = struct
   (* Debug logggers *)
 
   module LLog = struct
+    let log ~msg conv sexp =
+      Format.printf "%s %a\n%!" msg Sexplib.Sexp.pp_hum (conv sexp)
+
     let t = log sexp_of_t
 
     let state = log sexp_of_state
