@@ -403,7 +403,10 @@ let redo t (change : BE.change) =
       let op_set =
         { op_set with
           undo_pos= op_set.undo_pos + 1
-        ; redo_stack= CCList.drop 1 op_set.redo_stack }
+        ; redo_stack=
+            CCList.remove_at_idx
+              (CCList.length op_set.redo_stack - 1)
+              op_set.redo_stack }
       in
       let new_op_set, diffs = BE.add_change op_set change false in
       ({op_set= new_op_set}, diffs)

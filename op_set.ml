@@ -169,6 +169,7 @@ module OpSetBackend = struct
     ; key: key
     ; value: op_val option
     ; elem: int option }
+  [@@deriving sexp_of]
 
   type obj_aux =
     { _max_elem: int
@@ -214,10 +215,10 @@ module OpSetBackend = struct
         (* As you receieve new ops, the corresponding actor clock is updated. *)
     ; deps: seq ActorMap.t
     ; undo_pos: int
-    ; undo_stack: ref list list sexp_opaque
-    ; redo_stack: ref list list sexp_opaque
+    ; undo_stack: ref list list
+    ; redo_stack: ref list list
     ; queue: change CCFQueueWithSexp.t
-    ; undo_local: ref list option sexp_opaque }
+    ; undo_local: ref list option }
   [@@deriving sexp_of]
 
   (* Debug logggers *)
@@ -244,6 +245,10 @@ module OpSetBackend = struct
     let value = log sexp_of_value
 
     let change = log sexp_of_change
+
+    let ref_list = log (sexp_of_list sexp_of_ref)
+
+    let redo_stack = log (sexp_of_list (sexp_of_list sexp_of_ref))
   end
 
   (* Helpers not found in original *)

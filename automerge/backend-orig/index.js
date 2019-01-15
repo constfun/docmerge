@@ -1,5 +1,5 @@
 const { Map, List, fromJS } = require('immutable')
-const { isObject, lessOrEqual } = require('../src/common')
+const { isObject, lessOrEqual, log } = require('../src/common')
 const OpSet = require('./op_set')
 
 class MaterializationContext {
@@ -307,7 +307,15 @@ function getHistory(state) {
   return state.getIn(['opSet', 'history']).toArray().map(ch => ch.toJS())
 }
 
+function getUndoStack(state) {
+  return state.getIn(['opSet', 'undoStack'])
+}
+
+function getRedoStack(state) {
+  return state.getIn(['opSet', 'redoStack'])
+}
+
 module.exports = {
   init, applyChanges, applyLocalChange, getPatch,
-  getChanges, getChangesForActor, getMissingChanges, getMissingDeps, merge, getClock, getHistory
+  getChanges, getChangesForActor, getMissingChanges, getMissingDeps, merge, getClock, getHistory, getRedoStack, getUndoStack
 }
