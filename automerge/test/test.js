@@ -43,7 +43,7 @@ describe('Automerge', () => {
         assert.deepEqual(s2, {first: 'one', second: 'two'})
       })
 
-xit('should prevent mutations outside of a change block', () => {
+    it('should prevent mutations outside of a change block', () => {
         s2 = Automerge.change(s1, doc => doc.foo = 'bar')
         if (typeof window === 'object') {
           // Chrome and Firefox silently ignore modifications of a frozen object
@@ -1188,12 +1188,12 @@ xit('should prevent mutations outside of a change block', () => {
       assert.deepEqual(Automerge.diff(s, s), [])
     })
 
-xit('should refuse to diff diverged documents', () => {
+  it('should refuse to diff diverged documents', () => {
       let s1 = Automerge.change(Automerge.init(), doc => doc.birds = [])
       let s2 = Automerge.change(s1, doc => doc.birds.push('Robin'))
       let s3 = Automerge.merge(Automerge.init(), s1)
       let s4 = Automerge.change(s3, doc => doc.birds.push('Wagtail'))
-      assert.throws(() => Automerge.diff(s2, s4), /Cannot diff two states that have diverged/)
+      assert.throws(() => Automerge.diff(s2, s4), /Cannot diff two states that have diverged|Cannot_diff_two_states_that_have_diverged/)
     })
 
     it('should return list insertions by index', () => {

@@ -10,6 +10,7 @@ type exn +=
   | Nothing_to_be_undone
   | Unexpected_operation_type_in_undo_history
   | Last_change_was_not_an_undo
+  | Cannot_diff_two_states_that_have_diverged
 
 let freeze (o : 'a) : 'a =
   Js.Unsafe.fun_call (Js.Unsafe.js_expr "Object.freeze") [|Js.Unsafe.inject o|]
@@ -488,16 +489,30 @@ let get_changes_for_actor t js_actor_id =
   |> CCList.map change_to_js_change
   |> CCArray.of_list |> Js.array
 
+let less_or_equal clk1 clk2 =
+  let keys =
+    CCList.of_seq (ActorMap.keys clk1) @ CCList.of_seq (ActorMap.keys clk2)
+  in
+  CCList.fold_left
+    (fun result key ->
+      result
+      && ActorMap.get_or ~default:0 key clk1
+         <= ActorMap.get_or ~default:0 key clk2 )
+    true keys
+
 let get_changes old_state new_state =
   let old_clock = clock old_state in
-  (* function lessOrEqual(clock1, clock2) { *)
-  (*   return clock1.keySeq().concat(clock2.keySeq()).reduce( *)
-  (*     (result, key) => (result && clock1.get(key, 0) <= clock2.get(key, 0)), *)
-  (*     true) *)
-  (* } *)
-  BE.get_missing_changes new_state.op_set old_clock
-  |> CCList.map change_to_js_change
-  |> list_to_js_array
+  if not (less_or_equal old_clock new_state.op_set.clock) then
+    raise Cannot_diff_two_states_that_have_diverged
+  else
+    (* function lessOrEqual(clock1, clock2) { *)
+    (*   return clock1.keySeq().concat(clock2.keySeq()).reduce( *)
+    (*     (result, key) => (result && clock1.get(key, 0) <= clock2.get(key, 0)), *)
+    (*     true) *)
+    (* } *)
+    BE.get_missing_changes new_state.op_set old_clock
+    |> CCList.map change_to_js_change
+    |> list_to_js_array
 
 let get_missing_changes t _clock =
   let clock = FromJs.clock _clock in
