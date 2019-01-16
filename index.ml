@@ -45,15 +45,15 @@ let edit_action_to_js_edit_action v =
   Js.string
     OpSetBackend.(
       match v with
-      | Create -> "create"
-      | Set -> "set"
-      | Insert -> "insert"
-      | Remove -> "remove")
+      | DiffCreate -> "create"
+      | DiffSet -> "set"
+      | DiffInsert -> "insert"
+      | DiffRemove -> "remove")
 
 let type_to_js_type v =
   Js.string
     OpSetBackend.(
-      match v with Map -> "map" | Text -> "text" | List -> "list")
+      match v with DiffMap -> "map" | DiffText -> "text" | DiffList -> "list")
 
 let path_to_js_path v =
   list_to_js_array
@@ -142,27 +142,28 @@ let conflicts_to_js_conflicts (v : OpSetBackend.conflict list) =
 
 let number_of_int i = Js.number_of_float (float_of_int i)
 
-let obj_set_path (edit : OpSetBackend.edit) obj_kv =
+let obj_set_path (edit : OpSetBackend.diff) obj_kv =
   match edit.action with
-  | OpSetBackend.Set | OpSetBackend.Remove | OpSetBackend.Insert -> (
+  | OpSetBackend.DiffSet | OpSetBackend.DiffRemove | OpSetBackend.DiffInsert
+-> (
     match edit.path with
     | Some v ->
         CCArray.append obj_kv [|("path", Js.Unsafe.inject (path_to_js_path v))|]
     | None -> CCArray.append obj_kv [|("path", Js.Unsafe.inject Js.null)|] )
   | _ -> obj_kv
 
-let edit_to_js_edit (edit : OpSetBackend.edit) =
+let edit_to_js_edit (edit : OpSetBackend.diff) =
   CCArray.empty
   |> obj_set ~conv:edit_action_to_js_edit_action "action" edit.action
   |> obj_set ~conv:Js.string "obj" edit.obj
   |> obj_set_optdef Js.string "key" edit.key
   |> obj_set_optdef value_to_js_value "value" edit.value
-  |> obj_set ~conv:type_to_js_type "type" edit._type
-  |> obj_set_optdef Js.bool "link" (if edit.link then Some edit.link else None)
+  |> obj_set ~conv:type_to_js_type "type" edit.type_
+  |> obj_set_optdef Js.bool "link" edit.link
   |> obj_set_path edit
   |> obj_set_optdef conflicts_to_js_conflicts "conflicts" edit.conflicts
   |> obj_set_optdef number_of_int "index" edit.index
-  |> obj_set_optdef Js.string "elemId" edit.elem_id__key
+  |> obj_set_optdef Js.string "elemId" edit.elem_id
   |> Js.Unsafe.obj
 
 let change_op_to_js_change_op (op : OpSetBackend.change_op) =
@@ -436,7 +437,8 @@ let diff_to_js_diff (diff : OpSetBackend.diff) =
       ( match diff.action with
       | DiffSet -> "set"
       | DiffCreate -> "create"
-      | DiffInsert -> "insert" )
+      | DiffInsert -> "insert"
+      | DiffRemove -> "remove" )
   in
   let type_ =
     Js.string

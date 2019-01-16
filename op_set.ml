@@ -128,25 +128,25 @@ module OpSetBackend = struct
 
   type state = {change: change; allDeps: seq ActorMap.t} [@@deriving sexp_of]
 
-  type edit_action = Create | Insert | Remove | Set [@@deriving sexp_of]
-
-  type edit_type = Map | Text | List [@@deriving sexp_of]
+  (* type edit_action = Create | Insert | Remove | Set [@@deriving sexp_of] *)
+  
+  (* type edit_type = Map | Text | List [@@deriving sexp_of] *)
 
   type conflict = {actor: actor; value: value option; link: bool option}
   [@@deriving sexp_of]
 
-  type edit =
-    { _type: edit_type
-    ; action: edit_action
-    ; elem_id__key: key option
-    ; key: string option
-    ; value: value option
-    ; obj: obj_id
-    ; link: bool
-    ; index: int option
-    ; conflicts: conflict list option
-    ; path: [`IntPath of int | `StrPath of key] list option }
-  [@@deriving sexp_of]
+  (* type edit = *)
+  (*   { _type: edit_type *)
+  (*   ; action: edit_action *)
+  (*   ; elem_id__key: key option *)
+  (*   ; key: string option *)
+  (*   ; value: value option *)
+  (*   ; obj: obj_id *)
+  (*   ; link: bool *)
+  (*   ; index: int option *)
+  (*   ; conflicts: conflict list option *)
+  (*   ; path: [`IntPath of int | `StrPath of key] list option } *)
+  (* [@@deriving sexp_of] *)
 
   type ref =
     { action: action
@@ -169,7 +169,8 @@ module OpSetBackend = struct
 
   type diff_type = DiffMap | DiffList | DiffText [@@deriving sexp_of]
 
-  type diff_action = DiffCreate | DiffSet | DiffInsert [@@deriving sexp_of]
+  type diff_action = DiffCreate | DiffSet | DiffInsert | DiffRemove
+  [@@deriving sexp_of]
 
   type diff =
     { obj: string
@@ -180,7 +181,8 @@ module OpSetBackend = struct
     ; link: bool option
     ; index: int option
     ; elem_id: string option
-    ; conflicts: conflict list option }
+    ; conflicts: conflict list option
+    ; path: [`IntPath of int | `StrPath of key] list option }
   [@@deriving sexp_of]
 
   type child = string [@@deriving sexp_of]
@@ -227,8 +229,6 @@ module OpSetBackend = struct
     let seq = log sexp_of_int
 
     let change_list = log (sexp_of_list sexp_of_change)
-
-    let edit_list = log (sexp_of_list sexp_of_edit)
 
     let value = log sexp_of_value
 
@@ -299,16 +299,16 @@ module OpSetBackend = struct
     let edit, obj_aux =
       match op.action with
       | MakeMap ->
-          let e =
-            { action= Create
-            ; _type= Map
+          let e : diff =
+            { action= DiffCreate
+            ; type_= DiffMap
             ; obj= op.obj
             ; key= None
             ; index= None
             ; path= None
             ; conflicts= None
-            ; link= false
-            ; elem_id__key= None
+            ; link= None
+            ; elem_id= None
             ; value= None }
           in
           let o =
@@ -322,15 +322,15 @@ module OpSetBackend = struct
           (e, o)
       | MakeText ->
           let e =
-            { action= Create
-            ; _type= Text
+            { action= DiffCreate
+            ; type_= DiffText
             ; obj= op.obj
             ; index= None
             ; conflicts= None
             ; path= None
-            ; link= false
+            ; link= None
             ; key= None
-            ; elem_id__key= None
+            ; elem_id= None
             ; value= None }
           in
           let o =
@@ -344,15 +344,15 @@ module OpSetBackend = struct
           (e, o)
       | MakeList ->
           let e =
-            { action= Create
+            { action= DiffCreate
             ; key= None
-            ; _type= List
+            ; type_= DiffList
             ; conflicts= None
             ; obj= op.obj
             ; index= None
             ; path= None
-            ; link= false
-            ; elem_id__key= None
+            ; link= None
+            ; elem_id= None
             ; value= None }
           in
           let o =
@@ -414,9 +414,9 @@ module OpSetBackend = struct
     | [] -> None
 
   (* Returns the path from the root object to the given objectId, as an array of string keys
-     (for ancestor maps) and integer indexes (for ancestor lists). If there are several paths
-     to the same object, returns one of the paths arbitrarily. If the object is not reachable
-     from the root, returns null. *)
+   (for ancestor maps) and integer indexes (for ancestor lists). If there are several paths
+   to the same object, returns one of the paths arbitrarily. If the object is not reachable
+   from the root, returns null. *)
   let rec get_path t obj_id path =
     if String.equal obj_id root_id then path
     else
@@ -442,32 +442,32 @@ module OpSetBackend = struct
                   (CCOpt.map (fun p -> `StrPath ref.key :: p) path) ) ) )
 
   let patch_list (t : t) obj_id index (elem_id__key : key)
-      (action : edit_action) (ops : op list option) =
-    let _type =
+      (action : diff_action) (ops : op list option) =
+    let type_ =
       let _, obj_aux = ObjectIdMap.get obj_id t.by_object |> CCOpt.get_exn in
-      match obj_aux._init.action with MakeText -> Text | _ -> List
+      match obj_aux._init.action with MakeText -> DiffText | _ -> DiffList
     in
     let first_op = CCOpt.flat_map (fun ops -> CCList.nth_opt ops 0) ops in
     let elem_ids = CCOpt.get_exn (get_obj_aux_exn t obj_id)._elem_ids in
     let value = CCOpt.flat_map (fun (fop : op) -> fop.value) first_op in
     let value = CCOpt.map (fun v -> Value v) value in
     let path = get_path t obj_id (Some []) in
-    let edit : edit =
+    let edit : diff =
       { action
-      ; _type
+      ; type_
       ; obj= obj_id
       ; index= Some index
       ; key= None
       ; path
-      ; link= false
+      ; link= None
       ; value= None
       ; conflicts= None
-      ; elem_id__key= None }
+      ; elem_id= None }
     in
     let edit, value =
       match first_op with
       | Some fop when fop.action = Link ->
-          ( {edit with link= true}
+          ( {edit with link= Some true}
           , Some
               (Link {obj= get_op_value_as_string_exn (CCOpt.get_exn fop.value)})
           )
@@ -475,19 +475,19 @@ module OpSetBackend = struct
     in
     let elem_ids, edit =
       match action with
-      | Insert ->
+      | DiffInsert ->
           let elem_ids =
             SkipList.insert_index index (CCOpt.get_exn first_op).key value
               elem_ids
           in
-          (elem_ids, {edit with elem_id__key= Some elem_id__key; value})
-      | Set ->
+          (elem_ids, {edit with elem_id= Some elem_id__key; value})
+      | DiffSet ->
           let elem_ids =
             SkipList.set_value (CCOpt.get_exn first_op).key value elem_ids
           in
           (elem_ids, {edit with value})
-      | Remove -> (SkipList.remove_index index elem_ids, edit)
-      | Create -> raise Unknown_action_type
+      | DiffRemove -> (SkipList.remove_index index elem_ids, edit)
+      | DiffCreate -> raise Unknown_action_type
     in
     let edit =
       match ops with
@@ -506,7 +506,7 @@ module OpSetBackend = struct
     ({t with by_object}, [edit])
 
   (* Returns true if the two operations are concurrent, that is, they happened without being aware of
-     each other (neither happened before the other). Returns false if one supersedes the other. *)
+   each other (neither happened before the other). Returns false if one supersedes the other. *)
   let is_concurrent t (op1 : op) (op2 : op) =
     let actor1, seq1 = (op1.actor, op1.seq) in
     let actor2, seq2 = (op2.actor, op2.seq) in
@@ -590,7 +590,7 @@ module OpSetBackend = struct
       match parent_id with Some "_head" -> None | _ -> parent_id
     else
       (* In the original code, there seems to be a bug here, where prev_id will still be undefined when fist child is equal to key.
-         We replicate the behavior anyway to preserve the semantics. *)
+       We replicate the behavior anyway to preserve the semantics. *)
       let prev_id =
         match
           CCList.find_idx (fun child -> String.equal child key) children
@@ -614,8 +614,8 @@ module OpSetBackend = struct
     match index with
     | Some index ->
         if CCList.is_empty ops then
-          patch_list t obj_id index elem_id__key Remove None
-        else patch_list t obj_id index elem_id__key Set (Some ops)
+          patch_list t obj_id index elem_id__key DiffRemove None
+        else patch_list t obj_id index elem_id__key DiffSet (Some ops)
     | None ->
         (* Deleting a non-existent element = no-op *)
         if CCList.is_empty ops then (t, [])
@@ -630,22 +630,22 @@ module OpSetBackend = struct
           in
           (* Index can be -1 here, this feels like an error, but we keep going to preserve semantics *)
           let index = loop elem_id__key in
-          patch_list t obj_id (index + 1) elem_id__key Insert (Some ops)
+          patch_list t obj_id (index + 1) elem_id__key DiffInsert (Some ops)
 
   let update_map_key t obj_id key =
     let ops = get_field_ops t obj_id key in
     let path = get_path t obj_id (Some []) in
-    let edit =
+    let edit : diff =
       if CCList.is_empty ops then
-        { action= Remove
+        { action= DiffRemove
         ; key= Some key
-        ; _type= Map
+        ; type_= DiffMap
         ; conflicts= None
         ; obj= obj_id
         ; index= None
         ; path
-        ; link= false
-        ; elem_id__key= None
+        ; link= None
+        ; elem_id= None
         ; value= None }
       else
         let fst = CCList.hd ops in
@@ -653,16 +653,16 @@ module OpSetBackend = struct
         let conflicts =
           if CCList.length ops > 1 then get_conflicts ops else None
         in
-        { action= Set
-        ; _type= Map
+        { action= DiffSet
+        ; type_= DiffMap
         ; obj= obj_id
         ; key= Some key
         ; path
         ; value
-        ; link= fst.action = Link
+        ; link= (if fst.action = Link then Some true else None)
         ; conflicts
         ; index= None
-        ; elem_id__key= None }
+        ; elem_id= None }
     in
     (t, [edit])
 
@@ -817,7 +817,7 @@ module OpSetBackend = struct
       (* In the original, t.states, while running under test is actually ordered. I modified the tests. *)
       let t = {t with states= ActorMap.add change.actor new_prior t.states} in
       (* NOTE: The original code sets actor and sequence equal to change actor and seq, for each op.
-               We choose to keep the actor and seq attached to every op in the data type. *)
+             We choose to keep the actor and seq attached to every op in the data type. *)
       let ops =
         CCList.map
           (fun (ch_op : change_op) ->
@@ -844,16 +844,16 @@ module OpSetBackend = struct
 
   (* Simon says...
 
-     do drain op/change queue
-      if change ready
-        apply and accumulate diffs
-      else
-        put change into new queue
-     stop when new queue size == starting queue size
-      (ie. no ops were ready to apply)
-     otherwise recurse to retry ops that weren't ready
+   do drain op/change queue
+    if change ready
+      apply and accumulate diffs
+    else
+      put change into new queue
+   stop when new queue size == starting queue size
+    (ie. no ops were ready to apply)
+   otherwise recurse to retry ops that weren't ready
 
-  *)
+*)
   let rec apply_queued_ops t diffs =
     let t, diffs, queue =
       CCFQueue.fold
@@ -1058,6 +1058,7 @@ module OpSetBackend = struct
           ; obj= obj_id
           ; type_= typ
           ; action= DiffCreate
+          ; path= None
           ; key= None
           ; elem_id= None
           ; index= None } ]
@@ -1074,6 +1075,7 @@ module OpSetBackend = struct
             ; type_= typ
             ; action= DiffInsert
             ; key= None
+            ; path= None
             ; value= None
             ; link= None
             ; conflicts= None
@@ -1121,6 +1123,7 @@ module OpSetBackend = struct
           [ { conflicts= None
             ; value= None
             ; link= None
+            ; path= None
             ; obj= obj_id
             ; type_= DiffMap
             ; action= DiffCreate
@@ -1141,6 +1144,7 @@ module OpSetBackend = struct
                 { conflicts= None
                 ; value= None
                 ; link= None
+                ; path= None
                 ; obj= obj_id
                 ; type_= DiffMap
                 ; elem_id= None

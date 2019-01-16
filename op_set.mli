@@ -60,27 +60,11 @@ module OpSetBackend : sig
 
   type state = {change: change; allDeps: seq ActorMap.t}
 
-  type edit_action = Create | Insert | Remove | Set
-
-  type edit_type = Map | Text | List
-
   type conflict = {actor: actor; value: value option; link: bool option}
-
-  type edit =
-    { _type: edit_type
-    ; action: edit_action
-    ; elem_id__key: key option
-    ; key: string option
-    ; value: value option
-    ; obj: obj_id
-    ; link: bool
-    ; index: int option
-    ; conflicts: conflict list option
-    ; path: [`IntPath of int | `StrPath of key] list option }
 
   type diff_type = DiffMap | DiffList | DiffText
 
-  type diff_action = DiffCreate | DiffSet | DiffInsert
+  type diff_action = DiffCreate | DiffSet | DiffInsert | DiffRemove
 
   type diff =
     { obj: string
@@ -91,7 +75,8 @@ module OpSetBackend : sig
     ; link: bool option
     ; index: int option
     ; elem_id: string option
-    ; conflicts: conflict list option }
+    ; conflicts: conflict list option
+    ; path: [`IntPath of int | `StrPath of key] list option }
 
   type patch =
     { can_undo: bool
@@ -123,7 +108,7 @@ module OpSetBackend : sig
 
   val init : unit -> t
 
-  val add_change : t -> change -> bool -> t * edit list
+  val add_change : t -> change -> bool -> t * diff list
 
   val get_missing_changes : t -> seq ActorMap.t -> change list
 
