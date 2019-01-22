@@ -122,7 +122,7 @@ module OpSetBackend = struct
     { actor: actor
     ; seq: seq
     ; deps: seq ActorMap.t
-    ; ops: change_op list option
+    ; ops: change_op list
     ; message: string option }
   [@@deriving sexp_of, compare]
 
@@ -828,7 +828,7 @@ module OpSetBackend = struct
             ; obj= ch_op.obj
             ; elem= ch_op.elem
             ; value= ch_op.value } )
-          (CCOpt.get_exn change.ops)
+          change.ops
       in
       let t, diffs = apply_ops t ops in
       let remaining_deps =
