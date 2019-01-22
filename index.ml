@@ -1,3 +1,4 @@
+open Js_of_ocaml
 open Sexplib.Conv
 open Op_set
 open Datastructures
@@ -144,8 +145,7 @@ let number_of_int i = Js.number_of_float (float_of_int i)
 
 let obj_set_path (edit : OpSetBackend.diff) obj_kv =
   match edit.action with
-  | OpSetBackend.DiffSet | OpSetBackend.DiffRemove | OpSetBackend.DiffInsert
--> (
+  | OpSetBackend.DiffSet | OpSetBackend.DiffRemove | OpSetBackend.DiffInsert -> (
     match edit.path with
     | Some v ->
         CCArray.append obj_kv [|("path", Js.Unsafe.inject (path_to_js_path v))|]
@@ -198,9 +198,11 @@ let js_change_to_change js_change : OpSetBackend.change =
   ; seq= int_of_js_number js_change##.seq
   ; deps= actor_map_of_js_obj js_change##.deps
   ; ops=
-      Js.Optdef.case js_change##.ops
-        (fun () -> None)
-        (fun ops -> Some (to_op_list ops))
+      (* Undo will pass undefined ops, but this never propagates to the actual change sent to the BE.
+         Undo ops will be set by undo function bellow, hence the change type should always have ops.
+         A change with no ops makes no sense at all, but the frontend does pass a change with no ops for undo.
+       *)
+      Js.Optdef.case js_change##.ops (fun () -> []) (fun ops -> to_op_list ops)
   ; message=
       Js.Optdef.case js_change##.message
         (fun () -> None)
@@ -214,8 +216,8 @@ let change_to_js_change (change : OpSetBackend.change) =
   |> obj_set ~conv:(Js.number_of_float $ float_of_int) "seq" change.seq
   |> obj_set ~conv:(js_obj_of_actor_map js_number_of_int) "deps" change.deps
   |> obj_set_optdef Js.string "message" change.message
-  |> obj_set_optdef
-       (Js.array $ CCArray.of_list $ CCList.map change_op_to_js_change_op)
+  |> obj_set
+       ~conv:(Js.array $ CCArray.of_list $ CCList.map change_op_to_js_change_op)
        "ops" change.ops
   |> Js.Unsafe.obj
 
@@ -345,7 +347,7 @@ let undo t change =
                 : BE.change_op ) )
             undo_ops
         in
-        let change : BE.change = {change with ops= Some change_ops} in
+        let change : BE.change = {change with ops= change_ops} in
         let op_set = t.op_set in
         let redo_ops =
           CCList.fold_left
@@ -400,7 +402,7 @@ let redo t (change : BE.change) =
               : BE.change_op ) )
           redo_ops
       in
-      let change = {change with ops= Some change_ops} in
+      let change = {change with ops= change_ops} in
       let op_set = t.op_set in
       let op_set =
         { op_set with
