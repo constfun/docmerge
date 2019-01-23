@@ -193,7 +193,7 @@ let js_obj_of_actor_map conv m =
 
 let int_of_js_number n = int_of_float (Js.float_of_number n)
 
-let js_change_to_change js_change : OpSetBackend.change =
+let js_change_to_change js_change : BE.Change.t =
   { actor= Js.to_string js_change##.actor
   ; seq= int_of_js_number js_change##.seq
   ; deps= actor_map_of_js_obj js_change##.deps
@@ -210,15 +210,18 @@ let js_change_to_change js_change : OpSetBackend.change =
 
 let js_number_of_int i = Js.number_of_float (float_of_int i)
 
-let change_to_js_change (change : OpSetBackend.change) =
+let change_to_js_change (change : BE.Change.t) =
+  let module C = BE.Change in
   CCArray.empty
-  |> obj_set ~conv:Js.string "actor" change.actor
-  |> obj_set ~conv:(Js.number_of_float $ float_of_int) "seq" change.seq
-  |> obj_set ~conv:(js_obj_of_actor_map js_number_of_int) "deps" change.deps
-  |> obj_set_optdef Js.string "message" change.message
+  |> obj_set ~conv:Js.string "actor" (C.actor change)
+  |> obj_set ~conv:(Js.number_of_float $ float_of_int) "seq" (C.seq change)
+  |> obj_set
+       ~conv:(js_obj_of_actor_map js_number_of_int)
+       "deps" (C.deps change)
+  |> obj_set_optdef Js.string "message" (C.message change)
   |> obj_set
        ~conv:(Js.array $ CCArray.of_list $ CCList.map change_op_to_js_change_op)
-       "ops" change.ops
+       "ops" (C.ops change)
   |> Js.Unsafe.obj
 
 module ToJs = struct
@@ -347,7 +350,7 @@ let undo t change =
                 : BE.change_op ) )
             undo_ops
         in
-        let change : BE.change = {change with ops= change_ops} in
+        let change : BE.Change.t = {change with ops= change_ops} in
         let op_set = t.op_set in
         let redo_ops =
           CCList.fold_left
@@ -386,7 +389,7 @@ let undo t change =
         let t = {op_set= new_op_set} in
         (t, diffs)
 
-let redo t (change : BE.change) =
+let redo t (change : BE.Change.t) =
   let redo_ops = CCList.last_opt t.op_set.redo_stack in
   match redo_ops with
   | None -> raise Last_change_was_not_an_undo

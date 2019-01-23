@@ -23,6 +23,29 @@ module OpMap = CCMapMake (CCString)
 module DiffMap = CCMapMake (CCString)
 module ChildMap = CCMapMake (CCString)
 
+module MultiValueRegister = struct
+  type t = Bool of bool | String of string | Number of float
+  [@@deriving sexp_of, compare]
+end
+
+module MapOp = struct
+  type t =
+    | Create of string
+    | Set of string * MultiValueRegister.t
+    | Delete of string
+  [@@deriving sexp_of, compare]
+end
+
+module Op = struct
+  type t =
+    | MapOp of MapOp.t
+    (* | ListOp of ListOp.t *)
+    (* | TextOp of TextOp.t *)
+  [@@deriving sexp_of, compare]
+end
+
+module Clock = struct end
+
 module OpSetBackend = struct
   let root_id = "00000000-0000-0000-0000-000000000000"
 
@@ -85,14 +108,6 @@ module OpSetBackend = struct
     ; value: op_val option }
   [@@deriving sexp_of, compare]
 
-  type change_op =
-    { key: key option
-    ; action: action
-    ; obj: obj_id
-    ; elem: int option
-    ; value: op_val option }
-  [@@deriving sexp_of, compare]
-
   type lamport_op = {actor: actor; elem: int} [@@deriving sexp_of]
 
   let lamport_compare op1 op2 =
@@ -118,15 +133,67 @@ module OpSetBackend = struct
     end)
   end
 
-  type change =
-    { actor: actor
-    ; seq: seq
-    ; deps: seq ActorMap.t
-    ; ops: change_op list
-    ; message: string option }
+  type change_op =
+    { key: key option
+    ; action: action
+    ; obj: obj_id
+    ; elem: int option
+    ; value: op_val option }
   [@@deriving sexp_of, compare]
 
-  type state = {change: change; allDeps: seq ActorMap.t} [@@deriving sexp_of]
+  module Change : sig
+    type t =
+      { actor: string
+      ; seq: int
+      ; deps: int ActorMap.t (* ; ops: Op.t list *)
+      ; ops: change_op list
+      ; message: string option }
+    [@@deriving sexp_of, compare]
+
+    val actor : t -> string
+
+    val seq : t -> int
+
+    val ops : t -> change_op list
+
+    val deps : t -> int ActorMap.t
+
+    val message : t -> string option
+
+    val causally_ready : int ActorMap.t -> t -> bool
+  end = struct
+    type t =
+      { actor: string
+      ; seq: int
+      ; deps: int ActorMap.t (* ; ops: Op.t list *)
+      ; ops: change_op list
+      ; message: string option }
+    [@@deriving sexp_of, compare]
+
+    let actor {actor} = actor
+
+    let seq {seq} = seq
+
+    let ops {ops} = ops
+
+    let deps {deps} = deps
+
+    let message {message} = message
+
+    (* Returns true if all changes that causally precede the given change *)
+    (* have already been applied in `opSet`. *)
+    (* All changes are causally (and totally) ordered using lamport timestamps *)
+    (* When a new op lands in the op set, check if all preceeding ops have been applied *)
+    (* If we store ops in Irmin, causality is enforced by history, aka the Merkle DAG. *)
+    let causally_ready clock change =
+      change.deps
+      |> ActorMap.add change.actor (change.seq - 1)
+      |> ActorMap.for_all (fun depActor depSeq ->
+             let actseq = ActorMap.get_or ~default:0 depActor clock in
+             if actseq < depSeq then false else true )
+  end
+
+  type state = {change: Change.t; allDeps: seq ActorMap.t} [@@deriving sexp_of]
 
   (* type edit_action = Create | Insert | Remove | Set [@@deriving sexp_of] *)
   
@@ -194,7 +261,7 @@ module OpSetBackend = struct
     { states:
         state list ActorMap.t
         (* List of states for every actor for every seq *)
-    ; history: change list
+    ; history: Change.t list
     ; by_object: obj ObjectIdMap.t
     ; clock:
         seq ActorMap.t
@@ -204,7 +271,7 @@ module OpSetBackend = struct
     ; undo_pos: int
     ; undo_stack: ref list list
     ; redo_stack: ref list list
-    ; queue: change CCFQueueWithSexp.t
+    ; queue: Change.t CCFQueueWithSexp.t
     ; undo_local: ref list option }
   [@@deriving sexp_of]
 
@@ -222,17 +289,17 @@ module OpSetBackend = struct
 
     let seq_actor_map = log (ActorMap.sexp_of_t sexp_of_int)
 
-    let t_queue = log (CCFQueueWithSexp.sexp_of_t sexp_of_change)
+    (* let t_queue = log (CCFQueueWithSexp.sexp_of_t sexp_of_change) *)
 
     let actor = log sexp_of_string
 
     let seq = log sexp_of_int
 
-    let change_list = log (sexp_of_list sexp_of_change)
+    (* let change_list = log (sexp_of_list sexp_of_change) *)
 
     let value = log sexp_of_value
 
-    let change = log sexp_of_change
+    (* let change = log sexp_of_change *)
 
     let ref_list = log (sexp_of_list sexp_of_ref)
 
@@ -249,18 +316,6 @@ module OpSetBackend = struct
     | BoolValue _ | NumberValue _ | Null -> raise (Invalid_argument "op.value")
 
   let get_obj_action t obj_id = (get_obj_aux_exn t obj_id)._init.action
-
-  (* Returns true if all changes that causally precede the given change *)
-  (* have already been applied in `opSet`. *)
-  (* All changes are causally (and totally) ordered using lamport timestamps *)
-  (* When a new op lands in the op set, check if all preceeding ops have been applied *)
-  (* If we store ops in Irmin, causality is enforced by history, aka the Merkle DAG. *)
-  let causaly_ready t (change : change) =
-    change.deps
-    |> ActorMap.add change.actor (change.seq - 1)
-    |> ActorMap.for_all (fun depActor depSeq ->
-           let actseq = ActorMap.get_or ~default:0 depActor t.clock in
-           if actseq < depSeq then false else true )
 
   (*
      All change ops + allDeps of every actor state at current seq?
@@ -798,37 +853,39 @@ module OpSetBackend = struct
     in
     (t, all_diffs)
 
-  let apply_change t (change : change) =
-    let prior = ActorMap.get_or ~default:[] change.actor t.states in
-    if change.seq <= List.length prior then
-      match List.nth_opt prior (change.seq - 1) with
-      | Some state when compare_change state.change change != 0 ->
-          (* log "CH1" sexp_of_change state.change ; *)
-          (* log "CH2" sexp_of_change change ; *)
+  let apply_change t (change : Change.t) =
+    let prior = ActorMap.get_or ~default:[] (Change.actor change) t.states in
+    if Change.seq change <= List.length prior then
+      match List.nth_opt prior (Change.seq change - 1) with
+      | Some state when Change.compare state.change change != 0 ->
           raise Inconsistent_reuse_of_sequence
       | _ -> (t, [])
     else
       let allDeps =
-        ActorMap.add change.actor (change.seq - 1) change.deps
+        ActorMap.add (Change.actor change)
+          (Change.seq change - 1)
+          (Change.deps change)
         |> transitive_deps t
       in
       (* LLog.seq_actor_map "all deps" allDeps ; *)
       let new_prior = List.append prior [{change; allDeps}] in
       (* In the original, t.states, while running under test is actually ordered. I modified the tests. *)
-      let t = {t with states= ActorMap.add change.actor new_prior t.states} in
-      (* NOTE: The original code sets actor and sequence equal to change actor and seq, for each op.
+      let t =
+        {t with states= ActorMap.add (Change.actor change) new_prior t.states}
+      in
+      (* NOTE: The original code sets actor and sequence equal to (Change.actor change) and seq, for each op.
              We choose to keep the actor and seq attached to every op in the data type. *)
       let ops =
         CCList.map
           (fun (ch_op : change_op) ->
-            { actor= change.actor
-            ; seq= change.seq
+            { actor= Change.actor change
+            ; seq= Change.seq change
             ; action= ch_op.action (* TODO: Op key should be an option. *)
             ; key= (match ch_op.key with Some k -> k | None -> "")
             ; obj= ch_op.obj
             ; elem= ch_op.elem
             ; value= ch_op.value } )
-          change.ops
+          (Change.ops change)
       in
       let t, diffs = apply_ops t ops in
       let remaining_deps =
@@ -836,9 +893,11 @@ module OpSetBackend = struct
           (fun depActor depSeq ->
             depSeq > ActorMap.get_or depActor ~default:0 allDeps )
           t.deps
-        |> ActorMap.add change.actor change.seq
+        |> ActorMap.add (Change.actor change) (Change.seq change)
       in
-      let clock = ActorMap.add change.actor change.seq t.clock in
+      let clock =
+        ActorMap.add (Change.actor change) (Change.seq change) t.clock
+      in
       let history = List.append t.history [change] in
       ({t with deps= remaining_deps; clock; history}, diffs)
 
@@ -859,7 +918,7 @@ module OpSetBackend = struct
       CCFQueue.fold
         (fun (t, diffs, queue) change ->
           (* LLog.change "is change ready?" change ; *)
-          let ready = causaly_ready t change in
+          let ready = Change.causally_ready t.clock change in
           (* print_endline (if ready then "yes" else "no") ; *)
           if ready then
             let t, diff = apply_change t change in
@@ -941,10 +1000,13 @@ module OpSetBackend = struct
     |> CCList.map (fun state -> state.change)
 
   let get_missing_deps t =
-    (* LLog.t_queue "gmd t.queue" t.queue ; *)
     CCFQueue.fold
-      (fun missing (change : change) ->
-        let deps = ActorMap.add change.actor (change.seq - 1) change.deps in
+      (fun missing (change : Change.t) ->
+        let deps =
+          ActorMap.add (Change.actor change)
+            (Change.seq change - 1)
+            (Change.deps change)
+        in
         ActorMap.fold
           (fun depActor depSeq missing ->
             if ActorMap.get_or depActor t.clock ~default:0 < depSeq then
