@@ -271,25 +271,8 @@ module OpSetBackend = struct
 
   type state = {change: Change.t; allDeps: seq ActorMap.t} [@@deriving sexp_of]
 
-  (* type edit_action = Create | Insert | Remove | Set [@@deriving sexp_of] *)
-  
-  (* type edit_type = Map | Text | List [@@deriving sexp_of] *)
-
   type conflict = {actor: actor; value: value option; link: bool option}
   [@@deriving sexp_of]
-
-  (* type edit = *)
-  (*   { _type: edit_type *)
-  (*   ; action: edit_action *)
-  (*   ; elem_id__key: key option *)
-  (*   ; key: string option *)
-  (*   ; value: value option *)
-  (*   ; obj: obj_id *)
-  (*   ; link: bool *)
-  (*   ; index: int option *)
-  (*   ; conflicts: conflict list option *)
-  (*   ; path: [`IntPath of int | `StrPath of key] list option } *)
-  (* [@@deriving sexp_of] *)
 
   type ref =
     { action: action
