@@ -142,13 +142,17 @@ module OpSetBackend = struct
   [@@deriving sexp_of, compare]
 
   module Change : sig
-    type t =
-      { actor: string
-      ; seq: int
-      ; deps: int ActorMap.t (* ; ops: Op.t list *)
-      ; ops: change_op list
-      ; message: string option }
-    [@@deriving sexp_of, compare]
+    type t [@@deriving sexp_of, compare]
+
+    val create :
+         ?message:string
+      -> actor:string
+      -> seq:int
+      -> deps:int ActorMap.t
+      -> ops:change_op list
+      -> t
+
+    val set_ops : t -> change_op list -> t
 
     val actor : t -> string
 
@@ -161,6 +165,8 @@ module OpSetBackend = struct
     val message : t -> string option
 
     val causally_ready : int ActorMap.t -> t -> bool
+
+    val of_js : Js_of_ocaml.Js.Unsafe.any -> t
   end = struct
     type t =
       { actor: string
@@ -169,6 +175,11 @@ module OpSetBackend = struct
       ; ops: change_op list
       ; message: string option }
     [@@deriving sexp_of, compare]
+
+    let create ?message ~actor ~seq ~deps ~ops =
+      {actor; seq; deps; ops; message}
+
+    let set_ops t ops = {t with ops}
 
     let actor {actor} = actor
 
@@ -191,6 +202,71 @@ module OpSetBackend = struct
       |> ActorMap.for_all (fun depActor depSeq ->
              let actseq = ActorMap.get_or ~default:0 depActor clock in
              if actseq < depSeq then false else true )
+
+    let of_js (js_change : Js_of_ocaml.Js.Unsafe.any) =
+      let open Js_of_ocaml in
+      let js_action_to_action js_s =
+        let s = Js.to_string js_s in
+        if String.equal s "set" then Set
+        else if String.equal s "del" then Del
+        else if String.equal s "makeMap" then MakeMap
+        else if String.equal s "makeList" then MakeList
+        else if String.equal s "makeText" then MakeText
+        else if String.equal s "link" then Link
+        else if String.equal s "ins" then Ins
+        else raise Not_supported
+      in
+      let rec js_value_to_op_val js_value =
+        Js.Opt.case js_value
+          (fun () -> Null)
+          (fun js_value ->
+            let typ = Js.to_string (Js.typeof js_value) in
+            match typ with
+            | "string" -> StrValue (Js.to_string (Js.Unsafe.coerce js_value))
+            | "boolean" -> BoolValue (Js.to_bool (Js.Unsafe.coerce js_value))
+            | "number" ->
+                NumberValue (Js.float_of_number (Js.Unsafe.coerce js_value))
+            | _ -> raise Not_supported )
+      in
+      let to_op_list arr =
+        CCArray.to_list (Js.to_array arr)
+        |> CCList.map (fun js_op ->
+               { action= js_action_to_action js_op##.action
+               ; key= Js.Optdef.(to_option (map js_op##.key Js.to_string))
+               ; elem=
+                   Js.Optdef.(
+                     to_option
+                       (map js_op##.elem (fun x -> int_of_float (Js.to_float x))))
+               ; value=
+                   Js.Optdef.(to_option (map js_op##.value js_value_to_op_val))
+               ; obj= Js.to_string js_op##.obj } )
+      in
+      let actor_map_of_js_obj js_obj =
+        Js.to_array (Js.object_keys js_obj)
+        |> CCArray.fold
+             (fun amap js_actor ->
+               let value = Js.Unsafe.get js_obj js_actor in
+               ActorMap.add (Js.to_string js_actor) value amap )
+             ActorMap.empty
+      in
+      { actor= Js.to_string (Js.Unsafe.coerce js_change)##.actor
+      ; seq=
+          int_of_float (Js.float_of_number (Js.Unsafe.coerce js_change)##.seq)
+      ; deps= actor_map_of_js_obj (Js.Unsafe.coerce js_change)##.deps
+      ; ops=
+          (* Undo will pass undefined ops, but this never propagates to the actual change sent to the BE.
+             Undo ops will be set by undo function bellow, hence the change type should always have ops.
+             A change with no ops makes no sense at all, but the frontend does pass a change with no ops for undo.
+           *)
+          Js.Optdef.case
+            (Js.Unsafe.coerce js_change)##.ops
+            (fun () -> [])
+            (fun ops -> to_op_list ops)
+      ; message=
+          Js.Optdef.case
+            (Js.Unsafe.coerce js_change)##.message
+            (fun () -> None)
+            (fun msg -> Some (Js.to_string msg)) }
   end
 
   type state = {change: Change.t; allDeps: seq ActorMap.t} [@@deriving sexp_of]

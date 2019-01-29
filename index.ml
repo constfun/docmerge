@@ -67,20 +67,6 @@ let path_to_js_path v =
 
 let actor_to_js_actor actor = Js.Unsafe.inject (Js.string actor)
 
-let array_to_list arr = CCArray.to_list (Js.to_array arr)
-
-let js_action_to_action : Js.js_string Js.t -> OpSetBackend.action =
- fun js_s ->
-  let s = Js.to_string js_s in
-  if String.equal s "set" then OpSetBackend.Set
-  else if String.equal s "del" then OpSetBackend.Del
-  else if String.equal s "makeMap" then OpSetBackend.MakeMap
-  else if String.equal s "makeList" then OpSetBackend.MakeList
-  else if String.equal s "makeText" then OpSetBackend.MakeText
-  else if String.equal s "link" then OpSetBackend.Link
-  else if String.equal s "ins" then OpSetBackend.Ins
-  else raise Not_supported
-
 let action_to_js_action a =
   Js.string
     OpSetBackend.(
@@ -103,31 +89,6 @@ let rec value_to_js_value (value : OpSetBackend.value) =
   match value with
   | Value s -> op_val_to_js_value s
   | Link l -> Js.Unsafe.inject (Js.string l.obj)
-
-let rec js_value_to_op_val js_value =
-  Js.Opt.case js_value
-    (fun () -> OpSetBackend.Null)
-    (fun js_value ->
-      let typ = Js.to_string (Js.typeof js_value) in
-      match typ with
-      | "string" -> BE.StrValue (Js.to_string (Js.Unsafe.coerce js_value))
-      | "boolean" -> BE.BoolValue (Js.to_bool (Js.Unsafe.coerce js_value))
-      | "number" ->
-          BE.NumberValue (Js.float_of_number (Js.Unsafe.coerce js_value))
-      | _ -> raise Not_supported )
-
-let to_op_list arr =
-  array_to_list arr
-  |> CCList.map (fun js_op ->
-         ( { action= js_action_to_action js_op##.action
-           ; key= Js.Optdef.(to_option (map js_op##.key Js.to_string))
-           ; elem=
-               Js.Optdef.(
-                 to_option (map js_op##.elem (int_of_float $ Js.to_float)))
-           ; value=
-               Js.Optdef.(to_option (map js_op##.value js_value_to_op_val))
-           ; obj= Js.to_string js_op##.obj }
-           : OpSetBackend.change_op ) )
 
 let conflicts_to_js_conflicts (v : OpSetBackend.conflict list) =
   list_to_js_array
@@ -175,14 +136,6 @@ let change_op_to_js_change_op (op : OpSetBackend.change_op) =
   |> obj_set "obj" (Js.string op.obj)
   |> Js.Unsafe.obj
 
-let actor_map_of_js_obj js_obj =
-  Js.to_array (Js.object_keys js_obj)
-  |> CCArray.fold
-       (fun amap js_actor ->
-         let value = Js.Unsafe.get js_obj js_actor in
-         ActorMap.add (Js.to_string js_actor) value amap )
-       ActorMap.empty
-
 let js_obj_of_actor_map conv m =
   (* string, any array *)
   let kv =
@@ -190,23 +143,6 @@ let js_obj_of_actor_map conv m =
     |> CCArray.map (fun (k, v) -> (k, Js.Unsafe.inject (conv v)))
   in
   Js.Unsafe.obj kv
-
-let int_of_js_number n = int_of_float (Js.float_of_number n)
-
-let js_change_to_change js_change : BE.Change.t =
-  { actor= Js.to_string js_change##.actor
-  ; seq= int_of_js_number js_change##.seq
-  ; deps= actor_map_of_js_obj js_change##.deps
-  ; ops=
-      (* Undo will pass undefined ops, but this never propagates to the actual change sent to the BE.
-         Undo ops will be set by undo function bellow, hence the change type should always have ops.
-         A change with no ops makes no sense at all, but the frontend does pass a change with no ops for undo.
-       *)
-      Js.Optdef.case js_change##.ops (fun () -> []) (fun ops -> to_op_list ops)
-  ; message=
-      Js.Optdef.case js_change##.message
-        (fun () -> None)
-        (fun msg -> Some (Js.to_string msg)) }
 
 let js_number_of_int i = Js.number_of_float (float_of_int i)
 
@@ -322,7 +258,7 @@ let apply_changes t changes = apply t changes false
 let _apply_changes t js_changes =
   let js_changes = ToJs.imm js_changes in
   let changes =
-    CCArray.to_list (Js.to_array js_changes) |> CCList.map js_change_to_change
+    CCArray.to_list (Js.to_array js_changes) |> CCList.map BE.Change.of_js
   in
   let t, diffs = apply_changes t changes in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
@@ -350,7 +286,7 @@ let undo t change =
                 : BE.change_op ) )
             undo_ops
         in
-        let change : BE.Change.t = {change with ops= change_ops} in
+        let change = BE.Change.set_ops change change_ops in
         let op_set = t.op_set in
         let redo_ops =
           CCList.fold_left
@@ -405,7 +341,7 @@ let redo t (change : BE.Change.t) =
               : BE.change_op ) )
           redo_ops
       in
-      let change = {change with ops= change_ops} in
+      let change = BE.Change.set_ops change change_ops in
       let op_set = t.op_set in
       let op_set =
         { op_set with
@@ -419,8 +355,8 @@ let redo t (change : BE.Change.t) =
       ({op_set= new_op_set}, diffs)
 
 let apply_local_change t js_change =
-  let change = js_change_to_change js_change in
-  let request_type = Js.to_string js_change##.requestType in
+  let change = BE.Change.of_js js_change in
+  let request_type = Js.to_string (Js.Unsafe.coerce js_change)##.requestType in
   let t, diffs =
     if CCString.equal request_type "change" then apply t [change] true
     else if CCString.equal request_type "undo" then undo t change
@@ -429,8 +365,8 @@ let apply_local_change t js_change =
   in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
   let js_patch = make_patch t js_diffs in
-  (Js.Unsafe.coerce js_patch)##.actor := js_change##.actor ;
-  (Js.Unsafe.coerce js_patch)##.seq := js_change##.seq ;
+  (Js.Unsafe.coerce js_patch)##.actor := (Js.Unsafe.coerce js_change)##.actor ;
+  (Js.Unsafe.coerce js_patch)##.seq := (Js.Unsafe.coerce js_change)##.seq ;
   let ret = new%js Js.array_length 2 in
   Js.array_set ret 0 (Js.Unsafe.inject t) ;
   Js.array_set ret 1 (Js.Unsafe.inject js_patch) ;
