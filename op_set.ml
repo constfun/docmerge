@@ -98,15 +98,20 @@ module OpSetBackend = struct
     let remove_index index (t : t) = CCList.remove_at_idx index t
   end
 
-  type op =
+  type change_meta = {actor: string; seq: int; message: string option}
+  [@@deriving sexp_of, compare]
+
+  type change_op =
     { key: key
     ; action: action
-    ; actor: actor
-    ; seq: seq
     ; obj: obj_id
     ; elem: int option
     ; value: op_val option }
   [@@deriving sexp_of, compare]
+
+  type op = change_op [@@deriving sexp_of, compare]
+
+  type op_with_meta = change_meta * change_op [@@deriving sexp_of, compare]
 
   type lamport_op = {actor: actor; elem: int} [@@deriving sexp_of]
 
@@ -122,7 +127,7 @@ module OpSetBackend = struct
      We at least make the elem field optional, to encode its potentially undefined nature.
      We use the get_op_elem function to access the elem field and catch the invariant violation at runtime.
   *)
-  let get_op_elem (op : op) =
+  let get_op_elem (op : change_op) =
     match op.elem with
     | Some idx -> idx
     | None -> raise Accessing_undefined_element_index
@@ -132,14 +137,6 @@ module OpSetBackend = struct
       type t = op [@@deriving sexp_of, compare]
     end)
   end
-
-  type change_op =
-    { key: key option
-    ; action: action
-    ; obj: obj_id
-    ; elem: int option
-    ; value: op_val option }
-  [@@deriving sexp_of, compare]
 
   module Change : sig
     type t [@@deriving sexp_of, compare]
@@ -231,8 +228,10 @@ module OpSetBackend = struct
       let to_op_list arr =
         CCArray.to_list (Js.to_array arr)
         |> CCList.map (fun js_op ->
-               { action= js_action_to_action js_op##.action
-               ; key= Js.Optdef.(to_option (map js_op##.key Js.to_string))
+               { action=
+                   js_action_to_action js_op##.action
+                   (* TODO: Key should be an option, we do this to preserve semantics of the original *)
+               ; key= Js.Optdef.case js_op##.key (fun () -> "") Js.to_string
                ; elem=
                    Js.Optdef.(
                      to_option
@@ -284,14 +283,14 @@ module OpSetBackend = struct
 
   type obj_aux =
     { _max_elem: int
-    ; _following: op list KeyMap.t
-    ; _init: op
+    ; _following: op_with_meta list KeyMap.t
+    ; _init: change_op
     ; _inbound: OpSet.t
     ; _elem_ids: SkipList.t option sexp_opaque
     ; _insertion: op ElemIdMap.t }
   [@@deriving sexp_of]
 
-  type obj = op list KeyMap.t * obj_aux [@@deriving sexp_of]
+  type obj = op_with_meta list KeyMap.t * obj_aux [@@deriving sexp_of]
 
   type diff_type = DiffMap | DiffList | DiffText [@@deriving sexp_of]
 
@@ -409,7 +408,7 @@ module OpSetBackend = struct
           ActorMap.add depActor depSeq deps )
       baseDeps ActorMap.empty
 
-  let apply_make t (op : op) =
+  let apply_make t ((meta, op) : op_with_meta) =
     let edit, obj_aux =
       match op.action with
       | MakeMap ->
@@ -485,8 +484,8 @@ module OpSetBackend = struct
     in
     ({t with by_object}, [edit])
 
-  let apply_insert t (op : op) =
-    let elem_id = op.actor ^ ":" ^ CCInt.to_string (get_op_elem op) in
+  let apply_insert t ((meta, op) : op_with_meta) =
+    let elem_id = meta.actor ^ ":" ^ CCInt.to_string (get_op_elem op) in
     ( match ObjectIdMap.find_opt op.obj t.by_object with
     | Some (_, obj_aux) ->
         if ElemIdMap.mem elem_id obj_aux._insertion then
@@ -500,7 +499,8 @@ module OpSetBackend = struct
               let _following =
                 KeyMap.update op.key
                   (function
-                    | Some l -> Some (List.append l [op]) | None -> Some [op])
+                    | Some l -> Some (List.append l [(meta, op)])
+                    | None -> Some [(meta, op)])
                   obj_aux._following
               in
               let _max_elem = max (get_op_elem op) obj_aux._max_elem in
@@ -512,14 +512,14 @@ module OpSetBackend = struct
     let t = {t with by_object} in
     (t, [])
 
-  let get_conflicts (ops : op list) =
+  let get_conflicts (ops : op_with_meta list) =
     match ops with
     | _ :: ops_rest ->
         CCList.fold_left
-          (fun conflicts (op : op) ->
+          (fun conflicts ((meta, op) : op_with_meta) ->
             let link = match op.action with Link -> true | _ -> false in
             let conf : conflict =
-              { actor= op.actor
+              { actor= meta.actor
               ; value= CCOpt.map (fun x -> Value x) op.value
               ; link= Some link }
             in
@@ -556,12 +556,14 @@ module OpSetBackend = struct
                   (CCOpt.map (fun p -> `StrPath ref.key :: p) path) ) ) )
 
   let patch_list (t : t) obj_id index (elem_id__key : key)
-      (action : diff_action) (ops : op list option) =
+      (action : diff_action) (ops : op_with_meta list option) =
     let type_ =
       let _, obj_aux = ObjectIdMap.get obj_id t.by_object |> CCOpt.get_exn in
       match obj_aux._init.action with MakeText -> DiffText | _ -> DiffList
     in
-    let first_op = CCOpt.flat_map (fun ops -> CCList.nth_opt ops 0) ops in
+    let first_op =
+      CCOpt.map snd (CCOpt.flat_map (fun ops -> CCList.nth_opt ops 0) ops)
+    in
     let elem_ids = CCOpt.get_exn (get_obj_aux_exn t obj_id)._elem_ids in
     let value = CCOpt.flat_map (fun (fop : op) -> fop.value) first_op in
     let value = CCOpt.map (fun v -> Value v) value in
@@ -621,7 +623,7 @@ module OpSetBackend = struct
 
   (* Returns true if the two operations are concurrent, that is, they happened without being aware of
    each other (neither happened before the other). Returns false if one supersedes the other. *)
-  let is_concurrent t (op1 : op) (op2 : op) =
+  let is_concurrent t (op1 : change_meta) (op2 : change_meta) =
     let actor1, seq1 = (op1.actor, op1.seq) in
     let actor2, seq2 = (op2.actor, op2.seq) in
     let clock1 =
@@ -677,23 +679,25 @@ module OpSetBackend = struct
       | None -> []
     in
     CCList.filter
-      (fun (op : op) -> match op.action with Ins -> true | _ -> false)
+      (fun ((_, op) : op_with_meta) ->
+        match op.action with Ins -> true | _ -> false )
       following
-    |> CCList.filter (fun (op : op) ->
+    |> CCList.filter (fun ((meta, op) : op_with_meta) ->
            match child_key with
            | None -> true
            | Some child_key ->
                lamport_compare
-                 {actor= op.actor; elem= get_op_elem op}
+                 {actor= meta.actor; elem= get_op_elem op}
                  child_key
                < 0 )
-    |> CCList.sort (fun (op1 : op) (op2 : op) ->
+    |> CCList.sort
+         (fun ((meta1, op1) : op_with_meta) ((meta2, op2) : op_with_meta) ->
            lamport_compare
-             {actor= op1.actor; elem= get_op_elem op1}
-             {actor= op2.actor; elem= get_op_elem op2} )
+             {actor= meta1.actor; elem= get_op_elem op1}
+             {actor= meta2.actor; elem= get_op_elem op2} )
     |> CCList.rev
-    |> CCList.map (fun (op : op) ->
-           op.actor ^ ":" ^ string_of_int (get_op_elem op) )
+    |> CCList.map (fun ((meta, op) : op_with_meta) ->
+           meta.actor ^ ":" ^ string_of_int (get_op_elem op) )
 
   (*  Given the ID of a list element, returns the ID of the immediate predecessor list element, *)
   (*  or null if the given list element is at the head. *)
@@ -762,7 +766,7 @@ module OpSetBackend = struct
         ; elem_id= None
         ; value= None }
       else
-        let fst = CCList.hd ops in
+        let _, fst = CCList.hd ops in
         let value = CCOpt.map (fun s -> Value s) fst.value in
         let conflicts =
           if CCList.length ops > 1 then get_conflicts ops else None
@@ -781,7 +785,7 @@ module OpSetBackend = struct
     (t, [edit])
 
   (* Processes a 'set', 'del', or 'link' operation *)
-  let apply_assign t (op : op) is_top_level =
+  let apply_assign t ((meta, op) : op_with_meta) is_top_level =
     if not (ObjectIdMap.mem op.obj t.by_object) then
       raise Modification_of_unknown_object
     else
@@ -791,7 +795,7 @@ module OpSetBackend = struct
             let obj_map, obj_aux = ObjectIdMap.find op.obj t.by_object in
             let undo_ops =
               KeyMap.get_or op.key ~default:[] obj_map
-              |> CCList.map (fun (op : op) ->
+              |> CCList.map (fun ((_, op) : op_with_meta) ->
                      ( { action= op.action
                        ; obj= op.obj
                        ; elem= None
@@ -817,15 +821,16 @@ module OpSetBackend = struct
         let obj_map, _ = ObjectIdMap.find op.obj t.by_object in
         let refs = KeyMap.get_or op.key ~default:[] obj_map in
         CCList.fold_left
-          (fun (over, rem) ref ->
-            if is_concurrent t ref op then (over, ref :: rem)
-            else (ref :: over, rem) )
+          (fun (over, rem) (ref_meta, ref) ->
+            if is_concurrent t ref_meta meta then (over, (ref_meta, ref) :: rem)
+            else ((ref_meta, ref) :: over, rem) )
           ([], []) refs
       in
       (* If any links were overwritten, remove them from the index of inbound links *)
       let overwritten_links =
-        CCList.filter
-          (fun (op : op) -> match op.action with Link -> true | _ -> false)
+        CCList.filter_map
+          (fun ((_, op) : op_with_meta) ->
+            match op.action with Link -> Some op | _ -> None )
           overwritten
       in
       let t =
@@ -867,11 +872,12 @@ module OpSetBackend = struct
       let remaining =
         match op.action with
         | Del -> remaining
-        | _ -> CCList.append remaining [op]
+        | _ -> CCList.append remaining [(meta, op)]
       in
       let remaining =
         CCList.sort
-          (fun (op1 : op) (op2 : op) -> String.compare op1.actor op2.actor)
+          (fun ((meta1, _) : op_with_meta) ((meta2, _) : op_with_meta) ->
+            String.compare meta1.actor meta2.actor )
           remaining
         |> CCList.rev
       in
@@ -891,21 +897,22 @@ module OpSetBackend = struct
       | MakeList | MakeText -> update_list_element t op.obj op.key
       | _ -> update_map_key t op.obj op.key
 
-  let apply_ops t ops =
+  let apply_ops t meta ops =
     let t, all_diffs, _ =
       List.fold_left
         (fun (t, all_diffs, new_objs) (op : op) ->
           match op.action with
           | MakeMap | MakeList | MakeText ->
               let new_objs = ObjectIdSet.add op.obj new_objs in
-              let t, diffs = apply_make t op in
+              let t, diffs = apply_make t (meta, op) in
               (t, List.append all_diffs diffs, new_objs)
           | Ins ->
-              let t, diffs = apply_insert t op in
+              let t, diffs = apply_insert t (meta, op) in
               (t, List.append all_diffs diffs, new_objs)
           | Set | Del | Link ->
               let t, diffs =
-                apply_assign t op (not (ObjectIdSet.mem op.obj new_objs))
+                apply_assign t (meta, op)
+                  (not (ObjectIdSet.mem op.obj new_objs))
               in
               (t, List.append all_diffs diffs, new_objs) )
         (t, [], ObjectIdSet.empty) ops
@@ -932,21 +939,26 @@ module OpSetBackend = struct
       let t =
         {t with states= ActorMap.add (Change.actor change) new_prior t.states}
       in
-      (* NOTE: The original code sets actor and sequence equal to (Change.actor change) and seq, for each op.
-             We choose to keep the actor and seq attached to every op in the data type. *)
-      let ops =
-        CCList.map
-          (fun (ch_op : change_op) ->
-            { actor= Change.actor change
-            ; seq= Change.seq change
-            ; action= ch_op.action (* TODO: Op key should be an option. *)
-            ; key= (match ch_op.key with Some k -> k | None -> "")
-            ; obj= ch_op.obj
-            ; elem= ch_op.elem
-            ; value= ch_op.value } )
-          (Change.ops change)
+      (* (1* NOTE: The original code sets actor and sequence equal to (Change.actor change) and seq, for each op. *)
+      (*        We choose to keep the actor and seq attached to every op in the data type. *1) *)
+      (* let ops = *)
+      (*   CCList.map *)
+      (*     (fun (ch_op : change_op) -> *)
+      (*       { actor= Change.actor change *)
+      (*       ; seq= Change.seq change *)
+      (*       ; action= ch_op.action (1* TODO: Op key should be an option. *1) *)
+      (*       ; key= (match ch_op.key with Some k -> k | None -> "") *)
+      (*       ; obj= ch_op.obj *)
+      (*       ; elem= ch_op.elem *)
+      (*       ; value= ch_op.value } ) *)
+      (*     (Change.ops change) *)
+      (* in *)
+      let change_meta =
+        { actor= Change.actor change
+        ; seq= Change.seq change
+        ; message= Change.message change }
       in
-      let t, diffs = apply_ops t ops in
+      let t, diffs = apply_ops t change_meta (Change.ops change) in
       let remaining_deps =
         ActorMap.filter
           (fun depActor depSeq ->
@@ -1011,14 +1023,8 @@ module OpSetBackend = struct
     else apply_queued_ops t []
 
   let init () =
-    let root_op =
-      { key= ""
-      ; action= Set
-      ; actor= ""
-      ; seq= 0
-      ; obj= ""
-      ; elem= None
-      ; value= None }
+    let root_op : change_op =
+      {key= ""; action= Set; obj= ""; elem= None; value= None}
     in
     let root_obj =
       ( KeyMap.empty
@@ -1314,13 +1320,13 @@ module OpSetBackend = struct
             (fun key field (diffs, children, res) ->
               let diffs, children, conflicts =
                 CCList.fold_left
-                  (fun (diffs, children, conflicts) (op : op) ->
+                  (fun (diffs, children, conflicts) ((meta, op) : op_with_meta) ->
                     let diffs, children, (materialized : value option) =
                       get_op_value t op (diffs, children)
                     in
                     let conflicts =
                       match materialized with
-                      | Some mat -> OpMap.add op.actor mat conflicts
+                      | Some mat -> OpMap.add meta.actor mat conflicts
                       | None -> conflicts
                     in
                     (diffs, children, conflicts) )
@@ -1357,7 +1363,7 @@ module OpSetBackend = struct
     else
       match get_field_ops t obj_id key with
       | [] -> (diffs, children, None)
-      | hd :: _ -> get_op_value t hd (diffs, children)
+      | (_, op) :: _ -> get_op_value t op (diffs, children)
 
   and list_iterator t list_id mode context =
     let elem = ref (Some "_head") in
@@ -1373,7 +1379,7 @@ module OpSetBackend = struct
             | Some elem' -> (
               match get_field_ops t list_id elem' with
               | [] -> _next (diffs, children)
-              | hd :: tl as ops -> (
+              | (_, hd) :: tl as ops -> (
                   let diffs, children, value =
                     get_op_value t hd (diffs, children)
                   in
@@ -1404,13 +1410,14 @@ module OpSetBackend = struct
                         if CCList.length ops > 1 then
                           let diffs, children, conflict =
                             CCList.fold_left
-                              (fun (diffs, children, op_map) (op : op) ->
+                              (fun (diffs, children, op_map)
+                                   ((meta, op) : op_with_meta) ->
                                 let diffs, children, op_value =
                                   get_op_value t op (diffs, children)
                                 in
                                 ( diffs
                                 , children
-                                , OpMap.add op.actor (CCOpt.get_exn op_value)
+                                , OpMap.add meta.actor (CCOpt.get_exn op_value)
                                     op_map ) )
                               (diffs, children, OpMap.empty)
                               tl

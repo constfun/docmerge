@@ -130,7 +130,8 @@ let edit_to_js_edit (edit : OpSetBackend.diff) =
 let change_op_to_js_change_op (op : OpSetBackend.change_op) =
   CCArray.empty
   |> obj_set "action" (action_to_js_action op.action)
-  |> obj_set_optdef Js.string "key" op.key
+  |> obj_set_optdef Js.string "key"
+       (if String.equal op.key "" then None else Some op.key)
   |> obj_set_optdef (Js.number_of_float $ float_of_int) "elem" op.elem
   |> obj_set_optdef op_val_to_js_value "value" op.value
   |> obj_set "obj" (Js.string op.obj)
@@ -279,7 +280,7 @@ let undo t change =
           CCList.map
             (fun (un_op : BE.ref) ->
               ( { action= un_op.action
-                ; key= Some un_op.key
+                ; key= un_op.key
                 ; obj= un_op.obj
                 ; elem= None
                 ; value= un_op.value }
@@ -304,7 +305,7 @@ let undo t change =
                           : BE.ref ) ]
                   else
                     CCList.fold_left
-                      (fun redo_ops (field_op : BE.op) ->
+                      (fun redo_ops ((meta, field_op) : BE.op_with_meta) ->
                         CCList.append redo_ops
                           [ ( { action= field_op.action
                               ; key= field_op.key
@@ -334,7 +335,7 @@ let redo t (change : BE.Change.t) =
         CCList.map
           (fun (un_op : BE.ref) ->
             ( { action= un_op.action
-              ; key= Some un_op.key
+              ; key= un_op.key
               ; obj= un_op.obj
               ; elem= None
               ; value= un_op.value }
