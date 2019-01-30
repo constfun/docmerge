@@ -101,7 +101,7 @@ module OpSetBackend = struct
   type change_meta = {actor: string; seq: int; message: string option}
   [@@deriving sexp_of, compare]
 
-  type change_op =
+  type op =
     { key: key
     ; action: action
     ; obj: obj_id
@@ -109,9 +109,7 @@ module OpSetBackend = struct
     ; value: op_val option }
   [@@deriving sexp_of, compare]
 
-  type op = change_op [@@deriving sexp_of, compare]
-
-  type op_with_meta = change_meta * change_op [@@deriving sexp_of, compare]
+  type op_with_meta = change_meta * op [@@deriving sexp_of, compare]
 
   type lamport_op = {actor: actor; elem: int} [@@deriving sexp_of]
 
@@ -127,7 +125,7 @@ module OpSetBackend = struct
      We at least make the elem field optional, to encode its potentially undefined nature.
      We use the get_op_elem function to access the elem field and catch the invariant violation at runtime.
   *)
-  let get_op_elem (op : change_op) =
+  let get_op_elem (op : op) =
     match op.elem with
     | Some idx -> idx
     | None -> raise Accessing_undefined_element_index
@@ -146,16 +144,16 @@ module OpSetBackend = struct
       -> actor:string
       -> seq:int
       -> deps:int ActorMap.t
-      -> ops:change_op list
+      -> ops:op list
       -> t
 
-    val set_ops : t -> change_op list -> t
+    val set_ops : t -> op list -> t
 
     val actor : t -> string
 
     val seq : t -> int
 
-    val ops : t -> change_op list
+    val ops : t -> op list
 
     val deps : t -> int ActorMap.t
 
@@ -169,7 +167,7 @@ module OpSetBackend = struct
       { actor: string
       ; seq: int
       ; deps: int ActorMap.t (* ; ops: Op.t list *)
-      ; ops: change_op list
+      ; ops: op list
       ; message: string option }
     [@@deriving sexp_of, compare]
 
@@ -284,7 +282,7 @@ module OpSetBackend = struct
   type obj_aux =
     { _max_elem: int
     ; _following: op_with_meta list KeyMap.t
-    ; _init: change_op
+    ; _init: op
     ; _inbound: OpSet.t
     ; _elem_ids: SkipList.t option sexp_opaque
     ; _insertion: op ElemIdMap.t }
@@ -1023,7 +1021,7 @@ module OpSetBackend = struct
     else apply_queued_ops t []
 
   let init () =
-    let root_op : change_op =
+    let root_op : op =
       {key= ""; action= Set; obj= ""; elem= None; value= None}
     in
     let root_obj =

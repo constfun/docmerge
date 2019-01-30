@@ -127,7 +127,7 @@ let edit_to_js_edit (edit : OpSetBackend.diff) =
   |> obj_set_optdef Js.string "elemId" edit.elem_id
   |> Js.Unsafe.obj
 
-let change_op_to_js_change_op (op : OpSetBackend.change_op) =
+let change_op_to_js_change_op (op : OpSetBackend.op) =
   CCArray.empty
   |> obj_set "action" (action_to_js_action op.action)
   |> obj_set_optdef Js.string "key"
@@ -284,7 +284,7 @@ let undo t change =
                 ; obj= un_op.obj
                 ; elem= None
                 ; value= un_op.value }
-                : BE.change_op ) )
+                : BE.op ) )
             undo_ops
         in
         let change = BE.Change.set_ops change change_ops in
@@ -339,7 +339,7 @@ let redo t (change : BE.Change.t) =
               ; obj= un_op.obj
               ; elem= None
               ; value= un_op.value }
-              : BE.change_op ) )
+              : BE.op ) )
           redo_ops
       in
       let change = BE.Change.set_ops change change_ops in
