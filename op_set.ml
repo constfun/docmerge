@@ -37,27 +37,6 @@ module MapOp = struct
 end
 
 module Op = struct
-  type t =
-    | MapOp of MapOp.t
-    (* | ListOp of ListOp.t *)
-    (* | TextOp of TextOp.t *)
-  [@@deriving sexp_of, compare]
-end
-
-module Clock = struct end
-
-module OpSetBackend = struct
-  let root_id = "00000000-0000-0000-0000-000000000000"
-
-  type actor = string [@@deriving sexp_of, compare]
-
-  (* GUID *)
-  type seq = int [@@deriving sexp_of, compare]
-
-  type obj_id = string [@@deriving sexp_of, compare]
-
-  type key = string [@@deriving sexp_of, compare]
-
   type action = MakeMap | MakeList | MakeText | Ins | Set | Del | Link
   [@@deriving sexp, compare]
 
@@ -68,9 +47,164 @@ module OpSetBackend = struct
     | Null
   [@@deriving sexp_of, compare]
 
-  type value = Value of op_val | Link of {obj: string} [@@deriving sexp_of]
+  type t =
+    { key: string
+    ; action: action
+    ; obj: string
+    ; elem: int option
+    ; value: op_val option }
+  [@@deriving sexp_of, compare]
 
-  type elem_id = key * value option [@@deriving sexp_of]
+  (* type t = *)
+  (*   | MapOp of MapOp.t *)
+  (*   (1* | ListOp of ListOp.t *1) *)
+  (*   (1* | TextOp of TextOp.t *1) *)
+  (* [@@deriving sexp_of, compare] *)
+end
+
+module Clock = struct end
+
+module Change : sig
+  type t [@@deriving sexp_of, compare]
+
+  val create :
+       ?message:string
+    -> actor:string
+    -> seq:int
+    -> deps:int ActorMap.t
+    -> ops:Op.t list
+    -> t
+
+  val set_ops : t -> Op.t list -> t
+
+  val actor : t -> string
+
+  val seq : t -> int
+
+  val ops : t -> Op.t list
+
+  val deps : t -> int ActorMap.t
+
+  val message : t -> string option
+
+  val causally_ready : int ActorMap.t -> t -> bool
+
+  val of_js : Js_of_ocaml.Js.Unsafe.any -> t
+end = struct
+  type t =
+    { actor: string
+    ; seq: int
+    ; deps: int ActorMap.t (* ; ops: Op.t list *)
+    ; ops: Op.t list
+    ; message: string option }
+  [@@deriving sexp_of, compare]
+
+  let create ?message ~actor ~seq ~deps ~ops = {actor; seq; deps; ops; message}
+
+  let set_ops t ops = {t with ops}
+
+  let actor {actor} = actor
+
+  let seq {seq} = seq
+
+  let ops {ops} = ops
+
+  let deps {deps} = deps
+
+  let message {message} = message
+
+  (* Returns true if all changes that causally precede the given change *)
+  (* have already been applied in `opSet`. *)
+  (* All changes are causally (and totally) ordered using lamport timestamps *)
+  (* When a new op lands in the op set, check if all preceeding ops have been applied *)
+  (* If we store ops in Irmin, causality is enforced by history, aka the Merkle DAG. *)
+  let causally_ready clock change =
+    change.deps
+    |> ActorMap.add change.actor (change.seq - 1)
+    |> ActorMap.for_all (fun depActor depSeq ->
+           let actseq = ActorMap.get_or ~default:0 depActor clock in
+           if actseq < depSeq then false else true )
+
+  let of_js (js_change : Js_of_ocaml.Js.Unsafe.any) =
+    let open Js_of_ocaml in
+    let js_action_to_action js_s =
+      let s = Js.to_string js_s in
+      if String.equal s "set" then Op.Set
+      else if String.equal s "del" then Del
+      else if String.equal s "makeMap" then MakeMap
+      else if String.equal s "makeList" then MakeList
+      else if String.equal s "makeText" then MakeText
+      else if String.equal s "link" then Link
+      else if String.equal s "ins" then Ins
+      else raise Not_supported
+    in
+    let rec js_value_to_op_val js_value =
+      Js.Opt.case js_value
+        (fun () -> Op.Null)
+        (fun js_value ->
+          let typ = Js.to_string (Js.typeof js_value) in
+          match typ with
+          | "string" -> StrValue (Js.to_string (Js.Unsafe.coerce js_value))
+          | "boolean" -> BoolValue (Js.to_bool (Js.Unsafe.coerce js_value))
+          | "number" ->
+              NumberValue (Js.float_of_number (Js.Unsafe.coerce js_value))
+          | _ -> raise Not_supported )
+    in
+    let to_op_list arr =
+      CCArray.to_list (Js.to_array arr)
+      |> CCList.map (fun js_op ->
+             Op.
+               { action=
+                   js_action_to_action js_op##.action
+                   (* TODO: Key should be an option, we do this to preserve semantics of the original *)
+               ; key= Js.Optdef.case js_op##.key (fun () -> "") Js.to_string
+               ; elem=
+                   Js.Optdef.(
+                     to_option
+                       (map js_op##.elem (fun x -> int_of_float (Js.to_float x))))
+               ; value=
+                   Js.Optdef.(to_option (map js_op##.value js_value_to_op_val))
+               ; obj= Js.to_string js_op##.obj } )
+    in
+    let actor_map_of_js_obj js_obj =
+      Js.to_array (Js.object_keys js_obj)
+      |> CCArray.fold
+           (fun amap js_actor ->
+             let value = Js.Unsafe.get js_obj js_actor in
+             ActorMap.add (Js.to_string js_actor) value amap )
+           ActorMap.empty
+    in
+    { actor= Js.to_string (Js.Unsafe.coerce js_change)##.actor
+    ; seq= int_of_float (Js.float_of_number (Js.Unsafe.coerce js_change)##.seq)
+    ; deps= actor_map_of_js_obj (Js.Unsafe.coerce js_change)##.deps
+    ; ops=
+        (* Undo will pass undefined ops, but this never propagates to the actual change sent to the BE.
+             Undo ops will be set by undo function bellow, hence the change type should always have ops.
+             A change with no ops makes no sense at all, but the frontend does pass a change with no ops for undo.
+           *)
+        Js.Optdef.case
+          (Js.Unsafe.coerce js_change)##.ops
+          (fun () -> [])
+          (fun ops -> to_op_list ops)
+    ; message=
+        Js.Optdef.case
+          (Js.Unsafe.coerce js_change)##.message
+          (fun () -> None)
+          (fun msg -> Some (Js.to_string msg)) }
+end
+
+module OpSetBackend = struct
+  let root_id = "00000000-0000-0000-0000-000000000000"
+
+  type actor = string [@@deriving sexp_of, compare]
+
+  (* GUID *)
+  type seq = int [@@deriving sexp_of, compare]
+
+  type value = Value of Op.op_val | Link of {obj: string}
+  [@@deriving sexp_of]
+
+  type elem_id = string * value option [@@deriving sexp_of]
 
   (* Ineficient but simple implementation of skip list from original *)
   module SkipList = struct
@@ -101,15 +235,7 @@ module OpSetBackend = struct
   type change_meta = {actor: string; seq: int; message: string option}
   [@@deriving sexp_of, compare]
 
-  type op =
-    { key: key
-    ; action: action
-    ; obj: obj_id
-    ; elem: int option
-    ; value: op_val option }
-  [@@deriving sexp_of, compare]
-
-  type op_with_meta = change_meta * op [@@deriving sexp_of, compare]
+  type op_with_meta = change_meta * Op.t [@@deriving sexp_of, compare]
 
   type lamport_op = {actor: actor; elem: int} [@@deriving sexp_of]
 
@@ -125,145 +251,15 @@ module OpSetBackend = struct
      We at least make the elem field optional, to encode its potentially undefined nature.
      We use the get_op_elem function to access the elem field and catch the invariant violation at runtime.
   *)
-  let get_op_elem (op : op) =
+  let get_op_elem (op : Op.t) =
     match op.elem with
     | Some idx -> idx
     | None -> raise Accessing_undefined_element_index
 
   module OpSet = struct
     include CCSetMake (struct
-      type t = op [@@deriving sexp_of, compare]
+      type t = Op.t [@@deriving sexp_of, compare]
     end)
-  end
-
-  module Change : sig
-    type t [@@deriving sexp_of, compare]
-
-    val create :
-         ?message:string
-      -> actor:string
-      -> seq:int
-      -> deps:int ActorMap.t
-      -> ops:op list
-      -> t
-
-    val set_ops : t -> op list -> t
-
-    val actor : t -> string
-
-    val seq : t -> int
-
-    val ops : t -> op list
-
-    val deps : t -> int ActorMap.t
-
-    val message : t -> string option
-
-    val causally_ready : int ActorMap.t -> t -> bool
-
-    val of_js : Js_of_ocaml.Js.Unsafe.any -> t
-  end = struct
-    type t =
-      { actor: string
-      ; seq: int
-      ; deps: int ActorMap.t (* ; ops: Op.t list *)
-      ; ops: op list
-      ; message: string option }
-    [@@deriving sexp_of, compare]
-
-    let create ?message ~actor ~seq ~deps ~ops =
-      {actor; seq; deps; ops; message}
-
-    let set_ops t ops = {t with ops}
-
-    let actor {actor} = actor
-
-    let seq {seq} = seq
-
-    let ops {ops} = ops
-
-    let deps {deps} = deps
-
-    let message {message} = message
-
-    (* Returns true if all changes that causally precede the given change *)
-    (* have already been applied in `opSet`. *)
-    (* All changes are causally (and totally) ordered using lamport timestamps *)
-    (* When a new op lands in the op set, check if all preceeding ops have been applied *)
-    (* If we store ops in Irmin, causality is enforced by history, aka the Merkle DAG. *)
-    let causally_ready clock change =
-      change.deps
-      |> ActorMap.add change.actor (change.seq - 1)
-      |> ActorMap.for_all (fun depActor depSeq ->
-             let actseq = ActorMap.get_or ~default:0 depActor clock in
-             if actseq < depSeq then false else true )
-
-    let of_js (js_change : Js_of_ocaml.Js.Unsafe.any) =
-      let open Js_of_ocaml in
-      let js_action_to_action js_s =
-        let s = Js.to_string js_s in
-        if String.equal s "set" then Set
-        else if String.equal s "del" then Del
-        else if String.equal s "makeMap" then MakeMap
-        else if String.equal s "makeList" then MakeList
-        else if String.equal s "makeText" then MakeText
-        else if String.equal s "link" then Link
-        else if String.equal s "ins" then Ins
-        else raise Not_supported
-      in
-      let rec js_value_to_op_val js_value =
-        Js.Opt.case js_value
-          (fun () -> Null)
-          (fun js_value ->
-            let typ = Js.to_string (Js.typeof js_value) in
-            match typ with
-            | "string" -> StrValue (Js.to_string (Js.Unsafe.coerce js_value))
-            | "boolean" -> BoolValue (Js.to_bool (Js.Unsafe.coerce js_value))
-            | "number" ->
-                NumberValue (Js.float_of_number (Js.Unsafe.coerce js_value))
-            | _ -> raise Not_supported )
-      in
-      let to_op_list arr =
-        CCArray.to_list (Js.to_array arr)
-        |> CCList.map (fun js_op ->
-               { action=
-                   js_action_to_action js_op##.action
-                   (* TODO: Key should be an option, we do this to preserve semantics of the original *)
-               ; key= Js.Optdef.case js_op##.key (fun () -> "") Js.to_string
-               ; elem=
-                   Js.Optdef.(
-                     to_option
-                       (map js_op##.elem (fun x -> int_of_float (Js.to_float x))))
-               ; value=
-                   Js.Optdef.(to_option (map js_op##.value js_value_to_op_val))
-               ; obj= Js.to_string js_op##.obj } )
-      in
-      let actor_map_of_js_obj js_obj =
-        Js.to_array (Js.object_keys js_obj)
-        |> CCArray.fold
-             (fun amap js_actor ->
-               let value = Js.Unsafe.get js_obj js_actor in
-               ActorMap.add (Js.to_string js_actor) value amap )
-             ActorMap.empty
-      in
-      { actor= Js.to_string (Js.Unsafe.coerce js_change)##.actor
-      ; seq=
-          int_of_float (Js.float_of_number (Js.Unsafe.coerce js_change)##.seq)
-      ; deps= actor_map_of_js_obj (Js.Unsafe.coerce js_change)##.deps
-      ; ops=
-          (* Undo will pass undefined ops, but this never propagates to the actual change sent to the BE.
-             Undo ops will be set by undo function bellow, hence the change type should always have ops.
-             A change with no ops makes no sense at all, but the frontend does pass a change with no ops for undo.
-           *)
-          Js.Optdef.case
-            (Js.Unsafe.coerce js_change)##.ops
-            (fun () -> [])
-            (fun ops -> to_op_list ops)
-      ; message=
-          Js.Optdef.case
-            (Js.Unsafe.coerce js_change)##.message
-            (fun () -> None)
-            (fun msg -> Some (Js.to_string msg)) }
   end
 
   type state = {change: Change.t; allDeps: seq ActorMap.t} [@@deriving sexp_of]
@@ -272,20 +268,20 @@ module OpSetBackend = struct
   [@@deriving sexp_of]
 
   type ref =
-    { action: action
-    ; obj: obj_id
-    ; key: key
-    ; value: op_val option
+    { action: Op.action
+    ; obj: string
+    ; key: string
+    ; value: Op.op_val option
     ; elem: int option }
   [@@deriving sexp_of]
 
   type obj_aux =
     { _max_elem: int
     ; _following: op_with_meta list KeyMap.t
-    ; _init: op
+    ; _init: Op.t
     ; _inbound: OpSet.t
     ; _elem_ids: SkipList.t option sexp_opaque
-    ; _insertion: op ElemIdMap.t }
+    ; _insertion: Op.t ElemIdMap.t }
   [@@deriving sexp_of]
 
   type obj = op_with_meta list KeyMap.t * obj_aux [@@deriving sexp_of]
@@ -299,13 +295,13 @@ module OpSetBackend = struct
     { obj: string
     ; type_: diff_type
     ; action: diff_action
-    ; key: key option
+    ; key: string option
     ; value: value option
     ; link: bool option
     ; index: int option
     ; elem_id: string option
     ; conflicts: conflict list option
-    ; path: [`IntPath of int | `StrPath of key] list option }
+    ; path: [`IntPath of int | `StrPath of string] list option }
   [@@deriving sexp_of]
 
   type child = string [@@deriving sexp_of]
@@ -368,7 +364,7 @@ module OpSetBackend = struct
   let get_obj_aux_exn t obj_id = CCOpt.get_exn (get_obj_aux t obj_id)
 
   let get_op_value_as_string_exn = function
-    | StrValue s -> s
+    | Op.StrValue s -> s
     | BoolValue _ | NumberValue _ | Null -> raise (Invalid_argument "op.value")
 
   let get_obj_action t obj_id = (get_obj_aux_exn t obj_id)._init.action
@@ -553,7 +549,7 @@ module OpSetBackend = struct
                 get_path t ref.obj
                   (CCOpt.map (fun p -> `StrPath ref.key :: p) path) ) ) )
 
-  let patch_list (t : t) obj_id index (elem_id__key : key)
+  let patch_list (t : t) obj_id index (elem_id__key : string)
       (action : diff_action) (ops : op_with_meta list option) =
     let type_ =
       let _, obj_aux = ObjectIdMap.get obj_id t.by_object |> CCOpt.get_exn in
@@ -563,7 +559,7 @@ module OpSetBackend = struct
       CCOpt.map snd (CCOpt.flat_map (fun ops -> CCList.nth_opt ops 0) ops)
     in
     let elem_ids = CCOpt.get_exn (get_obj_aux_exn t obj_id)._elem_ids in
-    let value = CCOpt.flat_map (fun (fop : op) -> fop.value) first_op in
+    let value = CCOpt.flat_map (fun (fop : Op.t) -> fop.value) first_op in
     let value = CCOpt.map (fun v -> Value v) value in
     let path = get_path t obj_id (Some []) in
     let edit : diff =
@@ -633,12 +629,12 @@ module OpSetBackend = struct
     ActorMap.get_or actor2 ~default:0 clock1 < seq2
     && ActorMap.get_or actor1 ~default:0 clock2 < seq1
 
-  let get_field_ops t obj_id (key : key) =
+  let get_field_ops t obj_id (key : string) =
     match ObjectIdMap.get obj_id t.by_object with
     | Some (obj_map, _) -> KeyMap.get_or key obj_map ~default:[]
     | None -> []
 
-  let get_parent t obj_id (key : key option) =
+  let get_parent t obj_id (key : string option) =
     match key with
     | None -> None
     | Some key when String.equal key "_head" -> None
@@ -653,8 +649,8 @@ module OpSetBackend = struct
         | None -> raise Missing_index_for_list_element
         | Some k -> Some k )
 
-  let insertions_after t obj_id (parent_id : key option)
-      (child_id : key option) =
+  let insertions_after t obj_id (parent_id : string option)
+      (child_id : string option) =
     let child_key =
       match child_id with
       | Some child_id ->
@@ -722,7 +718,7 @@ module OpSetBackend = struct
       in
       loop children prev_id
 
-  let update_list_element t obj_id (elem_id__key : key) =
+  let update_list_element t obj_id (elem_id__key : string) =
     let ops = get_field_ops t obj_id elem_id__key in
     let _, {_elem_ids} = ObjectIdMap.find obj_id t.by_object in
     let elem_ids = CCOpt.get_exn _elem_ids in
@@ -833,7 +829,7 @@ module OpSetBackend = struct
       in
       let t =
         CCList.fold_left
-          (fun t (op : op) ->
+          (fun t (op : Op.t) ->
             let by_object =
               ObjectIdMap.update
                 (get_op_value_as_string_exn (CCOpt.get_exn op.value))
@@ -898,9 +894,9 @@ module OpSetBackend = struct
   let apply_ops t meta ops =
     let t, all_diffs, _ =
       List.fold_left
-        (fun (t, all_diffs, new_objs) (op : op) ->
+        (fun (t, all_diffs, new_objs) (op : Op.t) ->
           match op.action with
-          | MakeMap | MakeList | MakeText ->
+          | Op.MakeMap | MakeList | MakeText ->
               let new_objs = ObjectIdSet.add op.obj new_objs in
               let t, diffs = apply_make t (meta, op) in
               (t, List.append all_diffs diffs, new_objs)
@@ -1021,7 +1017,7 @@ module OpSetBackend = struct
     else apply_queued_ops t []
 
   let init () =
-    let root_op : op =
+    let root_op : Op.t =
       {key= ""; action= Set; obj= ""; elem= None; value= None}
     in
     let root_obj =
@@ -1338,7 +1334,7 @@ module OpSetBackend = struct
         (diffs, children, Some conflicts)
     | None -> (diffs, children, None)
 
-  and get_op_value t (op : op) ((diffs, children) : context) =
+  and get_op_value t (op : Op.t) ((diffs, children) : context) =
     let value =
       CCOpt.flat_map
         (fun value ->
@@ -1437,7 +1433,7 @@ module OpSetBackend = struct
     match insertions_after t obj_id key None with
     | hd :: _ -> Some hd
     | [] ->
-        let rec find_ancestor (key : key option) =
+        let rec find_ancestor (key : string option) =
           match get_parent t obj_id key with
           | None -> None
           | Some ancestor -> (

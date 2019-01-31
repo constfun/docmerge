@@ -71,7 +71,7 @@ let action_to_js_action a =
   Js.string
     OpSetBackend.(
       match a with
-      | MakeMap -> "makeMap"
+      | Op.MakeMap -> "makeMap"
       | MakeText -> "makeText"
       | MakeList -> "makeList"
       | Link -> "link"
@@ -80,10 +80,10 @@ let action_to_js_action a =
       | Set -> "set")
 
 let op_val_to_js_value = function
-  | BE.BoolValue b -> Js.Unsafe.inject (Js.bool b)
-  | BE.StrValue s -> Js.Unsafe.inject (Js.string s)
-  | BE.NumberValue n -> Js.Unsafe.inject (Js.number_of_float n)
-  | BE.Null -> Js.Unsafe.inject Js.null
+  | Op.BoolValue b -> Js.Unsafe.inject (Js.bool b)
+  | StrValue s -> Js.Unsafe.inject (Js.string s)
+  | NumberValue n -> Js.Unsafe.inject (Js.number_of_float n)
+  | Null -> Js.Unsafe.inject Js.null
 
 let rec value_to_js_value (value : OpSetBackend.value) =
   match value with
@@ -127,7 +127,7 @@ let edit_to_js_edit (edit : OpSetBackend.diff) =
   |> obj_set_optdef Js.string "elemId" edit.elem_id
   |> Js.Unsafe.obj
 
-let change_op_to_js_change_op (op : OpSetBackend.op) =
+let change_op_to_js_change_op (op : Op.t) =
   CCArray.empty
   |> obj_set "action" (action_to_js_action op.action)
   |> obj_set_optdef Js.string "key"
@@ -147,8 +147,8 @@ let js_obj_of_actor_map conv m =
 
 let js_number_of_int i = Js.number_of_float (float_of_int i)
 
-let change_to_js_change (change : BE.Change.t) =
-  let module C = BE.Change in
+let change_to_js_change (change : Change.t) =
+  let module C = Change in
   CCArray.empty
   |> obj_set ~conv:Js.string "actor" (C.actor change)
   |> obj_set ~conv:(Js.number_of_float $ float_of_int) "seq" (C.seq change)
@@ -259,7 +259,7 @@ let apply_changes t changes = apply t changes false
 let _apply_changes t js_changes =
   let js_changes = ToJs.imm js_changes in
   let changes =
-    CCArray.to_list (Js.to_array js_changes) |> CCList.map BE.Change.of_js
+    CCArray.to_list (Js.to_array js_changes) |> CCList.map Change.of_js
   in
   let t, diffs = apply_changes t changes in
   let js_diffs = list_to_js_array (CCList.map edit_to_js_edit diffs) in
@@ -284,20 +284,20 @@ let undo t change =
                 ; obj= un_op.obj
                 ; elem= None
                 ; value= un_op.value }
-                : BE.op ) )
+                : Op.t ) )
             undo_ops
         in
-        let change = BE.Change.set_ops change change_ops in
+        let change = Change.set_ops change change_ops in
         let op_set = t.op_set in
         let redo_ops =
           CCList.fold_left
             (fun redo_ops (op : BE.ref) ->
               match op.action with
-              | BE.Del | BE.Set | BE.Link ->
+              | Op.Del | Set | Link ->
                   let field_ops = BE.get_field_ops op_set op.obj op.key in
                   if CCList.is_empty field_ops then
                     CCList.append redo_ops
-                      [ ( { action= BE.Del
+                      [ ( { action= Op.Del
                           ; obj= op.obj
                           ; key= op.key
                           ; value= None
@@ -326,7 +326,7 @@ let undo t change =
         let t = {op_set= new_op_set} in
         (t, diffs)
 
-let redo t (change : BE.Change.t) =
+let redo t (change : Change.t) =
   let redo_ops = CCList.last_opt t.op_set.redo_stack in
   match redo_ops with
   | None -> raise Last_change_was_not_an_undo
@@ -339,10 +339,10 @@ let redo t (change : BE.Change.t) =
               ; obj= un_op.obj
               ; elem= None
               ; value= un_op.value }
-              : BE.op ) )
+              : Op.t ) )
           redo_ops
       in
-      let change = BE.Change.set_ops change change_ops in
+      let change = Change.set_ops change change_ops in
       let op_set = t.op_set in
       let op_set =
         { op_set with
@@ -356,7 +356,7 @@ let redo t (change : BE.Change.t) =
       ({op_set= new_op_set}, diffs)
 
 let apply_local_change t js_change =
-  let change = BE.Change.of_js js_change in
+  let change = Change.of_js js_change in
   let request_type = Js.to_string (Js.Unsafe.coerce js_change)##.requestType in
   let t, diffs =
     if CCString.equal request_type "change" then apply t [change] true
